@@ -1,0 +1,29 @@
+=head1 Mapping Objective-C Concepts to Haskell's Type System
+
+=head2 A Simple Example: I<NSMovie>
+
+=head2 Objective-C Objects
+
+=head3 Classes
+
+=head3 Protocols
+
+=head3 Protocol Adoptions
+
+=head2 Object Messaging
+
+=head3 Selectors
+
+=head3 Methods
+
+=head3 Sending Messages to Objects
+
+=head4 Do not Resist the Monad
+
+=head2 Non-Object Types
+
+=head3 C<enum> Types
+
+=head3 C<struct> Types
+
+
