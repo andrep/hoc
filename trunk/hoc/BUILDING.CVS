@@ -18,3 +18,17 @@ These are build instructions if you've checked out HOC from CVS
 
 3. Build HOC as usual with ./configure && make && make install.
 
+
+cvsps
+=====
+
+While we'd love to use a more modern revision control system such as
+darcs, Subversion or GNU arch, Sourceforge "only" provides a CVS server,
+so we're using that.  For people who are used to more modern revision
+control systems and miss working with 'patchsets' instead of the disjoint
+per-file patches that CVS uses, take a look at cvsps
+<http://www.cobite.com/cvsps/>, a patchset manager for CVS.  While it
+doesn't, by any means, give you the many advantages that more modern
+source control systems offer you, it certainly makes using CVS and
+managing patches far easier!
+
