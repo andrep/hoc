@@ -13,7 +13,7 @@ ffi_abi defaultABI()
 
 ffi_type * allocStructType(ffi_type **elements)
 {
-    ffi_type *theStruct = malloc(sizeof(ffi_type));
+    ffi_type *theStruct = (ffi_type *) malloc(sizeof(ffi_type));
     theStruct->type = FFI_TYPE_STRUCT;
     theStruct->size = theStruct->alignment = 0;
     theStruct->elements = elements;
