@@ -29,6 +29,22 @@
 
 =head3 C<struct> Types
 
+=head3 Ambiguous Function Names
+
+Some functions have the same name and are defined in more than
+one class: e.g. the I<NSProcessInfo>, I<NSScriptCommand> and
+I<NSTask> classes all define a method named C<arguments>.  Any
+such multiply-occuring method names are not exported from the
+top-level framework module (I<Foundation> or I<AppKit>) by
+default: you will need to import the class specifically, e.g.
+C<import Foundation.NSProcessInfo> to import I<NSProcessInfo>'s
+C<arguments> function.
+
+If you wish to use the C<arguments> method from multiple classes,
+use the C<import qualified> or C<import X as Y> constructs, just
+as if you were importing a same-named function from different
+Haskell modules normally.
+
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65
 
