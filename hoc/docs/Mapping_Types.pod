@@ -1,6 +1,6 @@
-=head1 Mapping Objective-C Concepts to Haskell's Type System
+=head1 Mapping Objective-C Concepts to Haskell
 
-=head2 Objective-C Objects
+=head2 Objects & Classes
 
 =head3 Classes
 
@@ -21,22 +21,28 @@ to the class name: I<_classname>.  For example, to send the
 C<alloc> message to the I<NSMovie> class object, write
 C<_NSMovie # alloc>.
 
-=head3 Protocols
+=head3 Protocols & Protocol Adoptions
 
-=begin comment
+=for comment XXX: fix up this section
 
-Yes, formal protocols. Luckily, they're very rarely used in
-Cocoa.  It's only an ifgen issue; the current ifgen just
-generates ID for all id<Foo> types.  For id<Foo,Bar> used as
-a parameter, it should generate (Foo (ID a), Bar (ID a)) => ID a.
-For return values id<Foo,Bar>, we'll have to define a special
-type ID_Bar_Foo and declare instances for Foo and Bar for it. The
-only difficult part should be to avoid defining those types too
-often...
+This section of the documentation hasn't been written yet, but in
+the meantime, you may find the following note from Wolfgang
+Thaller useful:
 
-=end comment
+  Yes, formal protocols. Luckily, they're very rarely used in
+  Cocoa.  It's only an ifgen issue; the current ifgen just
+  generates ID for all id<Foo> types.  For id<Foo,Bar> used as
+  a parameter, it should generate (Foo (ID a), Bar (ID a)) => ID
+  a.  For return values id<Foo,Bar>, we'll have to define
+  a special type ID_Bar_Foo and declare instances for Foo and Bar
+  for it. The only difficult part should be to avoid defining
+  those types too often...
 
-=head3 Protocol Adoptions
+=head3 Categories
+
+This section is not written yet: please write to the I<hoc-users>
+mailing list (see L<http://hoc.sourceforge.net/support.html>) for
+assistance or, have a look at the HOC source code yourself.
 
 =head3 Specific Classes
 
@@ -57,8 +63,6 @@ you can use the functions C<< haskellString :: NSString a -> IO
 String >> and C<< stringWithHaskellString :: String ->
 NSStringClass a -> IO (NSString a) >>.  Use them as if they were
 Objective-C methods in the I<NSString> class.
-
-
 
 =head2 Object Messaging
 
@@ -148,10 +152,7 @@ appropriate places), not the translated Haskell function name.
 For example, you should pass in C<"initWithURL:byReference:">,
 and not C<"initWithURLByReference">.
 
-
 =begin comment
-
-XXX: Put this back in when HOC.Marshal is written ...
 
 =for comment =head3 Generalised Marshaling
 
@@ -177,6 +178,19 @@ making them part of C<HOC.Marshal>'s C<ObjCMarshal> type class:
 
 =end comment
 
+=head3 Foundation & AppKit Frameworks
+
+The Haskell interfaces for the Foundation and AppKit frameworks
+(nE<eacute>e Cocoa) are automatically built when you build and
+install HOC.  To use them, simply write C<import Foundation>,
+C<import AppKit> or C<import Cocoa> at the top of your Haskell
+module to import the entire framework's class hierarchy and
+method definitions into scope.  (But, see the section on
+L<"Ambiguous Function Names"> to see why some methods are I<not>
+imported.)
+
+To use your own, custom frameworks with HOC, see the chapter on
+L<"Accessing Other Frameworks from Haskell">.
 
 =head2 Miscellanea
 
@@ -199,7 +213,15 @@ automatically released.
 
 =head3 C<enum> Types
 
+This section is not written yet: please write to the I<hoc-users>
+mailing list (see L<http://hoc.sourceforge.net/support.html>) for
+assistance or, have a look at the HOC source code yourself.
+
 =head3 C<struct> Types
+
+This section is not written yet: please write to the I<hoc-users>
+mailing list (see L<http://hoc.sourceforge.net/support.html>) for
+assistance or, have a look at the HOC source code yourself.
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65

@@ -48,10 +48,8 @@ main HOC functions you will require are C<declareClass> and
 C<exportClass>.  Note that these functions are I<Template
 Haskell> (TH) functions, so you'll need to use Template Haskell's
 special C<$(...)> syntax to use them.  (If you don't know what
-Template Haskell is, see the next section which gives a very
-quick overview about what it is.)
-
-=for comment XXX: Insert hyperlink to next section
+Template Haskell is, see the L<"Template Haskell in a Nutshell">
+appendix which gives a very quick overview about what it is.)
 
 =head3 The C<declareClass> Function
 
@@ -69,16 +67,12 @@ class to subclass: you cannot currently create a new class which
 sits at the root of an object hierarchy (such as I<NSObject> or
 I<NSProxy>).
 
-=for comment XXX: Maybe turn above into a type signature
-
 For example,
 
   $(declareClass "MyDocument" "NSDocument")
 
 declares a new class named I<MyDocument> which is a subclass of
 I<NSDocument>.  (Imaginative, huh?)
-
-=for comment XXX: Wolfgang -- is the above correct?
 
 =head3 The C<exportClass> Function
 
@@ -139,10 +133,7 @@ The C<ClassMember> data structure is defined as:
 
 Hopefully the type information will inform you about what
 arguments you need to provide to each of the data contructors to
-produce a C<ClassMember>.  (Refer to the documentation about
-C<ClassMember>s if you need more help with them.)
-
-=for comment XXX: document & provide link to ClassMember
+produce a C<ClassMember>.
 
 Here's an example of what this particular argument might look
 like (taken directly from the
@@ -188,9 +179,9 @@ in Haskell:
 
 The I<HaskellDocument> class in the above example only
 implemented methods whose types were already known because the
-selector was already defined somewhere in Cocoa. If you've just
-used InterfaceBuilder to place a small button labeled with the
-Greek letter Pi in the lower-left corner of your window and
+selector was already defined somewhere in Cocoa.  If you've used
+InterfaceBuilder to place a small button labelled with the Greek
+letter I<Pi> in the lower-left corner of your window and
 connected it to a method named C<smallPiClicked:>, then you'll
 need to declare that selector yourself using the
 C<declareSelector> template function, which has the following
@@ -202,20 +193,22 @@ type:
 
 So for the C<smallPiClicked:> selector you might write:
 
-  $(declareSelector "smallPiClicked:" [t| forall a. ID a -> IO () |]
+  $( declareSelector "smallPiClicked:" [t| forall a. ID a -> IO () |] )
 
 The Objective-C selector name "smallPiClicked:" will be
-automatically mangled to C<smallPiClicked>. If you don't like
-this, you can use C<declareRenamedSelector> instead:
+automatically mangled to C<smallPiClicked> (as per the rules
+given in the L<"Selectors"> section above).  If you don't like this,
+you can use C<declareRenamedSelector> instead:
 
-  $(declareRenamedSelector "smallPiClicked:" "haskellNameForThisSelector"
-                           [t| forall a. ID a -> IO () |])
+  $( declareRenamedSelector "smallPiClicked:" "haskellNameForThisSelector"
+                            [t| forall a. ID a -> IO () |] )
 
 Due to a limitation of Template Haskell, you cannot put this
 declaration in the same module as your C<exportClass>
-declaration. This is because identifiers declared by Template
-Haskell "splices" are not available to other splices within the
-same module.
+declaration: you'll have to put them in another module and
+C<import> that module instead.  (This is because identifiers
+declared by Template Haskell "splices" are not available to other
+splices within the same module.)
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65

@@ -18,10 +18,9 @@ TITLE = HOC: a Haskell to Objective-C bridge
 SOURCE_PODS = Introduction.pod \
 	      Quick_Start.pod \
 	      Mapping_Types.pod \
-	      Accessing_Core_Frameworks.pod \
 	      Accessing_Other_Frameworks.pod \
 	      Creating_an_Objective-C_Class_in_Haskell.pod \
-	      History.pod \
+	      Tools.pod \
 	      Appendices.pod \
 	      $(NULL)
 
@@ -60,6 +59,10 @@ view: HOC.html
 	open $+
 
 dist: HOC.html
+
+# failed attempt at getting Safari to print to PDF; see
+# http://64.233.167.104/search?q=cache:F2D2JTT0b98J:www1.odn.ne.jp/~cge02410/panther/system_events_003.html+applescript+safari+print+pdf&hl=en for more info
+# HOC.pdf: HOC.html
 
 install:
 	true

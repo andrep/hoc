@@ -2,8 +2,94 @@
 
 =head2 Building HOC
 
+HOC is distributed as a standard UNIX tarball (F<.tar.bz2> file), and
+uses GNU I<autoconf> for its build system.  Building HOC should
+be a simple matter of the standard autoconf build mantra:
+
+  ./configure
+  make
+  make install
+
+See the F<README.txt> file in the HOC distribution for the most
+up-to-date build information.
+
+Building HOC from a CVS repository is only slightly more
+involved: see the F<BUILDING.CVS> file in your checked out CVS
+directory (which is not included in proper release tarball) for
+more information.
+
 =head2 Template Haskell in a Nutshell
 
+I<Template Haskell is an extension to Haskell 98 that allows you
+to do type-safe compile-time meta-programming, with Haskell both
+as the manipulating language and the language being manipulated.>
+E<mdash> from the Template Haskell webpage at
+<L<http://www.haskell.org/th/>>.
+
+From a HOC user's viewpoint, Template Haskell makes lots of
+things possible in HOC that are not possible without it, and
+greatly simplifies the HOC API that you use to declare new
+classes.  In the L<"The Class Creation API"> section, the two
+functions C<declareClass> and C<exportClass> "template" functions
+were described.  These are functions which have the mysterious
+output type C<Q [Dec]>: to put it simply, the output of these
+template functions are actually I<Haskell code>.  Just as
+functional languages such as Haskell can treat functions as
+first-class entities, Template Haskell allows Haskell I<code> to
+be treated as a first-class entity: you can pass code around to
+other functions, inspect the code, change it, and pass that new
+code to yet more functions.  (If you're familiar with compilers,
+the code that's passed around is actually a data structure that
+represents the I<abstract syntax tree>: you can walk the tree and
+add, change or remove nodes at your leisure.)
+
+Of course, as well as manipulating code, you can also I<execute>
+these first-class code thingys, which is what the odd-looking
+C<$(...)> syntax does.  That tells GHC to execute the code
+fragment inside the brackets: in Template Haskell terminology,
+this is called I<splicing> in code.  So, when you use template
+functions such as C<exportClass>, they actually generate code
+based on the parameters you give it, and immediately splice the
+code in, writing out possibly hundreds of declarations and
+functions for you invisibly.
+
+Of course, this appendix only covers Template Haskell as it
+applies to HOC: see the Template Haskell webpage (link given
+above) for more information on it, what you can do with it, and
+why it (and meta-programming in general) kicks ass.
+
+=head2 History
+
+A long time ago, in a galaxy far, far away ... err, wait, wrong
+chapter.  Ahem.
+
+The first development snapshot of HOC came out in January 2003,
+in a humble announcement to the I<glasgow-haskell-users> mailing
+list by Wolfgang Thaller.  While it worked, it was half of an
+experiment with Template Haskell, and half a proof-of-concept,
+rather than intending to be a proper language binding.
+
+During HOC's development, another Haskell to Objective-C binding
+was being developed, named Mocha.  Mocha was the result of
+AndrE<eacute> Pang's thesis on Binding Haskell to Object-Oriented
+and Component Systems
+<L<http://www.algorithm.com.au/files/reflection/reflection.pdf>>,
+and it, like many thesis implementations, was also more of
+a proof-of-concept rather than a real, useful piece of software.
+
+The authors of HOC and Mocha met at the Haskell Implementor's
+Meeting in Stockholm, Sweden later in 2003, and sat down to try
+to reconcile the two projects.  HOC was a very different beast
+from Mocha: HOC wasn't typed at all (e.g. all Objective-C objects
+were represented using only the one C<ID> type), for instance.
+Mocha, being the result of a thesis on integrating Haskell with
+object-oriented systems, was focused very much at bringing
+object-oriented style overloading into the Haskell world.
+Wolfgang Thaller did the heavy lifting and rewrote HOC from
+scratch using many of the ideas from Mocha and AndrE<acute>'s
+thesis, and the result is what you have today: a more supported,
+stable Objective-C binding than would be possible without both
+authors supporting each other.
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65
