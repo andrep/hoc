@@ -1,7 +1,7 @@
 module CTypeToHaskell(pprSelectorType,
                       HSelectorType,
+                      SelectorKind(..),
                       getSelectorType,
-                      getCovariantSelectorType,
                       mentionedClasses) where
 
 import Control.Monad(when)
@@ -127,7 +127,6 @@ pprHTypeTerm _ (Var tv) = text tv
 pprHTypeTerm True t@(a :$ b) = parens (pprHTypeTerm False t)
 pprHTypeTerm False (a :$ b) = pprHTypeTerm True a <+> pprHTypeTerm True b
 
-getSelectorType :: Set String -> Selector -> Maybe HSelectorType
 
 pprSelectorType :: HSelectorType -> Doc
 
@@ -138,19 +137,33 @@ getSelectorType' classes sel ret = do
                         [ "t" ++ show i | i <- [1..] ] (selArgTypes sel)
     return $ liftContexts (argTypes ++ [ret])
 
-getSelectorType classes sel = do
+data SelectorKind = PlainSelector 
+                  | CovariantSelector
+                  | CovariantInstanceSelector
+                  | AllocSelector
+                  | InitSelector
+
+getSelectorType :: SelectorKind -> Set String -> Selector -> Maybe HSelectorType
+
+getSelectorType PlainSelector classes sel = do
     HType retTypeTyCtx retTypeMentioned retType <-
         (cTypeToHaskell classes True) "t" $ selRetType sel
     let ioRetType = HType retTypeTyCtx retTypeMentioned (Con "IO" :$ retType)
     getSelectorType' classes sel ioRetType
 
-getCovariantSelectorType factory classes sel =
+getSelectorType kind classes sel =
     getSelectorType' classes sel $
         HType Nothing [] (Con "IO" :$
-            (if factory then Con "CovariantInstance" else Con "Covariant"))
+            (case kind of
+                CovariantSelector -> Con "Covariant"
+                CovariantInstanceSelector -> Con "CovariantInstance"
+                AllocSelector -> Con "Allocated"
+                InitSelector -> Con "Inited"
+            ))
 
 pprSelectorType (HSelectorType tyvars context mentioned types) =
     pprForall tyvars <+> pprContext context <+>
     (hsep $ punctuate (text " ->") $ map (pprHTypeTerm False) types)
 
 mentionedClasses (HSelectorType tyvars context mentioned types) = mentioned
+

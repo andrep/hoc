@@ -19,7 +19,8 @@ import Data.Set
 import Data.FiniteMap
 import qualified Data.HashTable as HashTable
 import Data.Maybe(maybeToList, fromMaybe, mapMaybe)
-import Data.List(partition)
+import Data.List(partition,isPrefixOf)
+import Data.Char(isLower)
 
 data PreparedDeclarations = PreparedDeclarations {
         pdModuleNames :: [ModuleName],
@@ -260,9 +261,18 @@ prepareDeclarations bindingScript modules = do
                     
                     when (name `elementOf` soHiddenSelectors selectorOptions) $ Nothing
                     
-                    typ <- if mangled `elementOf` soCovariantSelectors selectorOptions
-                        then getCovariantSelectorType factory classNames sel
-                        else getSelectorType classNames sel
+                    let covariant = mangled `elementOf` soCovariantSelectors selectorOptions
+                        kind | covariant && factory = CovariantInstanceSelector
+                             | covariant = CovariantSelector
+                             | "alloc" `isFirstWordOf` name = AllocSelector
+                             | "init" `isFirstWordOf` name = InitSelector
+                             | otherwise = PlainSelector
+                        a `isFirstWordOf` b 
+                            | length b > length a = (a `isPrefixOf` b)
+                                                 && (not $ isLower (b !! length a))
+                            | otherwise = a == b
+                    
+                    typ <- getSelectorType kind classNames sel'
                     return $ (MangledSelector {
                             msSel = sel',
                             msMangled = mangled,
