@@ -11,10 +11,21 @@ SOURCE_PODS = Introduction.pod \
 	      Appendices.pod \
 	      $(NULL)
 
+SOURCE_DOTS = \
+	      $(NULL)
+
+# ---
+
+SOURCE_PNGS = \
+	      $(NULL)
+
 all: view
 
-HOC.html: $(SOURCE_PODS)
-	pod2html \
+%.png: %.dot
+	@DOT@ -Tpng
+
+HOC.html: $(SOURCE_PODS) $(SOURCE_PMGS)
+	@POD2HTML@ \
 	  --index \
 	  --header \
 	  --title="${TITLE}" \

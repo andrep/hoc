@@ -54,6 +54,6 @@ import HOC.StdArgumentTypes
 import HOC.ExportClass
 import HOC.Utilities
 import HOC.NewlyAllocated
-import HOC.Marshal
 
 import Data.Typeable
+

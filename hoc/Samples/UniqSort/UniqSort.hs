@@ -1,13 +1,8 @@
 module Main where
 
-import List (genericLength)
-import System
-
 import Foundation
 import Foundation.NSProcessInfo (arguments)
 import HOC
-import HOC.Base (newAutoreleasePool, releaseObject)
-import HOC.ID (isNil)
 
 -- int main (int argc, const char * argv[]) {
 main = do
