@@ -51,7 +51,7 @@ bc_awakeFromNib self = do
     putStrLn "Loading selectors..."
     allSels <- fmap (map read . lines) $
                readFile $
-               "/Users/wolfgang/HOCSourceforge/hoc/Bindings/all-selectors.txt"    
+               "../../Bindings/all-selectors.txt"
     putStrLn $ show (Prelude.length allSels) ++ " selectors total."
     let classifiedSels = sort $ map (
             \(haskell, objc, typ, mod) ->
