@@ -14,7 +14,7 @@ dist_FILES = \
 all: libHOC.a HOC.o ../inplace.conf
 
 ../inplace.conf: HOC-$(PLATFORM).conf-inplace
-	echo "[]" > $@
+	[ -f "$@" ] || echo '[]' > $@
 	$(GHC_PKG) register HOC-$(PLATFORM).conf-inplace \
 		--package-conf=../inplace.conf
 
