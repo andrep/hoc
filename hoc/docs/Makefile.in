@@ -45,6 +45,9 @@ view: HOC.html
 
 dist: HOC.html
 
+install:
+	true
+
 clean:
 	-rm HOC.html pod2htm*
 
