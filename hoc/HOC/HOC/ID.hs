@@ -245,3 +245,9 @@ getHaskellData_IMP super mbDat cif ret args = do
     return nullPtr  -- no exception
 
 getHaskellDataForID (ID (HSO _ dat)) = dat
+
+releaseExtraReference obj = do
+    case toID obj of
+        ID (HSO ptr _) -> releaseObject ptr
+        Nil -> return ()
+    return obj

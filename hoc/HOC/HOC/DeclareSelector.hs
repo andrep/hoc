@@ -19,6 +19,7 @@ data Covariant
 data CovariantInstance
 data Allocated
 data Inited
+data Retained a
 
 $(makeMarshallers 4)
 marshallersUpTo = 4
@@ -44,7 +45,7 @@ declareRenamedSelector name haskellName typeSigQ =
                 _ -> False
     
 
-            doctoredTypeSig = doctorType typeSig className
+            (resultRetained, doctoredTypeSig) = doctorType typeSig className
             
         sequence $ [
                 
@@ -72,8 +73,9 @@ declareRenamedSelector name haskellName typeSigQ =
                 
                 sigD haskellName $ return doctoredTypeSig,
                 
-                if nArgs > marshallersUpTo
-                    then makeMarshaller (Just infoName) haskellName nArgs isUnit isPure
+                if nArgs > marshallersUpTo || resultRetained
+                    then makeMarshaller (Just infoName) haskellName nArgs
+                                        isUnit isPure resultRetained
                     else valD (VarP haskellName) (normalB [|
                             $(varE $ thModulePrefix "DeclareSelector" $
                                     marshallerName nArgs isUnit)
@@ -98,34 +100,41 @@ replaceResult new ((ArrowT `AppT` arg) `AppT` rest) =
 replaceResult new result = new
 
 doctorType ty className = 
-        (if needInstance
-            then ForallT ["target", "inst"] [ConT className `AppT` VarT "target",
-                                            ConT "ClassAndObject"
-                                            `AppT` VarT "target" `AppT` VarT "inst"]
-            else ForallT ["target"] [ConT className `AppT` VarT "target"]) $
-        replaceResult (
-            (ArrowT `AppT` (fromMaybe (VarT "target") targetType))
-            `AppT` covariantResult
-        ) ty
+        (
+            retained,
+            (if needInstance
+                then ForallT ["target", "inst"] [ConT className `AppT` VarT "target",
+                                                ConT "ClassAndObject"
+                                                `AppT` VarT "target" `AppT` VarT "inst"]
+                else ForallT ["target"] [ConT className `AppT` VarT "target"]) $
+            replaceResult (
+                (ArrowT `AppT` (fromMaybe (VarT "target") targetType))
+                `AppT` covariantResult
+            ) ty
+        )
     where
-        (needInstance, targetType, covariantResult) = doctorCovariant $ resultType ty
+        (retained, needInstance, targetType, covariantResult) = doctorCovariant $ resultType ty
 
-doctorCovariant (ConT "HOC.DeclareSelector:Covariant") = (False, Nothing, VarT "target")
+doctorCovariant (ConT "HOC.DeclareSelector:Covariant") = (False, False, Nothing, VarT "target")
 
-doctorCovariant (ConT "HOC.DeclareSelector:CovariantInstance") = (True, Nothing, VarT "inst")
+doctorCovariant (ConT "HOC.DeclareSelector:CovariantInstance") = (False, True, Nothing, VarT "inst")
 
 doctorCovariant (ConT "HOC.DeclareSelector:Allocated") =
-    (True, Nothing, ConT "HOC.NewlyAllocated:NewlyAllocated" `AppT` VarT "inst")
+    (False, True, Nothing, ConT "HOC.NewlyAllocated:NewlyAllocated" `AppT` VarT "inst")
 
 doctorCovariant (ConT "HOC.DeclareSelector:Inited") =
-    (False, Just (ConT "HOC.NewlyAllocated:NewlyAllocated" `AppT` VarT "target"), VarT "target")
+    (True, False, Just (ConT "HOC.NewlyAllocated:NewlyAllocated" `AppT` VarT "target"), VarT "target")
+
+doctorCovariant (ConT "HOC.DeclareSelector:Retained" `AppT` ty) =
+        (True,inst', target', ty')
+    where (_,inst', target', ty') = doctorCovariant ty
 
 doctorCovariant (t1 `AppT` t2) =
-        (needInst1 || needInst2, target1 `mplus` target2, t1' `AppT` t2')
-    where (needInst1, target1, t1') = doctorCovariant t1
-          (needInst2, target2, t2') = doctorCovariant t2
+        (retained1 || retained2, needInst1 || needInst2, target1 `mplus` target2, t1' `AppT` t2')
+    where (retained1, needInst1, target1, t1') = doctorCovariant t1
+          (retained2, needInst2, target2, t2') = doctorCovariant t2
 
-doctorCovariant other = (False, Nothing, other)
+doctorCovariant other = (False, False, Nothing, other)
 
 -- Reduce the type to a form that can be used for creating a libffi CIF
 -- using the ObjCIMPType type class:
@@ -158,4 +167,4 @@ makeImpType ty = replaceResult (
                 ) ty'
     where
         ty' = simplifyType ty
-        (_needInstance, _target', covariantResult) = doctorCovariant $ resultType ty'
+        (_retained, _needInstance, _target', covariantResult) = doctorCovariant $ resultType ty'
