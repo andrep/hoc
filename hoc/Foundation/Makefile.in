@@ -7,9 +7,10 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHSFoundation.a HSFoundation.o ../inplace.conf
+all: libHSFoundation.a HSFoundation.o register-inplace
 
-../inplace.conf: Foundation.conf-inplace
+register-inplace:
+	[ -f "../inplace.conf" ] || echo '[]' > ../inplace.conf
 	$(GHC_PKG) unregister --force --package-conf=../inplace.conf Foundation || true
 	$(GHC_PKG) register Foundation.conf-inplace \
 		--package-conf=../inplace.conf
