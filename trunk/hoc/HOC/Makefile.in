@@ -11,7 +11,7 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHOC_dyn.dylib HOC.o ../inplace.conf
+all: libHOC.a libHOC_dyn.dylib HOC.o ../inplace.conf
 
 ../inplace.conf: HOC-$(PLATFORM).conf-inplace
 	[ -f "$@" ] || echo '[]' > $@
