@@ -2,6 +2,7 @@ module Main where
 
 import Prelude                  hiding ( init )
 
+import Control.Exception        ( handle, throw, handleJust, userErrors )
 import Control.Monad            ( when )
 import Data.List                ( isSuffixOf )
 import System.Console.GetOpt
@@ -48,7 +49,7 @@ usageHeader prog = unlines $ [
 forceDotApp x | ".app" `isSuffixOf` x = x
               | otherwise = x ++ ".app"
 
-main = do
+main = handleJust userErrors (\err -> putStrLn err) $ do
     prog <- getProgName
     args <- getArgs
     
@@ -57,20 +58,24 @@ main = do
     case getOpt Permute options args of
         (_,_,errs@(_:_)) -> putStrLn (unlines errs) >> putStrLn usage
 
-        (opts,moreArgs,[]) -> do
-            let contents = head $ [ s | Contents s <- opts ] ++ ["Contents"]
-            if any (`elem` [Interpret, Interactive]) opts
-                then do
-                    let appName = forceDotApp $ head $ [ s | OutputApp s <- opts ]
-                                                ++ ["Interactive Haskell Application"]
-                    runApp moreArgs appName contents (any (==Interpret) opts)
-                else do
-                    let executable = head (moreArgs ++ ["a.out"])
-                        appName = forceDotApp $ head $ [ s | OutputApp s <- opts ]
-                                                    ++ [executable ++ ".app"]
-                    when (length moreArgs > 1) $
-                        fail "Too many arguments."
-                    wrapApp executable appName contents
+        (opts,moreArgs,[])
+            | null args -> putStrLn usage
+            | any (==Help) opts -> putStrLn usage
+
+            | otherwise -> do
+                let contents = head $ [ s | Contents s <- opts ] ++ ["Contents"]
+                if any (`elem` [Interpret, Interactive]) opts
+                    then do
+                        let appName = forceDotApp $ head $ [ s | OutputApp s <- opts ]
+                                                    ++ ["Interactive Haskell Application"]
+                        runApp moreArgs appName contents (any (==Interpret) opts)
+                    else do
+                        let executable = head (moreArgs ++ ["a.out"])
+                            appName = forceDotApp $ head $ [ s | OutputApp s <- opts ]
+                                                        ++ [executable ++ ".app"]
+                        when (length moreArgs > 1) $
+                            fail "Too many arguments."
+                        wrapApp executable appName contents
             
 failOnFalse _ True = return ()
 failOnFalse err False = fail err
@@ -91,33 +96,40 @@ wrapApp' justLink overwrite executable appName contents =
              
         fm # createDirectoryAtPathAttributes nsAppName nil 
             >>= failOnFalse "Couldn't create .app."
-        fm # copyPathToPathHandler (toNSString contents)
-                   {-toPath:-}     (toNSString $ appName ++ "/Contents")
-                   {-handler:-}    nil
-            >>= failOnFalse "Couldn't copy Contents folder."
+        
+        handle (\ex -> do
+                           fm # removeFileAtPathHandler (toNSString appName) nil
+                           throw ex
+               ) $ do
+            fm # copyPathToPathHandler (toNSString contents)
+                       {-toPath:-}     (toNSString $ appName ++ "/Contents")
+                       {-handler:-}    nil
+                >>= failOnFalse "Couldn't copy Contents folder."
+                
+            let nsMacOSFolder = toNSString (appName ++ "/Contents/MacOS")
             
-        let nsMacOSFolder = toNSString (appName ++ "/Contents/MacOS")
-        
-        exists <- fm # fileExistsAtPath nsMacOSFolder
-        when (not exists) $
-            fm # createDirectoryAtPathAttributes nsMacOSFolder nil
-                >>= failOnFalse "Couldn't create Contents/MacOS"
-        
-        let copyMethod | justLink  = linkPathToPathHandler
-                       | otherwise = copyPathToPathHandler
-        
-        fm # copyMethod (toNSString executable)
-                        (toNSString $ appName ++ "/Contents/MacOS/"
-                                              ++ executableInApp)
-                        nil
-            >>= failOnFalse "Couldn't copy executable."
-        
-        let nsPListName = toNSString $ appName ++ "/Contents/Info.plist"
-        
-        infoPList <- _NSMutableDictionary # alloc >>= initWithContentsOfFile nsPListName
-        infoPList # setObjectForKey (toNSString executableInApp) (toNSString "CFBundleExecutable")
-        infoPList # writeToFileAtomically nsPListName False
-            >>= failOnFalse "Couldn't write plist."
+            exists <- fm # fileExistsAtPath nsMacOSFolder
+            when (not exists) $
+                fm # createDirectoryAtPathAttributes nsMacOSFolder nil
+                    >>= failOnFalse "Couldn't create Contents/MacOS"
+            
+            let copyMethod | justLink  = linkPathToPathHandler
+                           | otherwise = copyPathToPathHandler
+            
+            fm # copyMethod (toNSString executable)
+                            (toNSString $ appName ++ "/Contents/MacOS/"
+                                                  ++ executableInApp)
+                            nil
+                >>= failOnFalse "Couldn't copy executable."
+            
+            let nsPListName = toNSString $ appName ++ "/Contents/Info.plist"
+            
+            infoPList <- _NSMutableDictionary # alloc
+                     >>= initWithContentsOfFile nsPListName
+            infoPList # setObjectForKey (toNSString executableInApp)
+                                        (toNSString "CFBundleExecutable")
+            infoPList # writeToFileAtomically nsPListName False
+                >>= failOnFalse "Couldn't write plist."
         return ()
 
             
