@@ -46,7 +46,7 @@ class TVDataItem a where
         return (castObject nsstr)
 
 instance TVDataItem b => TVData (Array Int b) where
-    countItems arr = rangeSize (bounds arr)
+    countItems arr = rangeSize (Data.Array.bounds arr)
 
     stringValueForItem arr col row = stringValueForColumn (arr ! row) col
     objectValueForItem arr col row = objectValueForColumn (arr ! row) col
