@@ -135,3 +135,12 @@ main = do
                     ) manglingConflicts
         ))
 
+    writeFile "all-selectors.txt" $
+        unlines $
+        map show $
+        map (\(sel,mod) -> (msMangled sel,
+                            msName sel,
+                            render $ pprSelectorType $ msType sel,
+                            mod)) $
+        concatMap (snd . snd) $
+        selNamesList
