@@ -142,14 +142,16 @@ wrapApp' justLink overwrite executable appName contents =
 wrapApp executable appName contents =
     wrapApp' False True executable appName contents
 
--- for HEAD-GHC:
--- forkProcess' action = forkProcess action
--- for STABLE-GHC:
+-- for GHC >= 6.2
+forkProcess' action = forkProcess action
+-- for GHC < 6.2
+{-
 forkProcess' action = do
     mbPid <- forkProcess
     case mbPid of
         Just pid -> return pid
         Nothing -> action >> exitWith ExitSuccess
+-}
 
 runApp ghciArgs appName contents runNow = withAutoreleasePool $ do
     fm <- _NSFileManager # defaultManager
