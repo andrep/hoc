@@ -44,6 +44,13 @@ ffiPrepCif ret args = do
     when (result /= 0) $ error $ "libffi error: " ++ show result
     return cif
 
+foreign import ccall unsafe allocStructType :: Ptr FFIType -> IO FFIType
+
+makeStructType :: [FFIType] -> IO FFIType
+
+makeStructType members = do
+    members <- newArray0 (FFIType nullPtr) members
+    allocStructType members
 
 -- typeable instances
     
