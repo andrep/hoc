@@ -15,6 +15,11 @@ GHC_LIB_PATH=@GHC_LIB_PATH@
 DOT=@DOT@
 POD2HTML=@POD2HTML@
 
+# installation parameters
+
+prefix = @prefix@
+DESTDIR = $(prefix)
+bindir = $(DESTDIR)/bin
 
 # distribution tarball information
 

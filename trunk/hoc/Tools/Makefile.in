@@ -21,4 +21,4 @@ clean:
 	rm -rf hocwrap build
 
 install: all
-	install -s hocwrap /usr/local/bin/
+	install -s hocwrap $(bindir)
