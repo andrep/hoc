@@ -10,8 +10,8 @@ import HOC.MsgSend
 import HOC.FFICallInterface
 
 import Language.Haskell.THSyntax
-import Foreign(withArray)
-import System.IO.Unsafe(unsafePerformIO)
+import Foreign                      ( withArray, Ptr, nullPtr )
+import System.IO.Unsafe             ( unsafePerformIO )
 
 data SelectorInfo = SelectorInfo {
         selectorInfoObjCName :: String,
@@ -42,6 +42,7 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
         marshallerBody = purify $
                          releaseRetvalIfRetained $
                          marshallArgs  $
+                         checkTargetNil $
                          collectArgs $
                          invoke
 
@@ -66,6 +67,8 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
                  
         releaseRetvalIfRetained e | isRetained = [| $(e) >>= releaseExtraReference |]
                                   | otherwise = e
+                                  
+        checkTargetNil e = [| failNilMessage $(varE "target'") $(varE "selector'") >> $(e) |]
     
 makeMarshallers n =
         sequence $
