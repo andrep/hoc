@@ -1,0 +1,7 @@
+Mac OS X installer package
+
+Xcode integration
+
+Hmmm... but it doesn't even rebuild them now when it needs to - can we
+make the build-stamp depend on something like *.hs?
+
