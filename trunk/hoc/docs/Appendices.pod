@@ -86,7 +86,7 @@ Mocha, being the result of a thesis on integrating Haskell with
 object-oriented systems, was focused very much at bringing
 object-oriented style overloading into the Haskell world.
 Wolfgang Thaller did the heavy lifting and rewrote HOC from
-scratch using many of the ideas from Mocha and AndrE<acute>'s
+scratch using many of the ideas from Mocha and AndrE<eacute>'s
 thesis, and the result is what you have today: a more supported,
 stable Objective-C binding than would be possible without both
 authors supporting each other.
