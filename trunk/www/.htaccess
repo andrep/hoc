@@ -1,0 +1,11 @@
+# Turn on Server-Side Includes (SSI) and indexes
+Options Indexes +Includes
+
+# SSI support for .shtml files
+AddType text/html .shtml
+AddHandler server-parsed .shtml
+
+# SSI support for +x'ed .html files:
+#   See http://httpd.apache.org/docs/howto/ssi.html
+XBitHack Full
+
