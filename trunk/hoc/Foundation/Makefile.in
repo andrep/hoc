@@ -13,14 +13,14 @@ ghcmake.build-stamp:
 		ln -sf ../Bindings/ifgen-output/GNUstepBase.hs .
 	mkdir -p build/objects
 	mkdir -p build/imports
-	ghc --make Foundation.hs	\
+	$(GHC) --make Foundation.hs	\
 		-package-name Foundation	\
 		-odir build/objects \
 		-hidir build/imports	\
 		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
 		-fglasgow-exts
 	test ! -r GNUstepBase.hs || \
-		ghc --make GNUstepBase.hs	\
+		$(GHC) --make GNUstepBase.hs	\
 			-package-name Foundation	\
 			-odir build/objects \
 			-hidir build/imports	\
@@ -44,10 +44,10 @@ clean:
 	    Foundation ghcmake.build-stamp
 	
 install: all
-	mkdir -p `ghc --print-libdir`/Foundation
+	mkdir -p $(GHC_LIB_PATH)/Foundation
 	cp -R libHSFoundation.a HSFoundation.o build/imports \
-		`ghc --print-libdir`/Foundation/
-	ranlib `ghc --print-libdir`/Foundation/libHSFoundation.a
-	ghc-pkg --update-package	\
+		$(GHC_LIB_PATH)/Foundation/
+	ranlib $(GHC_LIB_PATH)/Foundation/libHSFoundation.a
+	$(GHC_PKG) --update-package	\
 			--input-file=Foundation.conf
 

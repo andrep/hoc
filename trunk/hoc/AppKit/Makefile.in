@@ -14,7 +14,7 @@ ghcmake.build-stamp:
 		ln -sf ../Bindings/ifgen-output/GNUstepGUI.hs .
 	mkdir -p build/objects
 	mkdir -p build/imports
-	ghc --make AppKit.hs	\
+	$(GHC) --make AppKit.hs	\
 		-package-name AppKit	\
 		-odir build/objects \
 		-hidir build/imports	\
@@ -22,14 +22,14 @@ ghcmake.build-stamp:
 		-package-conf ../Foundation/Foundation.conf-inplace \
 		-fglasgow-exts
 	test ! -r GNUstepGUI.hs || \
-		ghc --make GNUstepGUI.hs	\
+		$(GHC) --make GNUstepGUI.hs	\
 			-package-name AppKit	\
 			-odir build/objects \
 			-hidir build/imports	\
 			-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
 			-package-conf ../Foundation/Foundation.conf-inplace \
 			-fglasgow-exts
-	ghc -c Cocoa.hs \
+	$(GHC) -c Cocoa.hs \
 		-package-name AppKit	\
 		-ibuild/imports	   \
 		-o build/objects/Cocoa.o	\
@@ -55,9 +55,10 @@ clean:
 	    Cocoa.hs ghcmake.build-stamp
 
 install: all
-	mkdir -p `ghc --print-libdir`/AppKit
+	mkdir -p $(GHC_LIB_PATH)/AppKit
 	cp -R libHSAppKit.a HSAppKit.o build/imports \
-		`ghc --print-libdir`/AppKit/
-	ranlib `ghc --print-libdir`/AppKit/libHSAppKit.a
+		$(GHC_LIB_PATH)/AppKit/
+	ranlib $(GHC_LIB_PATH)/AppKit/libHSAppKit.a
 	ghc-pkg --update-package	\
 			--input-file=AppKit-$(PLATFORM).conf
+
