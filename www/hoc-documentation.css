@@ -1,0 +1,170 @@
+/* :: general text formatting :: */
+
+a {
+  color: 0000CC;
+  text-decoration: none;
+  border: none;
+  border-bottom: 1px dashed #888888; 
+}
+
+a:hover {
+  color: #888800;
+  border-color: #888800;
+}
+
+a.plain {
+  border: none;
+}
+
+p {
+  font-size:100%;
+  margin: 12px 0;
+  text-align: justify;
+}
+
+p.center {
+  font-size:100%;
+  margin: 12px 0;
+  text-align: center;
+  align: center;
+}
+
+p.right {
+  font-size:100%;
+  margin: 12px 0;
+  text-align: right;
+}
+
+pre {
+  font-size: 95%;
+  line-height: 95%;
+}
+
+ul {
+  /* same as inner-box */
+  margin: 12px 12px;
+  padding: 12px 35px 12px 35px;
+  background-image: url("bg-stripes-dark.png");
+  background-repeat: repeat;
+}
+
+li {
+  margin: 8px 0;
+}
+
+h1 {
+  font-family: Verdana, sans-serif;
+  font-size:150%;
+  line-height: 150%;
+  color: #000066;
+  text-align: center; 
+}
+
+h2 {
+  font-family: Verdana, sans-serif;
+  font-size:120%;
+  line-height: 120%;
+  /* color: #000066; */
+  text-align: center;
+}
+
+h3 {
+  font-family: Verdana, sans-serif;
+  font-size:120%;
+  color: #333333;
+}
+
+h4 {
+  font-family: Verdana, sans-serif;
+  font-size:110%;
+  color: #333333;
+}
+
+h5 {
+  font-family: Verdana, sans-serif;
+  font-size:110%;
+  color: #3A3A3A;
+}
+
+img {
+  border: none;
+}
+
+img.bordered {
+  border: 1px solid #BDBDBD;
+  padding: 12px 12px;
+  background-image: url("bg-stripes-verydark.png");
+  background-repeat: repeat;
+}
+
+/* :: header graphics :: */
+
+img.site-header {
+  position: absolute;
+  left: 240px;
+  top: 27px;
+  z-index: 20;
+  border: none;
+}
+
+img.site-logo {
+  position: absolute;
+  left: 27px;
+  top: 27px;
+  z-index: 30;
+  border: none;
+}
+
+img.screenshot {
+}
+
+/* :: outer boxes :: */
+
+body {
+  margin: 4px 12px 4px 4px;
+  font-size:100%;
+  color: #000000;
+  text-align: justify;
+}
+
+.main-box {
+  padding: 19px;
+  background: #FFFFFF;
+}
+
+.content-box {
+  border: 1px solid #BDBDBD;
+  font-family: Georgia, serif;
+  background-image: url("body-bg.png");
+  background-repeat: repeat;
+}
+
+.logo-box {
+  border: 0px;
+  font-family: Georgia, serif;
+  background-color: #FFFFFF;
+}
+
+/* :: inner boxes :: */
+
+.tab-box {
+  margin: 0px 0px 25px 0px;
+  font-family: Georgia, serif;
+  font-size:100%;
+  line-height: 125%;
+  background-image: url("tab-line.png");
+  background-repeat: repeat-x;
+}
+
+.firstpage {
+  margin: 40px 40px 25px 35px;
+}
+
+.inner-box {
+  margin: 12px 12px;
+  padding: 12px 35px 12px 35px;
+  border: 1px solid #BDBDBD;
+  background-image: url("bg-stripes-dark.png");
+  background-repeat: repeat;
+}
+
