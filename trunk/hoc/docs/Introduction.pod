@@ -89,7 +89,7 @@ Let's get something straight here: HOC isn't for the beginner
 Haskell or Objective-C developer.  You are required to know basic
 Objective-C concepts such as what classes, methods, messages and
 selectors are, and ideally will have written a few Objective-C
-programs to udnerstand how to use all these concepts in practice.
+programs to understand how to use all these concepts in practice.
 You should also be comfortable with programming in Haskell, in
 particular how to program with IO in Haskell (meaning that you
 should have actually I<written> a few Haskell tools which use
