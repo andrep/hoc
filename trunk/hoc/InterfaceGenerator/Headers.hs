@@ -12,6 +12,7 @@ import Text.ParserCombinators.Parsec(parse)
 
 type ModuleName = String
 data HeaderInfo = HeaderInfo ModuleName [ModuleName] [Declaration]
+    deriving(Show)
 
 stripPreprocessor = unlines . stripPP . lines
     where
@@ -19,8 +20,8 @@ stripPreprocessor = unlines . stripPP . lines
 		stripPP (x : xs) = x : stripPP xs
 		stripPP [] = []
 		dropPreprocessorLine x xs
-			| last x == '\\' = dropPreprocessorLine (head xs) (tail xs)
-			| otherwise = stripPP xs
+			| last x == '\\' = "" : dropPreprocessorLine (head xs) (tail xs)
+			| otherwise = "" : stripPP xs
 
 findImports = mapMaybe checkImport . lines
     where
