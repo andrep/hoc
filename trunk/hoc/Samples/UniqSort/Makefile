@@ -11,6 +11,9 @@ all: uniqsort
 uniqsort: UniqSort.hs
 	ghc -o $@ --make $<
 	
+uniqsort.stripped: UniqSort.hs
+	ghc -o $@ --make -optl-Wl,-dead_strip $<
+	
 clean:
 	-rm uniqsort *.o *.hi
 
