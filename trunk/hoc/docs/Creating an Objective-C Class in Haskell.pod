@@ -1,0 +1,203 @@
+=for comment This is a Perl POD (Plain Old Documentation) file.
+If you're not familiar with POD markup, type ``man perlpod'' in
+a Terminal for more information, or see
+<http://www.sunsite.ualberta.ca/Documentation/Misc/perl-5.6.1/pod/perlpod.html>.
+
+
+=head2 Creating an Objective-C Class in Haskell
+
+As well as being able to use Objective-C classes in Haskell, HOC
+also enables you to I<create> an Objective-C class in Haskell:
+you can subclass an existing Objective-C class, declare instance
+variables and methods in a class, and write code for it all in
+Haskell.  You can even make your class the owner of an Interface
+Builder F<.nib> file, and Interface Builder's outlets and actions
+can call methods in your class.
+
+
+=head3 Programming Examples
+
+If you're the type of person who learns best by following
+examples rather than reading documentation, HOC comes with two
+sample programs in the F<Samples/> directory of the HOC source
+code distribution:
+
+=over
+
+=item * Editor:
+
+A simple text editor, which loads and saves files with a F<.hs>
+extension.  There are no fancy features in the editor, but it is
+a full document-based application.  The C<HaskellDocument> class
+included with this sample application is a subclass of
+C<NSDocument>, and implements methods used by a document-based
+application, such as C<readFromFileOfType:> and
+C<windowControllerDidLoadNib:>.
+
+=item * Browser:
+
+A simple class browser.  It uses Objective-C's reflection
+capabilities to query the I<Foundation> and I<AppKit> frameworks,
+and displays all the Objective-C method names found, the
+corresponding Haskell function name, the Haskell type, and which
+class the method is defined in.  (Note that this program might
+take a while to start up and will bounce in the dock for a while,
+because it's reading all the method names during startup.)
+
+=back
+
+
+=head3 The Objective-C Class Creation Haskell API
+
+So, how do you create an Objective-C class in Haskell?  The two
+main HOC functions you will require are C<declareClass> and
+C<exportClass>.  Note that these functions are I<Template
+Haskell> (TH) functions, so you'll need to use Template Haskell's
+special C<$(...)> syntax to use them.  (If you don't know what
+Template Haskell is, see the next section which gives a very
+quick overview about what it is.)
+
+=for comment XXX: Insert hyperlink to next section
+
+=head4 The C<declareClass> function
+
+The C<declareClass> function is somewhat analgagous to writing
+the type signature for a function: in the same way that a type
+signature tells the compiler that you intend to write the body of
+a function later in the code, C<declareClass> tells HOC that you
+intend to define a class later in your code.
+
+The type of C<declareClass> is
+C<< String -> String -> Q [Dec] >>.
+Its first argument is the name of the class that you wish to
+write in Haskell, and the second argument is the name of an
+existing Objective-C class that you want to subclass (such as
+I<NSObject> or I<NSDocument>).
+
+For example,
+
+  $(declareClass "MyDocument" "NSDocument")
+
+declares a new class named I<MyDocument> which is a subclass of
+I<NSDocument>.  (Imaginative, huh?)
+
+=for comment XXX: Maybe turn above into a type signature
+
+You must declare an existing class to subclass: you cannot
+currently create a new class which sits at the root of an object
+hierarchy (such as I<NSObject> or I<NSProxy>).
+
+=for comment XXX: Wolfgang -- is the above correct?
+
+=head4 The C<exportClass> function
+
+After using the C<declareClass> Template Haskell function to
+declare a new Objective-C class, you can then I<export> the
+actual definition of the class with the C<exportClass> function.
+Here's the type of C<exportClass>, which gives a very brief
+overview of how to use it:
+
+  :: String         -- ^ Name of the class you're exporting,
+                    --   e.g. "MyDocument" 
+  -> String         -- ^ A prefix for function names which are
+		    --   methods belonging to this class,
+		    --   e.g. "md_"
+  -> [ClassMember]  -- ^ A list of class members (see below for
+                    --   example)
+  -> Q [Dec]        -- ^ Code which produces a Haskell declaration,
+		    --   which you can splice in with Template
+		    --   Haskell's $(...) syntax
+
+Here are the parameters you need to supply to C<exportClass> in
+a bit more detail:
+
+=over
+
+=item * C<String>
+
+The name of the class you're exporting (which must match the name
+of a class you've declared previously with C<declareClass>),
+
+=item * C<String>
+
+A I<methods prefix> (string), which tells HOC what functions in
+the current Haskell source file are methods belonging to the
+exported class.  HOC scans each function name in your Haskell
+source file: every function name which begins with the methods
+prefix you specify will be exported as a (class or instance)
+method, belonging to the exported class.
+
+For instance, if you declare and export a I<MyDocument> class,
+a sensible methods prefix could be C<md_>.  Then, any function
+names which begins with C<md_> will be treated as a method for
+that I<MyDocument> class.  For example, C<md_windowNibName> or
+C<md_windowControllerDidLoadNib> would be methods of
+I<MyDocument> (and thus expected to have the proper type
+signature for such a method), but C<wibble> would not be.
+
+=item * C<[ClassMember]>
+
+This argument specifies what members the class should have, i.e.
+instance methods, class methods, instance variables, and outlets.
+The C<ClassMember> data structure is defined as:
+
+  data ClassMember = InstanceMethod SelectorInfo
+                   | ClassMethod SelectorInfo
+                   | Outlet String TypeQ
+                   | InstanceVariable String TypeQ ExpQ
+
+Hopefully the type information will inform you about what
+arguments you need to provide to each of the data contructors to
+produce a C<ClassMember>.  (Refer to the documentation about
+C<ClassMember>s if you need more help with them.)
+
+=for comment XXX: document & provide link to ClassMember
+
+Here's an example of what this particular argument might look
+like (taken directly from the
+F<Samples/Editor/HaskellDocument.hs> file in the HOC source
+distribution):
+
+  [ Outlet "textView" [t| NSTextView () |]
+  , InstanceVariable "text" [t| Maybe (NSString ()) |] [| Nothing |]
+  , InstanceMethod info_windowNibName
+  , InstanceMethod info_writeToFileOfType
+  , InstanceMethod info_readFromFileOfType
+  , InstanceMethod info_windowControllerDidLoadNib
+  ]
+
+=back
+
+The type of output of C<exportClass> is C<Q [Dec]>, which is code
+that produces a Haskell declaration, which you need to use within
+Template Haskell's C<$(...)> context.
+
+=head4 Using C<declareClass> and C<exportClass>
+
+Putting it all together, here's a small example of how you might
+write a I<HaskellDocument> class (which subclasses I<NSDocument>)
+in Haskell:
+
+  import HOC
+
+  $(declareClass "HaskellDocument" "NSDocument")
+
+  $(exportClass "HaskellDocument" "hd_" [
+	  Outlet "textView" [t| NSTextView () |],
+	  InstanceVariable "text" [t| Maybe (NSString ()) |] [| Nothing |],
+	  InstanceMethod info_windowNibName,
+	  InstanceMethod info_writeToFileOfType,
+	  InstanceMethod info_readFromFileOfType,
+	  InstanceMethod info_windowControllerDidLoadNib
+      ])
+
+
+
+=head3 Template Haskell in a Nutshell
+
+
+
+
+=for comment Modeline for vi(m)
+vi:sw=2 tw=65
+
