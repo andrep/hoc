@@ -51,7 +51,8 @@ libHSAppKit.a: HSAppKit.o
 	ranlib libHSAppKit.a
 
 clean:
-	rm -rf build libHSAppKit.a HSAppKit.o AppKit.hs AppKit Cocoa.hs
+	rm -rf build libHSAppKit.a HSAppKit.o AppKit.hs AppKit \
+	    Cocoa.hs ghcmake.build-stamp
 
 install: all
 	mkdir -p `ghc --print-libdir`/AppKit

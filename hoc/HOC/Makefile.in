@@ -30,7 +30,8 @@ ghcmake.build-stamp:
 
 clean:
 	rm -rf libHOC.a HOC.o build \
-	    HOC/NewClass_stub.c HOC/NewClass_stub.h
+	    HOC/NewClass_stub.c HOC/NewClass_stub.h \
+	    ghcmake.build-stamp
 
 install: all
 	mkdir -p `ghc --print-libdir`/HOC
