@@ -134,6 +134,13 @@ such as I<NSMutableArray> (which is the behaviour you'd expect
 from an object-oriented language), use a type variable in place
 of the C<()>: e.g. I<NSArray a>.
 
+=head2 Class Objects
+
+Class objects are represented in HOC by preprending an underscore
+to the class name: I<_classname>.  For example, to send the
+C<alloc> message to the I<NSMovie> class object, write
+C<_NSMovie # alloc>.
+
 =head2 I<NSString> vs. I<String>
 
 HOC provides the two functions C<< toNSString :: String -> NSString
