@@ -9,7 +9,12 @@ SUBDIRS=\
 
 
 
-all:
+all: libffi-src/build/src/raw_api.o hoc-all
+	
+libffi-src/build/src/raw_api.o:
+	make -C libffi-src/build
+
+hoc-all:
 	for dir in $(SUBDIRS); do (cd $$dir; make all) done
 	
 clean:

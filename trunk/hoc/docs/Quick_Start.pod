@@ -14,8 +14,6 @@ things like emulate a C<while()> loop):
 
   module Main where
 
-  import List (genericLength)
-
   -- #import <Foundation/Foundation.h>
   import Foundation
   import Foundation.NSProcessInfo (arguments)
@@ -26,8 +24,6 @@ things like emulate a C<while()> loop):
          -- by the framework by default: you will need to
          -- import those functions explicitly.
   import HOC
-  import HOC.Base (newAutoreleasePool, releaseObject)
-  import HOC.ID (isNil)
 
   -- int main (int argc, const char * argv[]) {
   main = do
