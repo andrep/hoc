@@ -170,7 +170,7 @@ mkClassExportAction name members =
             where
                 setterName = setterNameFor ivarName
         
-        setterNameFor ivarName = "set" ++ toUpper (head ivarName) : tail ivarName
+        setterNameFor ivarName = "set" ++ toUpper (head ivarName) : tail ivarName ++ ":"
             
                 
         exportMethod' isClassMethod objCMethodList num methodBody
