@@ -1,3 +1,5 @@
+0. You'll need GHC 6.2 to build this.
+
 1. Check out the libffi module from HOC's CVS repository if you
    haven't done that yet:
 
@@ -42,15 +44,31 @@
    LICENSE           acinclude.m4   config.log     install-sh*     stamp-h.in
    Makefile.am       aclocal.m4     config.sub*    ltcf-c.sh       testsuite/
    22:16 .../hoc.cvs/hoc % 
-   
-3. Build libffi by typing ./build-ffi.sh in the HOC directory
 
-4. Type 'make' to compile HOC
+3. Make a 'build' directory in the libffi-src directory:
 
-5. Type 'make install' to register HOC with GHC's packages list
-   (you must currently do this)
+   mkdir libffi-src/build
 
-6. HOC's now compiled and should be working.  If you want to test
+4. Build libffi by typing ./build-ffi.sh in the HOC directory
+
+5. Make a symlink from config-macos.mk to config.mk if you're on
+   Mac OS X, or from config-gnustep.mk to config.mk if you're
+   using GNUstep:
+
+   ln -s config-macos.mk config.mk
+
+     OR
+
+   ln -s config-gnustep.mk config.mk
+
+6. Type 'make' to compile HOC.  Note: This can take a long time;
+   it takes about an hour on my 1GHz Powerbook G4.
+
+7. Type 'make install' to register HOC with GHC's packages list.
+   You may see some warnings about "can't find GHCi lib
+   `HSfoo.o'"; ignore them.
+
+8. HOC's now compiled and should be working.  If you want to test
    it, go to the Samples/ directory and try running 'make' in one
    of the directories there.
 
