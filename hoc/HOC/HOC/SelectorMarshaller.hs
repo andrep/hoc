@@ -1,4 +1,9 @@
-module HOC.SelectorMarshaller where
+module HOC.SelectorMarshaller(
+        SelectorInfo(..),
+        makeMarshaller,
+        makeMarshallers,
+        marshallerName
+    ) where
 
 import HOC.Base
 import HOC.Arguments
@@ -9,9 +14,10 @@ import HOC.SelectorNameMangling
 import HOC.MsgSend
 import HOC.FFICallInterface
 
-import Language.Haskell.THSyntax
 import Foreign                      ( withArray, Ptr, nullPtr )
 import System.IO.Unsafe             ( unsafePerformIO )
+
+import HOC.TH
 
 data SelectorInfo = SelectorInfo {
         selectorInfoObjCName :: String,
@@ -24,20 +30,22 @@ data SelectorInfo = SelectorInfo {
 
 makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
             funD haskellName [
-                clause (map VarP $ infoArgument ++ arguments
-                        ++ ["target"])
+                clause (map varP $ infoArgument ++ map mkName arguments
+                        ++ [mkName "target"])
                      (normalB $ marshallerBody
                     ) []
             ]
     where
         (infoVar, infoArgument) = case maybeInfoName of
                     Just name -> (varE name, [])
-                    Nothing -> (varE "info", ["info"])
+                    Nothing -> (varE (mkName "info"), [mkName "info"])
         arguments = [ "arg" ++ show i | i <- [1..nArgs] ]
-        argumentsToMarshal = varE "target"
+        argumentsToMarshal = varE (mkName "target")
                            : [| selectorInfoSel $(infoVar) |]
-                           : map varE arguments
-        marshalledArguments = "target'" : "selector'" : map (++"'") arguments
+                           : map (varE.mkName) arguments
+        marshalledArguments = mkName "target'"
+                            : mkName "selector'"
+                            : map (mkName . (++"'")) arguments
    
         marshallerBody = purify $
                          checkTargetNil $
@@ -54,13 +62,13 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
                     where e' = marshallArgs' args args' e
    
         collectArgs e = [| withArray $(listE (map varE marshalledArguments))
-                                     $(lamE [varP "args"] e) |]
+                                     $(lamE [varP $ mkName "args"] e) |]
 
         invoke | isUnit = [| sendMessageWithoutRetval (selectorInfoCif $(infoVar))
                                                       $(argsVar)|]
                | otherwise = [| sendMessageWithRetval (selectorInfoCif $(infoVar))
                                                       $(argsVar)|]
-            where argsVar = varE "args"
+            where argsVar = varE $ mkName "args"
 
         purify e | isPure = [| unsafePerformIO $(e) |]
                  | otherwise = e
@@ -68,13 +76,13 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
         releaseRetvalIfRetained e | isRetained = [| $(e) >>= releaseExtraReference |]
                                   | otherwise = e
                                   
-        checkTargetNil e = [| failNilMessage $(varE "target")
+        checkTargetNil e = [| failNilMessage $(varE $ mkName "target")
                                              (selectorInfoHaskellName $(infoVar))
                               >> $(e) |]
     
 makeMarshallers n =
         sequence $
-        [ makeMarshaller Nothing (marshallerName nArgs isUnit) nArgs isUnit False False
+        [ makeMarshaller Nothing (mkName $ marshallerName nArgs isUnit) nArgs isUnit False False
         | nArgs <- [0..n], isUnit <- [False, True] ]
 
 marshallerName nArgs False = "method" ++ show nArgs

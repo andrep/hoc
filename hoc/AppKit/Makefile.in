@@ -7,7 +7,23 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHSAppKit.a HSAppKit.o
+all: libHSAppKit.a HSAppKit.o ../inplace.conf
+
+../inplace.conf: AppKit.conf-inplace
+	$(GHC_PKG) unregister --force --package-conf=../inplace.conf AppKit || true
+	$(GHC_PKG) register AppKit.conf-inplace \
+		--package-conf=../inplace.conf
+
+exposed-modules.txt:
+	find build/imports | grep '\.hi' \
+            | sed 's@build/imports/@ ,@g' | sed 's/\.hi//g' | sed 's@/@.@g' \
+            > exposed-modules.txt
+
+AppKit.conf-inplace: AppKit-$(PLATFORM).conf-inplace.in exposed-modules.txt
+	cat AppKit-$(PLATFORM).conf-inplace.in exposed-modules.txt > AppKit.conf-inplace
+
+AppKit.conf: AppKit-$(PLATFORM).conf.in exposed-modules.txt
+	cat AppKit-$(PLATFORM).conf.in exposed-modules.txt > AppKit.conf
 
 ghcmake: ghcmake.build-stamp
 
@@ -22,50 +38,47 @@ ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
 	$(GHC) --make AppKit.hs	\
-		-package-name AppKit	\
+		-ignore-package AppKit	\
 		-odir build/objects \
 		-hidir build/imports	\
-		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
-		-package-conf ../Foundation/Foundation.conf-inplace \
+		-package-conf ../inplace.conf \
 		-fglasgow-exts
 	test ! -r GNUstepGUI.hs || \
 		$(GHC) --make GNUstepGUI.hs	\
-			-package-name AppKit	\
+			-ignore-package AppKit	\
 			-odir build/objects \
 			-hidir build/imports	\
-			-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
-			-package-conf ../Foundation/Foundation.conf-inplace \
+			-package-conf ../inplace.conf \
 			-fglasgow-exts
 	$(GHC) -c Cocoa.hs \
-		-package-name AppKit	\
+		-ignore-package AppKit	\
 		-ibuild/imports	   \
 		-o build/objects/Cocoa.o	\
 		-ohi build/imports/Cocoa.hi \
-		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
-		-package-conf ../Foundation/Foundation.conf-inplace \
+		-package-conf ../inplace.conf \
 		-fglasgow-exts
 	touch $@
 	
 HSAppKit.o: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs ld -r -x -o HSAppKit.o
 
-#libHSAppKit.a: ghcmake
-#	find build/objects/ -name \*.o | xargs libtool -static -o libHSAppKit.a
+libHSAppKit.a: ghcmake
+	find build/objects/ -name \*.o | xargs libtool -static -o libHSAppKit.a
 
-libHSAppKit.a: HSAppKit.o
-	rm -f libHSAppKit.a
-	ar cq libHSAppKit.a HSAppKit.o
-	ranlib libHSAppKit.a
+#libHSAppKit.a: HSAppKit.o
+#	rm -f libHSAppKit.a
+#	ar cq libHSAppKit.a HSAppKit.o
+#	ranlib libHSAppKit.a
 
 clean:
 	rm -rf build libHSAppKit.a HSAppKit.o AppKit.hs AppKit \
 	    Cocoa.hs ghcmake.build-stamp
 
-install: all
+install: all AppKit.conf
 	mkdir -p $(GHC_LIB_PATH)/AppKit
 	cp -R libHSAppKit.a HSAppKit.o build/imports \
 		$(GHC_LIB_PATH)/AppKit/
 	ranlib $(GHC_LIB_PATH)/AppKit/libHSAppKit.a
 	ghc-pkg --update-package	\
-			--input-file=AppKit-$(PLATFORM).conf
+			--input-file=AppKit.conf
 

@@ -11,7 +11,12 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHOC.a HOC.o
+all: libHOC.a HOC.o ../inplace.conf
+
+../inplace.conf: HOC-$(PLATFORM).conf-inplace
+	$(GHC_PKG) unregister --force --package-conf=../inplace.conf HOC || true
+	$(GHC_PKG) register HOC-$(PLATFORM).conf-inplace \
+		--package-conf=../inplace.conf
 
 libHOC.a: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHOC.a
@@ -30,10 +35,11 @@ ghcmake.build-stamp:
 	mkdir -p build/imports
 	$(GHC) --make HOC.hs	\
 		-odir build/objects -hidir build/imports	\
-		-fglasgow-exts -package-name HOC \
+		-fglasgow-exts \
 		../HOC_cbits/HOC_cbits.o	\
 		-I../HOC_cbits	\
 		-I../libffi-src/build/include	\
+		-ignore-package HOC \
 		$(FOUNDATION_INCLUDES) \
 		$(FOUNDATION_LIBS)      \
                 $(DEFINES)
@@ -49,5 +55,4 @@ install: all
 	cp -R libHOC.a HOC.o build/imports \
 		$(GHC_LIB_PATH)/HOC/
 	ranlib $(GHC_LIB_PATH)/HOC/libHOC.a
-	$(GHC_PKG) --update-package	\
-			--input-file=HOC-$(PLATFORM).conf
+	$(GHC_PKG) register HOC-$(PLATFORM).conf

@@ -1,0 +1,12 @@
+name:               Foundation
+maintainer:         wolfgang.thaller@gmx.net
+exposed:            True
+
+import-dirs:	    "$libdir/Foundation/imports"
+library-dirs:	    "$libdir/Foundation/"
+hs-libraries:	    "HSFoundation"
+extra-frameworks:   "Foundation"
+depends:            HOC
+
+exposed-modules:
+    Foundation

@@ -58,5 +58,3 @@ instance Eq (ID a) where
 --
 
 
-
-thModulePrefix mod id = "HOC." ++ mod ++ ":" ++ id
