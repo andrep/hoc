@@ -22,7 +22,9 @@ clean:
 
 HOC_cbits.o: libHOC_cbits.a
 		ld -r -x -o HOC_cbits.o $(ALL_LOAD) libHOC_cbits.a
-		strip --strip-debug HOC_cbits.o
+		if test $(PLATFORM) == gnustep; then \
+			strip --strip-debug HOC_cbits.o; \
+		fi
 
 libHOC_cbits.a: $(OBJS)
 		cp ../libffi-src/build/.libs/libffi.a libHOC_cbits.a
