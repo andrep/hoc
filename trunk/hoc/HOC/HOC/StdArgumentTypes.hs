@@ -19,13 +19,13 @@ instance FFITypeable SEL where
 
 $(declareStorableObjCArgument [t| SEL |] ":")
 
-instance ObjCArgument Bool CChar where
+instance ObjCArgument Bool CInt where
     exportArgument False = return 0
     exportArgument True = return 1
     importArgument 0 = return False
     importArgument _ = return True
     
-    objCTypeString _ = "B"    -- OS >= 10.2 only
+    objCTypeString _ = "c"
 
 $(declareStorableObjCArgument [t| Int |] "i")
 $(declareStorableObjCArgument [t| Float |] "f")
