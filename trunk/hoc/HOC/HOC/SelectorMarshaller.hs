@@ -40,9 +40,9 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
         marshalledArguments = "target'" : "selector'" : map (++"'") arguments
    
         marshallerBody = purify $
+                         checkTargetNil $
                          releaseRetvalIfRetained $
                          marshallArgs  $
-                         checkTargetNil $
                          collectArgs $
                          invoke
 
@@ -68,7 +68,9 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
         releaseRetvalIfRetained e | isRetained = [| $(e) >>= releaseExtraReference |]
                                   | otherwise = e
                                   
-        checkTargetNil e = [| failNilMessage $(varE "target'") $(varE "selector'") >> $(e) |]
+        checkTargetNil e = [| failNilMessage (toID $(varE "target"))
+                                             (selectorInfoHaskellName $(infoVar))
+                              >> $(e) |]
     
 makeMarshallers n =
         sequence $
