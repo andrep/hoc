@@ -10,7 +10,7 @@ AC_PREREQ(2.57)
 AC_INIT(HOC, 0.2, ozone@algorithm.com.au)
 
 # Check we're in the right directory
-AC_CONFIG_SRCDIR([HOC/HOC/NewClass_stub.c])
+AC_CONFIG_SRCDIR([HOC/HOC/NewClass.hs])
 
 # Check system we're running on
 AC_CANONICAL_SYSTEM
