@@ -1,5 +1,7 @@
 #include "MemoryManagement.h"
 
+#define DO_LOG 0
+
 #if 0
 
 #include <Foundation/NSAutoreleasePool.h>
@@ -52,6 +54,9 @@ void retainObject(id obj)
 {
     if(!selRetain)
         selRetain = getSelectorForName("retain");
+#if DO_LOG
+    printf("retain %p, %p\n",obj,obj->class_pointer);
+#endif
     objc_msgSend(obj,selRetain);
 }
 
@@ -59,6 +64,9 @@ void releaseObject(id obj)
 {
     if(!selRelease)
         selRelease = getSelectorForName("release");
+#if DO_LOG
+    printf("release %p, %p\n",obj,obj->class_pointer);
+#endif
     objc_msgSend(obj,selRelease);
 }
 
@@ -66,6 +74,9 @@ void deallocObject(id obj)
 {
     if(!selDealloc)
         selDealloc = getSelectorForName("dealloc");
+#if DO_LOG
+    printf("dealloc %p\n",obj);
+#endif
     objc_msgSend(obj,selDealloc);
 }
 
@@ -73,6 +84,9 @@ void autoreleaseObject(id obj)
 {
     if(!selAutorelease)
         selAutorelease = getSelectorForName("autorelease");
+#if DO_LOG
+    printf("autorelease %p\n",obj);
+#endif
     objc_msgSend(obj,selAutorelease);
 }
 
