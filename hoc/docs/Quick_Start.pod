@@ -120,19 +120,58 @@ above message chain could be written as C<<< _NSCountedSet
 
 =back
 
+=head2 Types for the Objective-C Class Hierarchy
+
+An Objective-C class C<foo> has a corresponding Haskell type
+C<foo ()>: the type signature for a function which takes in an
+I<NSArray> (and I<only> an I<NSArray>) and outputs an I<NSMovie>
+will look like C<< NSArray () -> NSMovie () >>.
+
+To permit a function to use a I<NSArray> or any of its subclasses
+such as I<NSMutableArray> (which is the behaviour you'd expect
+from an object-oriented language), use a type variable in place
+of the C<()>: e.g. I<NSArray a>.
+
+=head2 I<NSString> vs. I<String>
+
+HOC provides the two functions C<< toNSString :: String -> NSString
+() >>, and C<< fromNSString :: NSString () -> String >>, to
+convert to and from Haskell strings and the Foundation
+framework's C<NSString> objects.
+
+=head2 Generalised Marshaling
+
+The C<HOC.Marshal> module provides a function C<< marshal :: a ->
+b >>, which can be used to try to marshal (convert) any type to
+any other type.  Be careful with the C<marshal> function: since
+its output type is ambiguous (it's a type variable), Haskell's
+type inference engine greatly relies on context to figure out
+what the output type should really be.  You may have to I<fix>
+the output type explicitly by appending the C<:: t> syntax to
+expression.  For example, C<marshal "Foo"> own its own may
+generate an error, but C<marshal "Foo" :: NSString ()> may not.
+
+You can also define marshalling for your own data types, by
+making them part of C<HOC.Marshal>'s C<ObjCMarshal> type class:
+
+  import HOC.Marshal
+
+  instance ObjCMarshal FiniteMap ( NSDictionary () ) where
+    marshal fm = -- conversion code here
+
 =head2 Selectors
 
 Use the C<< getSelectorForName :: String -> SEL >> function to
 generate a Haskell C<SEL> datatype from a raw Haskell string.  As
-you can guess, Haskell's C<SEL> data type is the same as
+you can guess, the Haskell C<SEL> type is the same as
 Objective-C's C<SEL> type: it represents a selector (method
 name).
 
-Note that the C<String> passed to C<getSelectorForName> is the
+Note that the string passed to C<getSelectorForName> is the
 I<Objective-C> selector name (with all the colons in the
 appropriate places), not the translated Haskell function name.
-You should pass in C<"initWithURL:byReference:">, and not
-C<"initWithURLByReference">.
+For example, you should pass in C<"initWithURL:byReference:">,
+and not C<"initWithURLByReference">.
 
 =head2 Autorelease Pools
 
@@ -141,8 +180,7 @@ imported the C<newAutoreleasePool> and C<releaseObject> functions
 from the module C<HOC.Base>.  You normally won't use these two
 functions at all: to create a new autorelease pool, use the
 higher-level function C<withAutoreleasePool :: IO a>, which takes
-an IO action as a parameter and runs that.  A better way of
-writing the above code would be:
+an IO action as a parameter and runs that:
 
   main = do
     withAutoreleasePool main'
@@ -156,9 +194,6 @@ release the pool: after your action has been run, the pool is
 automatically released.
 
 =for comment XXX: link to autorelease pool section
-
-
-
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65

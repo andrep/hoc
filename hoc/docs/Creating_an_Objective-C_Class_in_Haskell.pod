@@ -67,8 +67,7 @@ signature tells the compiler that you intend to write the body of
 a function later in the code, C<declareClass> tells HOC that you
 intend to define a class later in your code.
 
-The type of C<declareClass> is C<< String -> String -> Q [Dec]
->>.  Its first argument is the name of the class that you wish to
+The type of C<declareClass> is C<< String -> String -> Q [Dec] >>.  Its first argument is the name of the class that you wish to
 write in Haskell, and the second argument is the name of an
 existing Objective-C class that you want to subclass (such as
 I<NSObject> or I<NSDocument>).  You must declare an existing
