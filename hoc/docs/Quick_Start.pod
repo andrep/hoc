@@ -139,6 +139,16 @@ HOC provides the two functions C<< toNSString :: String -> NSString
 convert to and from Haskell strings and the Foundation
 framework's C<NSString> objects.
 
+Note that C<fromNSString> is a pure function, and that it will not
+accept a subclass of C<NSString> as an argument, because subclasses
+may be mutable. Make sure you never pass a casted C<NSMutableString>
+to fromNSString.
+
+If you want to work with (potentially) mutable string objects, you
+need to use the functions C<< haskellString :: NSString a -> IO String >> and
+C<< stringWithHaskellString :: String -> NSStringClass a -> IO (NSString a) >>.
+Use them as if they were Objective-C methods in the NSString class.
+
 =head2 Generalised Marshaling
 
 The C<HOC.Marshal> module provides a function C<< marshal :: a ->
