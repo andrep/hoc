@@ -1,5 +1,7 @@
 =head1 Appendices
 
+=head2 Building HOC
+
 =head2 Template Haskell in a Nutshell
 
 
