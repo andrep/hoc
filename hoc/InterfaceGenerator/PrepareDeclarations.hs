@@ -240,23 +240,23 @@ prepareDeclarations bindingScript modules = do
     cleanClassInfos <- HashTable.toList cleanClassInfoHash
     
     let allInstanceSels :: [ (ClassInfo, [(MangledSelector, SelectorLocation)]) ]
-        allInstanceSels = [ (ci, mangleSelectors False $ ciNewInstanceMethods ci)
+        allInstanceSels = [ (ci, mangleSelectors False (ciName ci) (ciNewInstanceMethods ci))
                        | ci <- map snd cleanClassInfos ]
         allClassSels :: [ (ClassInfo, [(MangledSelector, SelectorLocation)]) ]
-        allClassSels =    [ (ci, mangleSelectors True $ ciNewClassMethods ci)
+        allClassSels =    [ (ci, mangleSelectors True (ciName ci) (ciNewClassMethods ci))
                        | ci <- map snd cleanClassInfos ]
     
-        mangleSelectors factory sels =
+        mangleSelectors factory clsName sels =
             mapMaybe (\(sel, location) -> do
                     let name = selName sel
-                        mapped = lookupFM (bsNameMappings bindingScript) name
+                        mapped = lookupFM (soNameMappings selectorOptions) name
                         mangled = case mapped of
                                     Just x -> x
                                     Nothing -> mangleSelectorName name
                     
-                    when (name `elementOf` bsHiddenSelectors bindingScript) $ Nothing
+                    when (name `elementOf` soHiddenSelectors selectorOptions) $ Nothing
                     
-                    typ <- if mangled `elementOf` bsCovariantSelectors bindingScript
+                    typ <- if mangled `elementOf` soCovariantSelectors selectorOptions
                         then getCovariantSelectorType factory classNames sel
                         else getSelectorType classNames sel
                     return $ (MangledSelector {
@@ -265,6 +265,8 @@ prepareDeclarations bindingScript modules = do
                             msType = typ
                         }, location)
                 ) $ fmToList sels
+            where
+                selectorOptions = getSelectorOptions bindingScript clsName
     
     return $ PreparedDeclarations {
                  pdModuleNames = moduleNames,

@@ -1,4 +1,9 @@
-module BindingScript(BindingScript(..), readBindingScript) where
+module BindingScript(
+        BindingScript(bsHiddenFromPrelude),
+        getSelectorOptions,
+        SelectorOptions(..),
+        readBindingScript
+    ) where
 
 import Data.FiniteMap
 import Data.Set
@@ -9,6 +14,21 @@ data BindingScript = BindingScript {
         bsHiddenFromPrelude :: Set String,
         bsCovariantSelectors :: Set String,
         bsHiddenSelectors :: Set String
+    }
+    
+data SelectorOptions = SelectorOptions {
+        soNameMappings :: FiniteMap String String,
+        soCovariantSelectors :: Set String,
+        soHiddenSelectors :: Set String
+    }
+    
+getSelectorOptions :: BindingScript -> String -> SelectorOptions
+
+getSelectorOptions bindingScript clsName =
+    SelectorOptions {
+        soNameMappings = bsNameMappings bindingScript,
+        soCovariantSelectors = bsCovariantSelectors bindingScript,
+        soHiddenSelectors = bsHiddenSelectors bindingScript
     }
     
 -- TODO: replace this by a proper parser, or at least report errors
