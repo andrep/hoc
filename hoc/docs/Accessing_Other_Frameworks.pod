@@ -1,7 +1,0 @@
-=head1 Accessing Other Frameworks from Haskell
-
-=head2 Using F<ifgen>
-
-=head3 Binding Scripts
-
-
