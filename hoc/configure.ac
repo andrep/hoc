@@ -7,7 +7,7 @@
 #
 
 AC_PREREQ(2.57)
-AC_INIT(HOC, 0.7, ozone@algorithm.com.au)
+AC_INIT(HOC, 0.8, ozone@algorithm.com.au)
 AC_CONFIG_AUX_DIR(autotools)
 
 # Check we're in the right directory
