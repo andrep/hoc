@@ -15,8 +15,13 @@ GHC_LIB_PATH=@GHC_LIB_PATH@
 DOT=@DOT@
 POD2HTML=@POD2HTML@
 
+
 # distribution tarball information
+
 dist_dir = @abs_top_builddir@/hoc-@PACKAGE_VERSION@
+
+default: all
+
 dist-recursive:
 	mkdir -p "$(dist_dir)/$(dist_srcdir)"
 	cp -R $(dist_FILES) "$(dist_dir)/$(dist_srcdir)"

@@ -1,5 +1,12 @@
 include ../../config.mk
 
+dist_srcdir = Samples/Browser
+dist_FILES = \
+	Contents/ \
+	$(wildcard *.hs) \
+	Makefile.in \
+	$(NULL)
+
 all: Browser.app
 
 Browser.app: Browser Contents/Resources/all-selectors.txt

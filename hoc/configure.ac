@@ -177,6 +177,7 @@ AC_CONFIG_FILES([config.mk
                  HOC_cbits/Makefile
                  InterfaceGenerator/Makefile
                  Samples/Browser/Makefile
+                 Samples/ExpressionParser/Makefile
                  Samples/Editor/Makefile
                  Samples/UniqSort/Makefile
                  Tools/Makefile
