@@ -68,7 +68,7 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
         releaseRetvalIfRetained e | isRetained = [| $(e) >>= releaseExtraReference |]
                                   | otherwise = e
                                   
-        checkTargetNil e = [| failNilMessage (toID $(varE "target"))
+        checkTargetNil e = [| failNilMessage $(varE "target")
                                              (selectorInfoHaskellName $(infoVar))
                               >> $(e) |]
     

@@ -13,9 +13,9 @@ module HOC.NewlyAllocated where
 
 import HOC.Base         ( ObjCObject )
 import HOC.Arguments    ( ObjCArgument(..) )
-import HOC.ID           ( Object(..) )
+import HOC.ID           ( Object(..), MessageTarget(..) )
 
-import Foreign.Ptr      ( Ptr )
+import Foreign.Ptr      ( Ptr, nullPtr )
 import System.IO.Unsafe ( unsafePerformIO )
 
 newtype NewlyAllocated a = NewlyAllocated (Ptr ObjCObject)
@@ -27,6 +27,10 @@ instance ObjCArgument (NewlyAllocated a) (Ptr ObjCObject) where
 
     objCTypeString _ = "@"
 
-instance Object (NewlyAllocated a) where
-    toID (NewlyAllocated p) = unsafePerformIO $ importArgument p
-    fromID obj = error "can't convert from ID to NewlyAllocated x"
+-- Note that NewlyAllocated is not an instance of Object. Objects can be converted
+-- to IDs, and IDs are reference counted. Not retaining and releasing objects before
+-- they have been inited is the whole point of NewlyAllocated (besides some added type
+-- safety)..
+    
+instance MessageTarget (NewlyAllocated a) where
+    isNil (NewlyAllocated p) = p == nullPtr
