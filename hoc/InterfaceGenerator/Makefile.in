@@ -12,7 +12,7 @@ ifgen:
 	mkdir -p build
 	$(GHC) --make Main.hs	\
 		-odir build -hidir build \
-		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
+		-package-conf ../inplace.conf \
 		-o $@
 		
 clean:
