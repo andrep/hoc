@@ -190,8 +190,38 @@ in Haskell:
       ])
 
 
+=head2 Declaring your own Selectors
 
+The I<HaskellDocument> class in the above example only
+implemented methods whose types were already known because the
+selector was already defined somewhere in Cocoa. If you've just
+used InterfaceBuilder to place a small button labeled with the
+Greek letter Pi in the lower-left corner of your window and
+connected it to a method named C<smallPiClicked:>, then you'll
+need to declare that selector yourself using the
+C<declareSelector> template function, which has the following
+type:
 
+  :: String  -- ^ The Objective-C selector name
+  -> TypeQ   -- ^ The method's type signature
+  -> Q [Dec] -- ^ Code which produces a Haskell declaration
+
+So for the C<smallPiClicked:> selector you might write:
+
+  $(declareSelector "smallPiClicked:" [t| forall a. ID a -> IO () |]
+
+The Objective-C selector name "smallPiClicked:" will be
+automatically mangled to C<smallPiClicked>. If you don't like
+this, you can use C<declareRenamedSelector> instead:
+
+  $(declareRenamedSelector "smallPiClicked:" "haskellNameForThisSelector"
+                           [t| forall a. ID a -> IO () |])
+
+Due to a limitation of Template Haskell, you cannot put this
+declaration in the same module as your C<exportClass>
+declaration. This is because identifiers declared by Template
+Haskell "splices" are not available to other splices within the
+same module.
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65
