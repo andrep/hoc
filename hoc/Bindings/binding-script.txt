@@ -1,4 +1,4 @@
-hidePrelude init error minimum maximum null concat words print length;
+hidePrelude init error minimum maximum null concat words print length compare;
 rename data data';
 rename type type';
 
@@ -21,6 +21,9 @@ rename hideOtherApplications: hideOtherApplications_;
 rename stop: stop_;
 rename copy: copy_;
 rename beginSheetModalForWindow:modalDelegate:didEndSelector:contextInfo: beginModalSheet;
+
+rename drawKnob: drawKnob_;
+rename titleWidth: titleWidth_;
 
 class NSDistributedNotificationCenter {
     hide addObserver:selector:name:object: postNotificationName:object:
@@ -52,6 +55,11 @@ class NSMenu {
 class NSScrollView {
     - (void) setContentView: (NSView*) view;
 }
+
+
+type NSPoint Foundation.NSGeometry;
+type NSSize Foundation.NSGeometry;
+type NSRect Foundation.NSGeometry;
 
 -- GNUstep specifics:
 rename rawMimeData: rawMimeData_;
