@@ -8,6 +8,9 @@ dist_FILES = \
 	$(SOURCE_PODS) \
 	Makefile.in \
 	HOC.html \
+	README.txt \
+	documentation-footer.template \
+	documentation-header.template \
 	$(NULL)
 
 TITLE = HOC: a Haskell to Objective-C bridge
