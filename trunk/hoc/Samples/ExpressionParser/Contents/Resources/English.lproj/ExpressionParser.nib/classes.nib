@@ -1,0 +1,13 @@
+{
+    IBClasses = (
+        {
+            ACTIONS = {evaluateExpression = id; }; 
+            CLASS = EPController; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {evaluation = id; expressionEntry = id; }; 
+            SUPERCLASS = NSObject; 
+        }, 
+        {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }
+    ); 
+    IBVersion = 1; 
+}
