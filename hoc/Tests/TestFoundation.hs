@@ -1,6 +1,6 @@
 module Main where
 
-import HUnit
+import Test.HUnit
 import Prelude hiding(init)
 import Foundation hiding(test)
 import Foundation.NSObject(init)
