@@ -1,16 +1,16 @@
-hidePrelude init error minimum maximum null concat words print length
-rename data data'
-rename type type'
-covariant alloc
-covariant init initWithInt
+hidePrelude init error minimum maximum null concat words print length;
+rename data data';
+rename type type';
+covariant alloc;
+covariant init initWithInt;
 
-covariant initWithUTF8String
-covariant initWithCString initWithCStringLength initWithCStringNoCopyLengthFreeWhenDone
-covariant stringWithCString stringWithCStringLength
-covariant stringWithContentsOfFile stringWithContentsOfURL
-covariant stringWithString
+covariant initWithUTF8String;
+covariant initWithCString initWithCStringLength initWithCStringNoCopyLengthFreeWhenDone;
+covariant stringWithCString stringWithCStringLength;
+covariant stringWithContentsOfFile stringWithContentsOfURL;
+covariant stringWithString;
 
-rename noteFileSystemChanged: noteFileSystemChanged_
-rename close: close_
-rename open: open_
-rename setNeedsDisplay: setNeedsDisplay_
+rename noteFileSystemChanged: noteFileSystemChanged_;
+rename close: close_;
+rename open: open_;
+rename setNeedsDisplay: setNeedsDisplay_;
