@@ -1,0 +1,8 @@
+=head1 Appendices
+
+=head2 Template Haskell in a Nutshell
+
+
+=for comment Modeline for vi(m)
+vi:sw=2 tw=65
+

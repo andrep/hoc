@@ -4,7 +4,7 @@ a Terminal for more information, or see
 <http://www.sunsite.ualberta.ca/Documentation/Misc/perl-5.6.1/pod/perlpod.html>.
 
 
-=head2 Creating an Objective-C Class in Haskell
+=head1 Creating an Objective-C Class in Haskell
 
 As well as being able to use Objective-C classes in Haskell, HOC
 also enables you to I<create> an Objective-C class in Haskell:
@@ -15,7 +15,7 @@ Builder F<.nib> file, and Interface Builder's outlets and actions
 can call methods in your class.
 
 
-=head3 Programming Examples
+=head2 Programming Examples
 
 If you're the type of person who learns best by following
 examples rather than reading documentation, HOC comes with two
@@ -47,7 +47,7 @@ because it's reading all the method names during startup.)
 =back
 
 
-=head3 The Objective-C Class Creation Haskell API
+=head2 The Class Creation API
 
 So, how do you create an Objective-C class in Haskell?  The two
 main HOC functions you will require are C<declareClass> and
@@ -59,7 +59,7 @@ quick overview about what it is.)
 
 =for comment XXX: Insert hyperlink to next section
 
-=head4 The C<declareClass> function
+=head3 The C<declareClass> Function
 
 The C<declareClass> function is somewhat analgagous to writing
 the type signature for a function: in the same way that a type
@@ -67,12 +67,16 @@ signature tells the compiler that you intend to write the body of
 a function later in the code, C<declareClass> tells HOC that you
 intend to define a class later in your code.
 
-The type of C<declareClass> is
-C<< String -> String -> Q [Dec] >>.
-Its first argument is the name of the class that you wish to
+The type of C<declareClass> is C<< String -> String -> Q [Dec]
+>>.  Its first argument is the name of the class that you wish to
 write in Haskell, and the second argument is the name of an
 existing Objective-C class that you want to subclass (such as
-I<NSObject> or I<NSDocument>).
+I<NSObject> or I<NSDocument>).  You must declare an existing
+class to subclass: you cannot currently create a new class which
+sits at the root of an object hierarchy (such as I<NSObject> or
+I<NSProxy>).
+
+=for comment XXX: Maybe turn above into a type signature
 
 For example,
 
@@ -81,15 +85,9 @@ For example,
 declares a new class named I<MyDocument> which is a subclass of
 I<NSDocument>.  (Imaginative, huh?)
 
-=for comment XXX: Maybe turn above into a type signature
-
-You must declare an existing class to subclass: you cannot
-currently create a new class which sits at the root of an object
-hierarchy (such as I<NSObject> or I<NSProxy>).
-
 =for comment XXX: Wolfgang -- is the above correct?
 
-=head4 The C<exportClass> function
+=head3 The C<exportClass> Function
 
 After using the C<declareClass> Template Haskell function to
 declare a new Objective-C class, you can then I<export> the
@@ -168,11 +166,12 @@ distribution):
 
 =back
 
-The type of output of C<exportClass> is C<Q [Dec]>, which is code
-that produces a Haskell declaration, which you need to use within
-Template Haskell's C<$(...)> context.
+The output type of C<exportClass> is C<Q [Dec]>, which is code
+that produces a Haskell declaration.  You'll need to 'splice'
+this code into your source file, by using Template Haskell's
+C<$(...)> syntax.
 
-=head4 Using C<declareClass> and C<exportClass>
+=head3 An Example
 
 Putting it all together, here's a small example of how you might
 write a I<HaskellDocument> class (which subclasses I<NSDocument>)
@@ -191,9 +190,6 @@ in Haskell:
 	  InstanceMethod info_windowControllerDidLoadNib
       ])
 
-
-
-=head3 Template Haskell in a Nutshell
 
 
 
