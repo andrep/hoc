@@ -94,8 +94,9 @@ tests = test [
                 fromNSString (toNSString "Hello, world.") @?= "Hello, world."
             ),
             "initWithContentsOfFile" ~: (assertNoLeaks $ do
-                expected <- readFile "Test1.hs"
-                actual_ns <- _NSString # alloc >>= initWithContentsOfFile (toNSString "Test1.hs")
+                expected <- readFile "TestFoundation.hs"
+                actual_ns <- _NSString # alloc >>= initWithContentsOfFile
+                                                    (toNSString "TestFoundation.hs")
                 fromNSString actual_ns @?= expected
             )
         ],
