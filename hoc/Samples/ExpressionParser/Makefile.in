@@ -2,7 +2,7 @@ include ../../config.mk
 
 dist_srcdir = Samples/ExpressionParser
 dist_FILES = \
-	Contents/ \
+	Contents \
 	$(wildcard *.hs) \
 	Makefile.in \
 	$(NULL)
