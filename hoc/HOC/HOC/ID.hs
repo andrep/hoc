@@ -11,9 +11,8 @@ import System.IO.Unsafe(unsafePerformIO)
 import System.Mem.Weak
 import Foreign.Ptr
 import Foreign.StablePtr
-import Foreign.C.Types(CInt,CUInt,CChar {- ObjC BOOL is typedefed to char -})
+import Foreign.C.Types(CUInt,CChar {- ObjC BOOL is typedefed to char -})
 import Foreign.Storable
-import Foreign.Marshal.Alloc(alloca)
 import Data.Dynamic
 import Data.Maybe(fromMaybe, isJust)
 
@@ -22,35 +21,17 @@ data ID a = ID HSO | Nil
 nil = Nil
 
 castObject (ID a) = ID a
-castObject Nil = Nil
 
 instance Eq (ID a) where
-    (ID (HSO a _)) == (ID (HSO b _))    = a == b
-    Nil == Nil                          = True
-    _ == _                              = False
+    (ID (HSO a _)) == (ID (HSO b _)) = a == b
 
-class ObjCArgument a (Ptr ObjCObject) => MessageTarget a where
-    isNil :: a -> Bool
-    
-class MessageTarget a => Object a where
-    toID :: a -> ID ()
-    fromID :: ID () -> a
-
-instance MessageTarget (ID a) where
-    isNil x = x == nil
-        
+class ObjCArgument a (Ptr ObjCObject) => Object a where
+	toID :: a -> ID ()
+	fromID :: ID () -> a
+	
 instance Object (ID a) where
     toID (ID a) = ID a
-    toID Nil = Nil
-    
     fromID (ID a) = ID a
-    fromID Nil = Nil
-
-failNilMessage :: MessageTarget t => t -> String -> IO ()
-failNilMessage target selectorName
-    | isNil target = fail $ "Message sent to nil: " ++ selectorName
-    | otherwise = return ()
-
 
 {-
     *
@@ -81,11 +62,9 @@ objectMapLock = unsafePerformIO $ newMVar ()
 foreign import ccall unsafe "ObjectMap.h getHaskellPart"
     getHaskellPart :: Ptr ObjCObject -> IO (StablePtr (Weak HSO))
 foreign import ccall unsafe "ObjectMap.h setHaskellPart"
-    setHaskellPart :: Ptr ObjCObject -> StablePtr (Weak HSO) -> CInt -> IO ()
+    setHaskellPart :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
 foreign import ccall unsafe "ObjectMap.h removeHaskellPart"
     removeHaskellPart :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
-foreign import ccall unsafe "ObjectMap.h objectMapStatistics"
-    c_objectMapStatistics :: Ptr CUInt -> Ptr CUInt -> IO ()
 
     -- must be "safe", because it calls methods implemented in Haskell
 foreign import ccall safe "GetNewHaskellData.h getNewHaskellData"
@@ -148,7 +127,7 @@ importArgument' immortal p
                               | otherwise = Just $ finalizeID p new_sptr
                 wptr <- mkWeakPtr haskellObj finalizer
                 new_sptr <- newStablePtr wptr
-                setHaskellPart p new_sptr (if immortal then 1 else 0)
+                setHaskellPart p new_sptr
                 
                 case haskellData of
                     Just _ -> haskellObject_retain p
@@ -266,18 +245,3 @@ getHaskellData_IMP super mbDat cif ret args = do
     return nullPtr  -- no exception
 
 getHaskellDataForID (ID (HSO _ dat)) = dat
-
-releaseExtraReference obj = do
-    case toID obj of
-        ID (HSO ptr _) -> releaseObject ptr
-        Nil -> return ()
-    return obj
-
-objectMapStatistics =
-    alloca $ \pAllocated ->
-    alloca $ \pImmortal ->
-    do
-        c_objectMapStatistics pAllocated pImmortal
-        allocated <- peek pAllocated
-        immortal <- peek pImmortal
-        return (allocated, immortal)

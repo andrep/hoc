@@ -14,7 +14,7 @@ type ModuleName = String
 data HeaderInfo = HeaderInfo ModuleName [ModuleName] [Declaration]
 
 stripPreprocessor = unlines . stripPP . lines
-    where
+	where
 		stripPP (x@('#':_) : xs) = dropPreprocessorLine x xs
 		stripPP (x : xs) = x : stripPP xs
 		stripPP [] = []
@@ -25,7 +25,7 @@ stripPreprocessor = unlines . stripPP . lines
 findImports = mapMaybe checkImport . lines
     where
         checkImport line
-            | ("#import" `isPrefixOf` line) || ("#include" `isPrefixOf` line) =
+            | ("#import " `isPrefixOf` line) || ("#include " `isPrefixOf` line) =
                 Just $ init $ tail $ dropWhile (\c -> c /= '"' && c /= '<') line
             | otherwise = Nothing
 

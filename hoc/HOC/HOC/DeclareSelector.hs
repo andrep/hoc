@@ -12,14 +12,9 @@ import HOC.StdArgumentTypes
 
 import Language.Haskell.THSyntax
 import Data.Char(isUpper, toLower, toUpper)
-import Data.Maybe(fromMaybe)
-import Control.Monad(MonadPlus(mplus))
 
 data Covariant
 data CovariantInstance
-data Allocated
-data Inited
-data Retained a
 
 $(makeMarshallers 4)
 marshallersUpTo = 4
@@ -45,7 +40,7 @@ declareRenamedSelector name haskellName typeSigQ =
                 _ -> False
     
 
-            (resultRetained, doctoredTypeSig) = doctorType typeSig className
+            doctoredTypeSig = doctorType typeSig className
             
         sequence $ [
                 
@@ -73,9 +68,8 @@ declareRenamedSelector name haskellName typeSigQ =
                 
                 sigD haskellName $ return doctoredTypeSig,
                 
-                if nArgs > marshallersUpTo || resultRetained
-                    then makeMarshaller (Just infoName) haskellName nArgs
-                                        isUnit isPure resultRetained
+                if nArgs > marshallersUpTo
+                    then makeMarshaller (Just infoName) haskellName nArgs isUnit isPure
                     else valD (VarP haskellName) (normalB [|
                             $(varE $ thModulePrefix "DeclareSelector" $
                                     marshallerName nArgs isUnit)
@@ -100,41 +94,25 @@ replaceResult new ((ArrowT `AppT` arg) `AppT` rest) =
 replaceResult new result = new
 
 doctorType ty className = 
-        (
-            retained,
-            (if needInstance
-                then ForallT ["target", "inst"] [ConT className `AppT` VarT "target",
-                                                ConT "ClassAndObject"
-                                                `AppT` VarT "target" `AppT` VarT "inst"]
-                else ForallT ["target"] [ConT className `AppT` VarT "target"]) $
-            replaceResult (
-                (ArrowT `AppT` (fromMaybe (VarT "target") targetType))
-                `AppT` covariantResult
-            ) ty
-        )
+        (if needInstance
+            then ForallT ["target", "inst"] [ConT className `AppT` VarT "target",
+                                            ConT "ClassAndObject"
+                                            `AppT` VarT "target" `AppT` VarT "inst"]
+            else ForallT ["target"] [ConT className `AppT` VarT "target"]) $
+        replaceResult (
+            (ArrowT `AppT` VarT "target")
+            `AppT` covariantResult
+        ) ty
     where
-        (retained, needInstance, targetType, covariantResult) = doctorCovariant $ resultType ty
+        (needInstance, covariantResult) = doctorCovariant $ resultType ty
 
-doctorCovariant (ConT "HOC.DeclareSelector:Covariant") = (False, False, Nothing, VarT "target")
-
-doctorCovariant (ConT "HOC.DeclareSelector:CovariantInstance") = (False, True, Nothing, VarT "inst")
-
-doctorCovariant (ConT "HOC.DeclareSelector:Allocated") =
-    (False, True, Nothing, ConT "HOC.NewlyAllocated:NewlyAllocated" `AppT` VarT "inst")
-
-doctorCovariant (ConT "HOC.DeclareSelector:Inited") =
-    (True, False, Just (ConT "HOC.NewlyAllocated:NewlyAllocated" `AppT` VarT "target"), VarT "target")
-
-doctorCovariant (ConT "HOC.DeclareSelector:Retained" `AppT` ty) =
-        (True,inst', target', ty')
-    where (_,inst', target', ty') = doctorCovariant ty
-
-doctorCovariant (t1 `AppT` t2) =
-        (retained1 || retained2, needInst1 || needInst2, target1 `mplus` target2, t1' `AppT` t2')
-    where (retained1, needInst1, target1, t1') = doctorCovariant t1
-          (retained2, needInst2, target2, t2') = doctorCovariant t2
-
-doctorCovariant other = (False, False, Nothing, other)
+doctorCovariant (ConT "HOC.DeclareSelector:Covariant") = (False, VarT "target")
+doctorCovariant (ConT "GHC.IOBase:IO" `AppT` ConT "HOC.DeclareSelector:Covariant") =
+    (False, ConT "GHC.IOBase:IO" `AppT` VarT "target")
+doctorCovariant (ConT "HOC.DeclareSelector:CovariantInstance") = (True, VarT "inst")
+doctorCovariant (ConT "GHC.IOBase:IO" `AppT` ConT "HOC.DeclareSelector:CovariantInstance") =
+    (True, ConT "GHC.IOBase:IO" `AppT` VarT "inst")
+doctorCovariant other = (False, other)
 
 -- Reduce the type to a form that can be used for creating a libffi CIF
 -- using the ObjCIMPType type class:
@@ -146,9 +124,7 @@ simplifyType (ConT "GHC.IOBase:IO" `AppT` x) = ConT "GHC.IOBase:IO" `AppT` repla
 simplifyType x = replaceVarByUnit x
 
 replaceVarByUnit (VarT var) = ConT "HOC.ID:ID" `AppT` ConT "GHC.Base:()"
-replaceVarByUnit (ConT "HOC.NewlyAllocated:NewlyAllocated" `AppT` ty) = 
-    replaceVarByUnit ty
-replaceVarByUnit (ConT cls `AppT` VarT var) = ConT cls `AppT` ConT "GHC.Base:()"
+replaceVarByUnit (ConT cls `AppT` VarT var) = ConT "HOC.ID:ID" `AppT` ConT "GHC.Base:()"
 replaceVarByUnit x = x
 
 -- ===
@@ -167,4 +143,4 @@ makeImpType ty = replaceResult (
                 ) ty'
     where
         ty' = simplifyType ty
-        (_retained, _needInstance, _target', covariantResult) = doctorCovariant $ resultType ty'
+        (_needInstance, covariantResult) = doctorCovariant $ resultType ty'

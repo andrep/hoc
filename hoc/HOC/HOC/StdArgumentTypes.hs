@@ -5,7 +5,6 @@ import HOC.Invocation
 import HOC.Arguments
 import HOC.FFICallInterface
 
-import Control.Exception        ( bracket )
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
@@ -19,13 +18,13 @@ instance FFITypeable SEL where
 
 $(declareStorableObjCArgument [t| SEL |] ":")
 
-instance ObjCArgument Bool CInt where
+instance ObjCArgument Bool CChar where
     exportArgument False = return 0
     exportArgument True = return 1
     importArgument 0 = return False
     importArgument _ = return True
     
-    objCTypeString _ = "c"
+    objCTypeString _ = "B"    -- OS >= 10.2 only
 
 $(declareStorableObjCArgument [t| Int |] "i")
 $(declareStorableObjCArgument [t| Float |] "f")
@@ -70,12 +69,7 @@ foreign import ccall unsafe "Marshalling.h utf8ToNSString"
     utf8ToNSString :: CString -> IO (Ptr ObjCObject)
 
 instance ObjCArgument String (Ptr ObjCObject) where
-    withExportedArgument arg action =
-        bracket (withCString arg utf8ToNSString) releaseObject action
-    exportArgument arg = do
-        nsstr <- withCString arg utf8ToNSString
-        autoreleaseObject nsstr
-        return nsstr
+    exportArgument arg = withCString arg utf8ToNSString
     importArgument arg = nsStringToUTF8 arg >>= peekCString
     
     objCTypeString _ = "*"

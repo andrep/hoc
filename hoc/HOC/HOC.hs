@@ -13,14 +13,10 @@ module HOC (
         declareRenamedSelector,
         Covariant,
         CovariantInstance,
-        Allocated,
-        Inited,
 
         getSelectorForName,
         
         withAutoreleasePool,
-
-	isNil,
         
         IVar,
         getIVar,
@@ -31,15 +27,8 @@ module HOC (
         ClassMember(..),
         exportClass,
         
-        NewlyAllocated,
-        
-        -- debugging & statistics:
-        
-        objectMapStatistics,
-        
         -- things that shouldn't really be exported
-        InstanceVariables(..),
-        Typeable(..)
+        InstanceVariables(..)
     ) where
 
 import HOC.Base
@@ -53,7 +42,3 @@ import HOC.DeclareSelector
 import HOC.StdArgumentTypes
 import HOC.ExportClass
 import HOC.Utilities
-import HOC.NewlyAllocated
-
-import Data.Typeable
-

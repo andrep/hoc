@@ -11,26 +11,21 @@ import SyntaxTree
 import BindingScript
 import CTypeToHaskell
 import Headers(HeaderInfo(..), ModuleName)
-import Enums
-import NameCaseChange
 
 import HOC.SelectorNameMangling(mangleSelectorName)
 
-import Control.Monad(when)
 import Data.Set
 import Data.FiniteMap
 import qualified Data.HashTable as HashTable
 import Data.Maybe(maybeToList, fromMaybe, mapMaybe)
-import Data.List(partition,isPrefixOf)
-import Data.Char(isLower)
+import Data.List(partition)
 
 data PreparedDeclarations = PreparedDeclarations {
+        pdModuleNames :: [ModuleName],
         pdCleanClassInfos :: [(String, ClassInfo)],
         pdCleanClassInfoHash :: HashTable.HashTable String ClassInfo, {- used read only -}
         pdAllInstanceSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])],
-        pdAllClassSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])],
-        pdEnumTypeDefinitions :: FiniteMap ModuleName [EnumType],
-        pdTypeEnvironment :: TypeEnvironment
+        pdAllClassSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])]
     }
 
 data SelectorLocation = SelectorLocation {
@@ -59,34 +54,34 @@ instance (Show elem) => Show (Set elem) where
     show = show . setToList
     
 classInfoForDeclaration (moduleName, SelectorList (Interface name super protocols) methods) =
-    Just $ (nameToUppercase name, ClassInfo {
+    Just $ (name, ClassInfo {
         ciProtocol = False,
-        ciName = nameToUppercase name,
-        ciSuper = fmap nameToUppercase super,
-        ciProtocols = mkSet (map nameToUppercase protocols),
+        ciName = name,
+        ciSuper = super,
+        ciProtocols = mkSet protocols,
         ciDefinedIn = moduleName,
         ciInstanceMethods = listToFM [ (sel, SelectorLocation moduleName moduleName)
                                      | InstanceMethod sel <- methods ],
         ciClassMethods = listToFM [ (sel, SelectorLocation moduleName moduleName)
                                   | ClassMethod sel <- methods ],
-        ciNewProtocols = error "ciNewProtocols 1",
-        ciNewInstanceMethods = error "ciNewInstanceMethods 1",
-        ciNewClassMethods = error "ciNewClassMethods 1"
+        ciNewProtocols = undefined,
+        ciNewInstanceMethods = undefined,
+        ciNewClassMethods = undefined
     })
 classInfoForDeclaration (moduleName, SelectorList (Protocol name protocols) methods) =
-    Just $ (nameToUppercase name ++ "Protocol", ClassInfo {
+    Just $ (name ++ "Protocol", ClassInfo {
         ciProtocol = True,
-        ciName = nameToUppercase name ++ "Protocol",
+        ciName = name ++ "Protocol",
         ciSuper = Nothing,
-        ciProtocols = mkSet (map nameToUppercase protocols),
+        ciProtocols = mkSet protocols,
         ciDefinedIn = moduleName,
         ciInstanceMethods = listToFM [ (sel, SelectorLocation moduleName cantHappen)
                                      | InstanceMethod sel <- methods ],
         ciClassMethods = listToFM [ (sel, SelectorLocation moduleName cantHappen)
                                   | ClassMethod sel <- methods ],
-        ciNewProtocols = error "ciNewProtocols 2",
-        ciNewInstanceMethods = error "ciNewInstanceMethods 2",
-        ciNewClassMethods = error "ciNewClassMethods 2"
+        ciNewProtocols = undefined,
+        ciNewInstanceMethods = undefined,
+        ciNewClassMethods = undefined
     })
     where
         cantHappen = error "internal error: protocol asked for location of instance decl"
@@ -134,9 +129,8 @@ cleanClassInfo outInfos inInfos name =
                     then cleanClassInfo outInfos inInfos name
                     else do
                         -- putStrLn name
-                        let ci' = cleanClassInfo' ci mbSuper protocols
-                        HashTable.insert outInfos name ci'
-                                         
+                        HashTable.insert outInfos name
+                                         (cleanClassInfo' ci mbSuper protocols)
     where
         cleanSuper ci = do
             (mbSuper,superRecheck) <- case (ciSuper ci) of
@@ -205,13 +199,7 @@ cleanClassInfo' info mbSuperInfo protocolInfos
                                      map extract protocolInfos
             plusFM_proto cls proto = plusFM_C (\(SelectorLocation _ inst)
                                                 (SelectorLocation def _)
-                                              -> SelectorLocation def {-inst-} (ciDefinedIn info))
-                                      -- * All selectors that are part of a protocol
-                                      -- should be declared where the protocol is declared.
-                                      -- * The method instances should be where the class itself
-                                      -- with the protocol adoption is, not in a category.
-                                      -- Otherwise, the context for the protocol instance declaration
-                                      -- won't be available when the protocol is adopted.
+                                              -> SelectorLocation def inst)
                                               cls
                                               (mapFM (\sel (SelectorLocation def _)
                                                      -> SelectorLocation def (ciDefinedIn info))
@@ -234,18 +222,11 @@ prepareDeclarations :: BindingScript -> [HeaderInfo] -> IO PreparedDeclarations
 
 prepareDeclarations bindingScript modules = do
     let allDecls = concatMap (\(HeaderInfo mod _ decls) -> map ((,) mod) decls) modules
+        classNames = mkSet [ name | (mod, SelectorList (Interface name _ _) _) <- allDecls ]
+        moduleNames = map (\(HeaderInfo name _ _) -> name) $ modules
 
         classes = mapMaybe classInfoForDeclaration $ allDecls
         
-        classNames = [ (nameToUppercase name, (ClassTypeName, mod))
-                     | (mod, SelectorList (Interface name _ _) _) <- allDecls ]
-        (enumNamesAndLocations, enumDefinitions) = extractEnums bindingScript modules
-        
-        typeEnv = TypeEnvironment $ listToFM $
-                  classNames ++ [ (name, (PlainTypeName, mod))
-                                | (name, mod) <- enumNamesAndLocations
-                                                 ++ bsAdditionalTypes bindingScript ]
-                                                            
     putStrLn "collecting categories..."
     classHash <- HashTable.fromList HashTable.hashString classes
     mapM_ (updateClassInfoForCategory classHash) allDecls
@@ -258,52 +239,32 @@ prepareDeclarations bindingScript modules = do
     cleanClassInfos <- HashTable.toList cleanClassInfoHash
     
     let allInstanceSels :: [ (ClassInfo, [(MangledSelector, SelectorLocation)]) ]
-        allInstanceSels = [ (ci, mangleSelectors False (ciName ci) (ciNewInstanceMethods ci))
+        allInstanceSels = [ (ci, mangleSelectors False $ ciNewInstanceMethods ci)
                        | ci <- map snd cleanClassInfos ]
         allClassSels :: [ (ClassInfo, [(MangledSelector, SelectorLocation)]) ]
-        allClassSels =    [ (ci, mangleSelectors True (ciName ci) (ciNewClassMethods ci))
+        allClassSels =    [ (ci, mangleSelectors True $ ciNewClassMethods ci)
                        | ci <- map snd cleanClassInfos ]
     
-        mangleSelectors factory clsName sels =
-            mapMaybe (\(sel, location) -> do {- Maybe -}
+        mangleSelectors factory sels =
+            mapMaybe (\(sel, location) -> do
                     let name = selName sel
-                        mapped = lookupFM (soNameMappings selectorOptions) name
-                        mangled = case mapped of
-                                    Just x -> x
-                                    Nothing -> mangleSelectorName name
-                        replacement = lookupFM (soChangedSelectors selectorOptions) name
-                        sel' = case replacement of
-                            Just x -> x
-                            Nothing -> sel
+                        mangled = mangleSelectorName name
+                        mapped = lookupFM (bsNameMappings bindingScript) name
                     
-                    when (name `elementOf` soHiddenSelectors selectorOptions) $ Nothing
-                    
-                    let covariant = mangled `elementOf` soCovariantSelectors selectorOptions
-                        kind | covariant && factory = CovariantInstanceSelector
-                             | covariant = CovariantSelector
-                             | "alloc" `isFirstWordOf` name = AllocSelector
-                             | "init" `isFirstWordOf` name = InitSelector
-                             | otherwise = PlainSelector
-                        a `isFirstWordOf` b 
-                            | length b > length a = (a `isPrefixOf` b)
-                                                 && (not $ isLower (b !! length a))
-                            | otherwise = a == b
-                    
-                    typ <- getSelectorType kind typeEnv sel'
+                    typ <- if mangled `elementOf` bsCovariantSelectors bindingScript
+                        then getCovariantSelectorType factory classNames sel
+                        else getSelectorType classNames sel
                     return $ (MangledSelector {
-                            msSel = sel',
-                            msMangled = mangled,
+                            msSel = sel,
+                            msMangled = case mapped of Just x -> x ; Nothing -> mangled,
                             msType = typ
                         }, location)
                 ) $ fmToList sels
-            where
-                selectorOptions = getSelectorOptions bindingScript clsName
     
     return $ PreparedDeclarations {
+                 pdModuleNames = moduleNames,
                  pdCleanClassInfos = cleanClassInfos,
                  pdCleanClassInfoHash = cleanClassInfoHash,
                  pdAllInstanceSels = allInstanceSels,
-                 pdAllClassSels = allClassSels,
-                 pdEnumTypeDefinitions = enumDefinitions,
-                 pdTypeEnvironment = typeEnv
+                 pdAllClassSels = allClassSels
              }

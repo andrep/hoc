@@ -7,7 +7,6 @@ import qualified Data.HashTable as HashTable
 import Data.List(isPrefixOf,isSuffixOf,partition)
 import Data.Maybe(fromMaybe,mapMaybe,isJust,isNothing,catMaybes,maybeToList)
 import Data.Set
-import Control.Monad(unless)
 
 import System.Info(os)
 
@@ -21,7 +20,6 @@ import Files
 import Utils
 import ExportModule
 import Headers
-import Enums(extractEnums)
 
 
 writeMasterModule masterModuleName realModuleNames selNamesList = do
@@ -70,21 +68,10 @@ main = do
     foundationModules <- loadHeaders foundationHeaders
     appKitModules <- loadHeaders appKitHeaders
     
-    preparedDeclarations <- prepareDeclarations bindingScript (foundationModules ++ appKitModules)
- 
-    let headerNames = map (\(HeaderInfo name _ _) -> name)
+    let modules = orderModules foundationModules ++ orderModules appKitModules
     
-    let orderModules2 mods = do
-            deps <- mapM (getModuleDependencies preparedDeclarations) mods
-            let order [] = []
-                order xs | null ok = error $ "nothing OK:" ++ show xs
-                         | otherwise = ok ++ order notOK
-                    where (notOK, ok) = partition (\(name,imports) -> any (`elem` names) imports) xs
-                          names = map fst xs
-            return $ map fst $ order $ zip mods deps
-            
-    modules <- fmap concat $ mapM (orderModules2 . headerNames) [foundationModules, appKitModules]
-            
+    preparedDeclarations <- prepareDeclarations bindingScript modules
+ 
     selsDefinedWhere <- HashTable.new (==) (\sel -> HashTable.hashString (selName sel))
     
     allSelNames <- HashTable.new (==) HashTable.hashString
@@ -96,22 +83,17 @@ main = do
    
     realModuleNames <- fmap catMaybes $ 
                        mapM ( exportModule bindingScript
-                                           preparedDeclarations
-                                           selsDefinedWhere
-                                           noteSelDefinition ) $
-                       modules
+                              preparedDeclarations
+                              selsDefinedWhere
+                              noteSelDefinition ) $
+                       pdModuleNames preparedDeclarations
     
     selNamesList <- HashTable.toList allSelNames
     
         -- this is cheap: it would be nicer to generate the bindings for
         -- AppKit & Foundation separately, and without hard-coded names.
-    let writeMasterModule' name = writeMasterModule name
-                                                    (filter ((name++".") `isPrefixOf`) realModuleNames)
-                                                    selNamesList
-    writeMasterModule' "Foundation"
-    unless (System.Info.os == "darwin") $ writeMasterModule' "GNUstepBase"
-    writeMasterModule' "AppKit"
-    unless (System.Info.os == "darwin") $ writeMasterModule' "GNUstepGUI"
+    writeMasterModule "Foundation" (filter ("Foundation." `isPrefixOf`) realModuleNames) selNamesList
+    writeMasterModule "AppKit" (filter ("AppKit." `isPrefixOf`) realModuleNames) selNamesList
     writeMasterModule "Cocoa" realModuleNames selNamesList
     
     let manglingConflicts :: [(String, [(String, [ModuleName])])]
@@ -127,7 +109,7 @@ main = do
         
         typeConflicts = filter ((>1) . length . snd) $
                         mapSnd (groupByFirst . mapFst msType) $
-                        map (\(_, selsAndExps@((sel,exp):_)) -> (msName sel, selsAndExps)) $
+                        map (\(_, selsAndExps@((sel,exp):_)) -> (msMangled sel, selsAndExps)) $
                         groupByFirst $
                         map (\(sel,exp) -> (msName sel, (sel, exp))) $
                         concatMap (snd . snd) $
@@ -153,12 +135,3 @@ main = do
                     ) manglingConflicts
         ))
 
-    writeFile "all-selectors.txt" $
-        unlines $
-        map show $
-        map (\(sel,mod) -> (msMangled sel,
-                            msName sel,
-                            render $ pprSelectorType $ msType sel,
-                            mod)) $
-        concatMap (snd . snd) $
-        selNamesList

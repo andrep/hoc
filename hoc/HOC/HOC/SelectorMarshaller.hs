@@ -2,7 +2,6 @@ module HOC.SelectorMarshaller where
 
 import HOC.Base
 import HOC.Arguments
-import HOC.ID
 import HOC.Class
 import HOC.Invocation
 import HOC.SelectorNameMangling
@@ -10,8 +9,8 @@ import HOC.MsgSend
 import HOC.FFICallInterface
 
 import Language.Haskell.THSyntax
-import Foreign                      ( withArray, Ptr, nullPtr )
-import System.IO.Unsafe             ( unsafePerformIO )
+import Foreign(withArray)
+import System.IO.Unsafe(unsafePerformIO)
 
 data SelectorInfo = SelectorInfo {
         selectorInfoObjCName :: String,
@@ -22,7 +21,7 @@ data SelectorInfo = SelectorInfo {
         selectorInfoIsUnit :: Bool
     }
 
-makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
+makeMarshaller maybeInfoName haskellName nArgs isUnit isPure =
             funD haskellName [
                 clause (map VarP $ infoArgument ++ arguments
                         ++ ["target"])
@@ -40,8 +39,6 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
         marshalledArguments = "target'" : "selector'" : map (++"'") arguments
    
         marshallerBody = purify $
-                         checkTargetNil $
-                         releaseRetvalIfRetained $
                          marshallArgs  $
                          collectArgs $
                          invoke
@@ -56,25 +53,16 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
         collectArgs e = [| withArray $(listE (map varE marshalledArguments))
                                      $(lamE [varP "args"] e) |]
 
-        invoke | isUnit = [| sendMessageWithoutRetval (selectorInfoCif $(infoVar))
-                                                      $(argsVar)|]
-               | otherwise = [| sendMessageWithRetval (selectorInfoCif $(infoVar))
-                                                      $(argsVar)|]
+        invoke | isUnit = [| callWithoutRetval (selectorInfoCif $(infoVar)) objc_msgSendPtr $(argsVar) |]
+               | otherwise = [| callWithRetval (selectorInfoCif $(infoVar)) objc_msgSendPtr $(argsVar) |]
             where argsVar = varE "args"
 
         purify e | isPure = [| unsafePerformIO $(e) |]
                  | otherwise = e
-                 
-        releaseRetvalIfRetained e | isRetained = [| $(e) >>= releaseExtraReference |]
-                                  | otherwise = e
-                                  
-        checkTargetNil e = [| failNilMessage $(varE "target")
-                                             (selectorInfoHaskellName $(infoVar))
-                              >> $(e) |]
     
 makeMarshallers n =
         sequence $
-        [ makeMarshaller Nothing (marshallerName nArgs isUnit) nArgs isUnit False False
+        [ makeMarshaller Nothing (marshallerName nArgs isUnit) nArgs isUnit False
         | nArgs <- [0..n], isUnit <- [False, True] ]
 
 marshallerName nArgs False = "method" ++ show nArgs

@@ -1,9 +1,4 @@
-#ifdef GNUSTEP
-#include <objc/objc-api.h>
-#else
 #include <objc/objc-runtime.h>
-#endif
-
 #include <ffi.h>
 
 #ifdef __OBJC__

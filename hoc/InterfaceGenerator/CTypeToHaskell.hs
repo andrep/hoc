@@ -1,85 +1,52 @@
-module CTypeToHaskell(TypeEnvironment(..),
-                      TypeNameKind(..),
-                      isClassType,
-                      isPlainType,
-                      typeDefinedIn,
-                      lookupTypeEnv,
-                      pprSelectorType,
+module CTypeToHaskell(pprSelectorType,
                       HSelectorType,
-                      SelectorKind(..),
                       getSelectorType,
-                      mentionedTypes) where
-
-import SyntaxTree
-import NameCaseChange
-import Headers(ModuleName)
+                      getCovariantSelectorType,
+                      mentionedClasses) where
 
 import Control.Monad(when)
-import Data.FiniteMap
+import Data.Set
 import Data.Maybe(mapMaybe)
 import Text.PrettyPrint
 
 import Debug.Trace
 
-data TypeNameKind = ClassTypeName | PlainTypeName
-
-newtype TypeEnvironment = TypeEnvironment (FiniteMap String (TypeNameKind, ModuleName))
-    -- (Set String) -- known classes
-    -- (Set String) -- other known types
-
-isClassType (TypeEnvironment env) name =
-    case lookupFM env (nameToUppercase name) of
-        Just (ClassTypeName, _) -> True
-        _                       -> False
-isPlainType (TypeEnvironment env) name =
-    case lookupFM env (nameToUppercase name) of
-        Just (PlainTypeName, _) -> True
-        _                       -> False
-        
-typeDefinedIn (TypeEnvironment env) name =
-    case lookupFM env (nameToUppercase name) of
-        Just (_, loc) -> loc
-
-lookupTypeEnv (TypeEnvironment env) name = lookupFM env name
+import SyntaxTree
 
 data HTypeTerm = Con String | HTypeTerm :$ HTypeTerm | Var String
     deriving(Eq,Ord)
     
 data HType = HType (Maybe (String, [String])) [String] HTypeTerm
-    -- Maybe (tyvar, context), mentioned, terms
+    -- Maybe (tyvar, context), classes, terms
 
 data HSelectorType = HSelectorType [String] [(String,String)] [String] [HTypeTerm]
     deriving(Eq,Ord)
 
-cTypeToHaskell :: TypeEnvironment -> Bool -> String -> CType -> Maybe HType
-cTypeToHaskell env retval tyvar (CTIDType protocols) = 
+cTypeToHaskell :: Set String -> Bool -> String -> CType -> Maybe HType
+cTypeToHaskell classes retval tyvar (CTIDType protocols) = 
     -- (if protocols /= [] then trace (show (retval,protocols)) else id) $
 
     Just $ HType (if retval then Nothing else Just (tyvar,[]))
                  [] (Con "ID" :$ (if retval then Con "()" else Var tyvar))
 
-cTypeToHaskell env retval tyvar (CTPointer (CTSimple cls))
-    | isClassType env cls =
+cTypeToHaskell classes retval tyvar (CTPointer (CTSimple cls)) | cls `elementOf` classes =
     Just $ HType (if retval then Nothing else Just (tyvar,[]))
-                 [cls] (Con (nameToUppercase cls) :$
-                        (if retval then Con "()" else Var tyvar))
+                 [cls] (Con cls :$ (if retval then Con "()" else Var tyvar))
  
 
 -- cTypeToHaskell classes retval tyvar (CTBuiltin signedness len "int") =
 --    case signedness of 
-cTypeToHaskell env retval tyvar bi@(CTBuiltin _ _ _) =
+cTypeToHaskell classes retval tyvar bi@(CTBuiltin _ _ _) =
     do
         typ <- builtinTypeToHaskell bi
         return $ HType Nothing [] (Con typ)
 
-cTypeToHaskell env retval tyvar (CTSimple name) 
-    | name /= "" && isPlainType env name =
-        return $ HType Nothing [name]
-                       (Con $ nameToUppercase name)
-    | otherwise = do typ <- simpleTypeToHaskell name
-                     return $ HType Nothing [] (Con typ)
+cTypeToHaskell classes retval tyvar (CTSimple simple) =
+    do
+        typ <- simpleTypeToHaskell simple
+        return $ HType Nothing [] (Con typ)
 
-cTypeToHaskell env retval tyvar (CTPointer pointed) =
+cTypeToHaskell classes retval tyvar (CTPointer pointed) =
         case pointed of
             CTSimple _ -> pointerToHaskell
             CTBuiltin _ _ _ -> pointerToHaskell
@@ -88,16 +55,10 @@ cTypeToHaskell env retval tyvar (CTPointer pointed) =
         pointerToHaskell =
             do
                 HType context mentioned ty
-                    <- cTypeToHaskell env retval tyvar pointed
+                    <- cTypeToHaskell classes retval tyvar pointed
                 return $ HType context mentioned (Con "Ptr" :$ ty)
 
-cTypeToHaskell env retval tyvar (CTEnum name _) 
-    | name /= "" && isPlainType env name = return $ HType Nothing [name]
-                                                          (Con $ nameToUppercase name)
-    | otherwise = Nothing
-
-cTypeToHaskell env retval tyvar _ = Nothing
-
+cTypeToHaskell classes retval tyvar _ = Nothing
 {-
 cTypeToHaskell classes retval tyvar (CTSimple str) = Nothing
 cTypeToHaskell classes retval tyvar (CTPointer x) = Nothing
@@ -112,7 +73,7 @@ cTypeToHaskell classes retval tyvar (CTUnion x) = Nothing
 simpleTypeToHaskell "void" = Just "()"
 simpleTypeToHaskell "BOOL" = Just "Bool"
 simpleTypeToHaskell "SEL" = Just "SEL"
-simpleTypeToHaskell _ = Nothing
+simpleTypeToHaskell other = {-trace ("unknown simple type " ++ show other)-} Nothing
 
 {-builtinTypeToHaskell (CTBuiltin Nothing Nothing "int") =
     trace (
@@ -166,43 +127,30 @@ pprHTypeTerm _ (Var tv) = text tv
 pprHTypeTerm True t@(a :$ b) = parens (pprHTypeTerm False t)
 pprHTypeTerm False (a :$ b) = pprHTypeTerm True a <+> pprHTypeTerm True b
 
+getSelectorType :: Set String -> Selector -> Maybe HSelectorType
 
 pprSelectorType :: HSelectorType -> Doc
 
-getSelectorType' env sel ret = do
+getSelectorType' classes sel ret = do
     when (selVarArg sel) Nothing
     argTypes <- sequence $
-                zipWith (cTypeToHaskell env False)
+                zipWith (cTypeToHaskell classes False)
                         [ "t" ++ show i | i <- [1..] ] (selArgTypes sel)
     return $ liftContexts (argTypes ++ [ret])
 
-data SelectorKind = PlainSelector 
-                  | CovariantSelector
-                  | CovariantInstanceSelector
-                  | AllocSelector
-                  | InitSelector
-
-getSelectorType :: SelectorKind -> TypeEnvironment -> Selector -> Maybe HSelectorType
-
-getSelectorType PlainSelector env sel = do
+getSelectorType classes sel = do
     HType retTypeTyCtx retTypeMentioned retType <-
-        (cTypeToHaskell env True) "t" $ selRetType sel
+        (cTypeToHaskell classes True) "t" $ selRetType sel
     let ioRetType = HType retTypeTyCtx retTypeMentioned (Con "IO" :$ retType)
-    getSelectorType' env sel ioRetType
+    getSelectorType' classes sel ioRetType
 
-getSelectorType kind env sel =
-    getSelectorType' env sel $
+getCovariantSelectorType factory classes sel =
+    getSelectorType' classes sel $
         HType Nothing [] (Con "IO" :$
-            (case kind of
-                CovariantSelector -> Con "Covariant"
-                CovariantInstanceSelector -> Con "CovariantInstance"
-                AllocSelector -> Con "Allocated"
-                InitSelector -> Con "Inited"
-            ))
+            (if factory then Con "CovariantInstance" else Con "Covariant"))
 
 pprSelectorType (HSelectorType tyvars context mentioned types) =
     pprForall tyvars <+> pprContext context <+>
     (hsep $ punctuate (text " ->") $ map (pprHTypeTerm False) types)
 
-mentionedTypes (HSelectorType tyvars context mentioned types) = mentioned
-
+mentionedClasses (HSelectorType tyvars context mentioned types) = mentioned

@@ -1,155 +1,30 @@
-module BindingScript(
-        BindingScript(bsHiddenFromPrelude, bsHiddenEnums, bsAdditionalTypes),
-        getSelectorOptions,
-        SelectorOptions(..),
-        readBindingScript
-    ) where
+module BindingScript(BindingScript(..), readBindingScript) where
 
-import SyntaxTree(
-        SelectorListItem(InstanceMethod, ClassMethod),
-        Selector(..)
-    )
-import qualified Parser(selector)
-
-import Control.Monad(when)
 import Data.FiniteMap
 import Data.Set
-import Data.List(intersperse)
-
-import Text.ParserCombinators.Parsec.Language(haskellStyle)
-import Text.ParserCombinators.Parsec.Token
-import Text.ParserCombinators.Parsec
+import Data.Char(isSpace)
 
 data BindingScript = BindingScript {
+        bsNameMappings :: FiniteMap String String,
         bsHiddenFromPrelude :: Set String,
-        bsHiddenEnums :: Set String,
-        bsTopLevelOptions :: SelectorOptions,
-        bsAdditionalTypes :: [(String, String)],
-        bsClassSpecificOptions :: FiniteMap String SelectorOptions
+        bsCovariantSelectors :: Set String
     }
     
-data SelectorOptions = SelectorOptions {
-        soNameMappings :: FiniteMap String String,
-        soCovariantSelectors :: Set String,
-        soHiddenSelectors :: Set String,
-        soChangedSelectors :: FiniteMap String Selector
-    }
+-- TODO: replace this by a proper parser, or at least report errors
     
-getSelectorOptions :: BindingScript -> String -> SelectorOptions
-
-getSelectorOptions bindingScript clsName =
-        case lookupFM (bsClassSpecificOptions bindingScript) clsName of
-            Just opt -> SelectorOptions {
-                            soNameMappings = soNameMappings top
-                                    `plusFM` soNameMappings opt,
-                            soCovariantSelectors = soCovariantSelectors top
-                                           `union` soCovariantSelectors opt,
-                            soHiddenSelectors = soHiddenSelectors top
-                                        `union` soHiddenSelectors opt,
-                            soChangedSelectors = soChangedSelectors top
-                                        `plusFM` soChangedSelectors opt
-                        }
-            Nothing -> top
-    where
-        top = bsTopLevelOptions bindingScript
-
-tokenParser = makeTokenParser $ haskellStyle { identStart = letter <|> char '_' }
-
-selector tp = lexeme tp $ do
-                c <- letter <|> char '_'
-                s <- many (alphaNum <|> oneOf "_:")
-                return (c:s)
-qualified tp = do x <- identifier tp
-                  xs <- many (symbol tp "." >> identifier tp)
-                  return (concat $ intersperse "." $ x : xs)
-                  
-idList keyword = do
-    try $ symbol tokenParser keyword
-    many1 (identifier tokenParser)
-
-data Statement = HidePrelude String
-               | Covariant String
-               | Hide String
-               | Rename String String
-               | ClassSpecific String SelectorOptions
-               | ReplaceSelector Selector
-               | Type String String
-               | HideEnum String
-
-extractSelectorOptions statements =
-    SelectorOptions {
-            soNameMappings = listToFM [ (objc, haskell)
-                                      | Rename objc haskell <- statements ],
-            soCovariantSelectors = mkSet $ [ ident 
-                                           | Covariant ident <- statements ],
-            soHiddenSelectors = mkSet $ [ ident | Hide ident <- statements ],
-            soChangedSelectors = listToFM [ (selName sel, sel)
-                                          | ReplaceSelector sel <- statements ]
-    }
-
-hidePrelude = fmap (map HidePrelude) $ idList "hidePrelude"
-    
-rename = do
-    symbol tokenParser "rename"
-    objc <- selector tokenParser
-    haskell <- identifier tokenParser
-    return [Rename objc haskell]
-    
-covariant = fmap (map Covariant) $ idList "covariant"
-hide = do
-    try $ symbol tokenParser "hide"
-    fmap (map Hide) $ many1 (selector tokenParser)
-
-hideEnums = fmap (map HideEnum) $ idList "hideEnums"
-    
-replaceSelector = do
-    thing <- try Parser.selector
-    let sel = case thing of
-                InstanceMethod sel -> sel
-                ClassMethod sel -> sel
-    return [ReplaceSelector sel]
-
-typ = do
-    try $ symbol tokenParser "type"
-    typ <- identifier tokenParser
-    mod <- qualified tokenParser
-    return [Type typ mod]
-
-statement = classSpecificOptions <|> replaceSelector <|> do
-    result <- hidePrelude  <|> hideEnums <|> rename <|> covariant <|> hide <|> typ
-    semi tokenParser
-    return result
-
-classSpecificOptions = do
-    try $ symbol tokenParser "class"
-    clsname <- identifier tokenParser
-    statements <- braces tokenParser (fmap concat $ many statement)
-    
-    let wrongThings = [ () | HidePrelude _ <- statements ]
-                   ++ [ () | ClassSpecific _ _ <- statements ]
-                   ++ [ () | HideEnum _ <- statements ]
-    
-    when (not $ null wrongThings) $ fail "illegal thing in class block"
-    
-    return [ClassSpecific clsname (extractSelectorOptions statements)]
-
-bindingScript = do
-    statements <- fmap concat $ many statement
-    eof
-
-    let wrongThings = [ () | ReplaceSelector _ <- statements ]
-    
+readBindingScript fn = do
+    scriptLines <- fmap (map words .
+                        filter ((/= '#') . head) .
+                        filter (any (not . isSpace)) .
+                        lines) $
+                  readFile fn
     return $ BindingScript {
-            bsHiddenFromPrelude = mkSet [ ident | HidePrelude ident <- statements ],
-            bsHiddenEnums = mkSet [ ident | HideEnum ident <- statements ],
-            bsTopLevelOptions = extractSelectorOptions statements,
-            bsAdditionalTypes = [ (typ, mod) | Type typ mod <- statements ],
-            bsClassSpecificOptions = listToFM [ (cls, opt)
-                                              | ClassSpecific cls opt <- statements ]
+            bsNameMappings = listToFM [ (objc, haskell)
+                                      | ["rename", objc, haskell] <- scriptLines ],
+            bsHiddenFromPrelude = mkSet $ concat 
+                                  [ xs | ("hidePrelude" : xs) <- scriptLines ],
+            bsCovariantSelectors = mkSet $
+                                   concat [ xs 
+                                          | ("covariant" : xs) <- scriptLines ]
         }
 
-readBindingScript fn = do
-    either <- parseFromFile bindingScript fn
-    case either of
-        Left err -> error (show err)
-        Right result -> print (setToList $ bsHiddenEnums result) >> return result

@@ -1,86 +1,16 @@
-hidePrelude init error minimum maximum null concat words print length compare;
-rename data data';
-rename type type';
+hidePrelude init error minimum maximum null concat words print length
+rename data data'
+rename type type'
+covariant alloc
+covariant init initWithInt
 
-covariant stringWithCString stringWithCStringLength;
-covariant stringWithContentsOfFile stringWithContentsOfURL;
-covariant stringWithString;
+covariant initWithUTF8String
+covariant initWithCString initWithCStringLength initWithCStringNoCopyLengthFreeWhenDone
+covariant stringWithCString stringWithCStringLength
+covariant stringWithContentsOfFile stringWithContentsOfURL
+covariant stringWithString
 
-rename noteFileSystemChanged: noteFileSystemChanged_;
-rename close: close_;
-rename open: open_;
-rename setNeedsDisplay: setNeedsDisplay_;
-
-rename endEditing: endEditing_;
-rename stopSpeaking: stopSpeaking_;
-rename terminate: terminate_;
-rename hide: hide_;
-rename unhide: unhide_;
-rename defaultLineHeightForFont: defaultLineHeightForFont_;
-rename hideOtherApplications: hideOtherApplications_;
-rename stop: stop_;
-rename copy: copy_;
-rename beginSheetModalForWindow:modalDelegate:didEndSelector:contextInfo: beginModalSheet;
-
-rename drawKnob: drawKnob_;
-rename titleWidth: titleWidth_;
-
-class NSDistributedNotificationCenter {
-    hide addObserver:selector:name:object: postNotificationName:object:
-         postNotificationName:object:userInfo: removeObserver:name:object: ;
-}
-
-class NSUserDefaults {
-    - (id) objectForKey: (id) key;
-    - (void) removeObjectForKey: (id) key;
-    - (void) setObject: (id) object forKey: (id) key;
-}
-
-class NSStatusItem {
-    hide setLength: length;
-}
-
-class NSToolbar {
-    - (id) initWithIdentifier: (id) ident;
-}
-
-class NSTabViewItem {
-    - (NSView*) initialFirstResponder;
-}
-
-class NSMenu {
-    - (BOOL) validateMenuItem: (NSMenuItem*) item;
-}
-
-class NSScrollView {
-    - (void) setContentView: (NSView*) view;
-}
-
-
-type NSPoint Foundation.NSGeometry;
-type NSSize Foundation.NSGeometry;
-type NSRect Foundation.NSGeometry;
-
--- GNUstep specifics:
-rename rawMimeData: rawMimeData_;
-rename setContent:type: setContentAndType;
-rename setContent:type:name: setContentAndTypeAndName;
-rename removePort:forName: removePort_forName;
-
-class GSXMLNamespace {
-    rename next nextNamespace;
-}
-rename parse: parse_;
-hidePrelude break;
-
-class NSMenuValidationProtocol {
-    - (BOOL) validateMenuItem: (NSMenuItem*) item;
-}
-
-class GSDisplayServer {
-    rename window::: window3;
-    rename window:::: window4;
-}
-
-
-hideEnums _NSGNUstepStringEncoding NSGNUstepStringEncoding;
+rename noteFileSystemChanged: noteFileSystemChanged_
+rename close: close_
+rename open: open_
+rename setNeedsDisplay: setNeedsDisplay_

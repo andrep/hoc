@@ -8,7 +8,6 @@ module HOC.NewClass(
         setIvarInList,
         setMethodInList,
         makeDefaultIvarList,
-        defaultIvarSize,
         setHaskellRetainMethod,
         setHaskellReleaseMethod,
         setHaskellDataMethod
@@ -61,8 +60,6 @@ makeDefaultIvarList = do
     typ <- newCString "^v"
     setIvarInList list 0 name typ 0
     return list
-
-defaultIvarSize = 4 :: Int
 
 retainSelector = getSelectorForName "retain"
 retainCif = getCifForSelector (undefined :: ID () -> IO (ID ()))

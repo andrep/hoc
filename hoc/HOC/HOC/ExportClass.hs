@@ -18,10 +18,10 @@ import HOC.Class
 import HOC.NewClass
 
 data ClassMember =
-        InstanceMethod SelectorInfo
-    |   ClassMethod SelectorInfo
+        InstanceMethod SelectorInfo String
+    |   ClassMethod SelectorInfo String
     |   Outlet String TypeQ
-    |   InstanceVariable String TypeQ ExpQ
+    |   InstanceVariable String TypeQ
 
 class (Object cls, Typeable ivars) => InstanceVariables cls ivars
       | cls -> ivars, ivars -> cls
@@ -56,15 +56,10 @@ setVarCif = getCifForSelector (undefined :: SetVarImpType (ID ()) (ID ()))
 getVarCif = getCifForSelector (undefined :: GetVarImpType (ID ()) (ID ()))
 
 
-exportClass :: String -- ^ Name of class you're exporting, e.g. "MyDocument"
-            -> String -- ^ A prefix for function names which are methods 
-	              --   belonging to this class, e.g. "md_"
-	    -> [ClassMember] -- ^ A list of class members, such as outlets
-	                     --   and instance variables
-	    -> Q [Dec] -- ^ A Haskell declaration, which can be spliced in
-	               --   with Template Haskell's $(...) syntax
-exportClass name prefix members = sequence $ [
-        valD (VarP exportFunName) (normalB (mkClassExportAction name prefix members)) [],
+exportClass :: String -> [ClassMember] -> Q [Dec]
+
+exportClass name members = sequence $ [
+        valD (VarP exportFunName) (normalB (mkClassExportAction name members)) [],
         dataD (cxt []) instanceDataName [] [normalC instanceDataName strictTypes] [],
         valD (VarP tyConVar) (normalB [| mkTyCon instanceDataName |]) [],
         instanceD (cxt []) (conT "Data.Typeable:Typeable" `appT` instTy) `whereQ`
@@ -80,10 +75,10 @@ exportClass name prefix members = sequence $ [
         instanceDataName = name ++ "_IVARS"
         tyConVar = "tycon_" ++ name ++ "_IVARS"
         strictTypes = map (strictType (return IsStrict)) wrappedIvarTypes
-        ivars = [ (name, ty, [| nil |]) | Outlet name ty <- members ]
-             ++ [ (name, ty, initial)   | InstanceVariable name ty initial <- members ]
-        wrappedIvarTypes = [ conT "GHC.IOBase:MVar" `appT` ty | (_,ty,_) <- ivars ]
-        ivarNames = [ name | (name,_,_) <- ivars ]
+        ivars = [ (name, ty) | Outlet name ty <- members ]
+             ++ [ (name, ty) | InstanceVariable name ty <- members ]
+        wrappedIvarTypes = [ conT "GHC.IOBase:MVar" `appT` ty | (_,ty) <- ivars ]
+        ivarNames = [ name | (name,_) <- ivars ]
         clsTy = conT name `appT` conT "GHC.Base:()"
         instTy = conT instanceDataName
         nIVars = length ivarNames
@@ -94,16 +89,16 @@ exportClass name prefix members = sequence $ [
                 getNth n = lamE [conP instanceDataName args] (varE $ "arg" ++ show n)
                 args = [ varP $ "arg" ++ show i | i <- [1..nIVars] ]
         
-        initIVars = doE (map initIVar ivars ++ [noBindS [| return $(wrap) |]])
+        initIVars = doE (map initIVar ivarNames ++ [noBindS [| return $(wrap) |]])
             where
                 wrap = foldl appE (conE instanceDataName) (map varE ivarNames)
-                initIVar (ivar,ty,initial) = bindS (varP ivar) [| newMVar $(initial) |]
+                initIVar ivar = bindS (varP ivar) [| newMVar nil |]
 
 data Method = ImplementedMethod SelectorInfo String
             | GetterMethod String
             | SetterMethod String
 
-mkClassExportAction name prefix members =
+mkClassExportAction name members =
         [| 
             do
                 super <- getClassByName $(varE $ "super_" ++ name)
@@ -118,17 +113,15 @@ mkClassExportAction name prefix members =
                 $(fillMethodList False 3 [|imethods|] instanceMethods) 
                 $(fillMethodList True 0 [|cmethods|] classMethods)
                 clsname <- newCString name
-                newClass super clsname defaultIvarSize ivars imethods cmethods
+                newClass super clsname 0 ivars imethods cmethods
         |]
     where
         typedInitIvars = [|initializeInstanceVariables|] `sigE` (conT "GHC.IOBase:IO" `appT` conT (name ++ "_IVARS"))
     
         outlets = [ name | Outlet name _ <- members ]
-        classMethods =    [ ImplementedMethod info (prefix ++ selectorInfoHaskellName info)
-                          | ClassMethod info <- members ] 
+        classMethods =    [ ImplementedMethod info def | ClassMethod    info def <- members ] 
 
-        explicitInstanceMethods = [ (info, prefix ++ selectorInfoHaskellName info)
-                                  | InstanceMethod info <- members ]         
+        explicitInstanceMethods = [ (info, def) | InstanceMethod info def <- members ]         
         instanceMethodNames = map (selectorInfoObjCName . fst) explicitInstanceMethods
         instanceMethods =
                 [ ImplementedMethod i d | (i,d) <- explicitInstanceMethods ] 
@@ -177,7 +170,7 @@ mkClassExportAction name prefix members =
             where
                 setterName = setterNameFor ivarName
         
-        setterNameFor ivarName = "set" ++ toUpper (head ivarName) : tail ivarName ++ ":"
+        setterNameFor ivarName = "set" ++ toUpper (head ivarName) : tail ivarName
             
                 
         exportMethod' isClassMethod objCMethodList num methodBody

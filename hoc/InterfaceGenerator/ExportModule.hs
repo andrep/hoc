@@ -1,6 +1,5 @@
 module ExportModule(
         exportModule,
-        getModuleDependencies,
         idsForSel
     ) where
 
@@ -10,35 +9,12 @@ import PrepareDeclarations
 import BindingScript
 import Utils(groupByFirst)
 import Headers(ModuleName)
-import Enums(enumName, pprEnumType)
-import NameCaseChange
 
 import Data.Set
 import qualified Data.HashTable as HashTable
-import Data.List(nub, partition, isPrefixOf)
-import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)
-import Data.FiniteMap(lookupFM)
+import Data.List(nub, partition)
+import Data.Maybe(catMaybes, maybeToList, isNothing)
 import Text.PrettyPrint.HughesPJ
-
-getModuleDependencies :: PreparedDeclarations -> ModuleName -> IO [ModuleName]
-getModuleDependencies (PreparedDeclarations { 
-                        pdCleanClassInfos = cleanClassInfos,
-                        pdCleanClassInfoHash = cleanClassInfoHash
-                      })
-                      moduleName = do
-    let definedClassInfos = [ ci | (_,ci) <- cleanClassInfos, ciDefinedIn ci == moduleName ]
-        superClasses = nub $ catMaybes $ map ciSuper definedClassInfos
-        adoptedProtocols = map (++ "Protocol") $
-                           setToList $
-                           unionManySets $
-                           map ciNewProtocols $
-                           definedClassInfos
-    
-    infos <- mapM (HashTable.lookup cleanClassInfoHash) (superClasses ++ adoptedProtocols)
-    let superModules = map ciDefinedIn $ catMaybes $ infos
-    
-    
-    return $ nub $ filter (/= moduleName) $ superModules
 
 orderClassInfos [] = []
 orderClassInfos cis = ok ++ orderClassInfos notOK
@@ -51,9 +27,7 @@ exportModule bindingScript
                  pdCleanClassInfos = cleanClassInfos,
                  pdCleanClassInfoHash = cleanClassInfoHash,
                  pdAllInstanceSels = allInstanceSels,
-                 pdAllClassSels = allClassSels,
-                 pdEnumTypeDefinitions = allEnumDefinitions,
-                 pdTypeEnvironment = typeEnv
+                 pdAllClassSels = allClassSels
              })
              selsDefinedWhere
              noteSelDefinition
@@ -184,72 +158,29 @@ exportModule bindingScript
                                   | proto <- setToList $ ciNewProtocols ci]
                                 | ci <- definedClassInfos, not (ciProtocol ci) ]
             
-    let mentionedTypeNames = nub $ concatMap (mentionedTypes . msType) selDefinitions
-            
-            -- ### we discard the information about where to import it from
-            --     and then recover it later - not nice
-        mentionedClassNames = filter (isClassType typeEnv) mentionedTypeNames
-        
-        
-        mentionedTypeImports = importsToForward $
-                               groupImports moduleName $
-                               [ (loc, name)
-                               | (name, Just (PlainTypeName, loc))
-                                 <- map (\name -> (name, lookupTypeEnv typeEnv name))
-                                        mentionedTypeNames ]
-         
+    let mentionedClassNames = nub $ concatMap (mentionedClasses . msType) selDefinitions                
     mentionedClassImports <- makeForwardClassImports mentionedClassNames
 
     categoryImports <- makeForwardClassImports $ setToList $ mkSet $ map fst (instanceSels ++ classSels)
 
     additionalCode <- readFileOrEmpty (additionalCodePath (dotToSlash moduleName ++ ".hs"))
 
-    let additionalCodeLines = lines $ concat $ maybeToList additionalCode
-        [additionalCodeAbove, additionalCodeBelow,
-         additionalCodeAboveForward, additionalCodeBelowForward]
-            = take 4 $ (splitAt "-- CUT HERE" additionalCodeLines) ++ repeat []
-
-        splitAt s xs 
-                | null xs'' = [xs']
-                | otherwise = xs' : splitAt s (tail xs'')
-            where (xs', xs'') = span (not . (s `isPrefixOf`)) xs
-            
-        additionalExports = [ additionalExport
-                            | '-':'-':'X':additionalExport
-                              <- additionalCodeAbove ++ additionalCodeBelow ]
-        additionalForwardExports = [ additionalExport
-                                   | '-':'-':'X':additionalExport
-                                     <- additionalCodeAboveForward
-                                        ++ additionalCodeBelowForward ]
-
-    let enumDefinitions = fromMaybe [] $ lookupFM allEnumDefinitions moduleName
-
     let anythingGoingOn = not $ and [null methodInstances,
                                      null exportedClasses,
                                      null exportedSels,
                                      null exportedProtos,
-                                     isNothing additionalCode,
-                                     null enumDefinitions]
+                                     isNothing additionalCode]
+        
+        additionalCodeLines = lines $ concat $ maybeToList additionalCode
         
         forwardModule = render $ vcat $ [
                 text "module " <+> text (moduleName ++ ".Forward")
-                    <+> parens (sep $ punctuate comma $
-                        map text (exportedClasses
-                                 ++ [ nameToUppercase enum ++ "(..)"
-                                    | enum <- mapMaybe enumName enumDefinitions ]
-                                 ++ additionalForwardExports
-                                 ))
+                    <+> parens (sep $ punctuate comma $ map text exportedClasses)
                     <+> text "where",
-                if null enumDefinitions then empty
-                                        else text "import Foreign.C.Types(CInt)",
                 text "import HOC"
             ] 
-            ++ (map text $ additionalCodeAboveForward)
             ++ map pprImport superClassForwardImports
             ++ map pprClassDecl (orderClassInfos $ filter (not . ciProtocol) $ definedClassInfos)
-            ++ [text "-- enum definitions"]
-            ++ map pprEnumType enumDefinitions
-            ++ (map text $ additionalCodeBelowForward)
             
         declarationModule = render $ vcat $ [
                 text "module" <+> text moduleName
@@ -258,8 +189,7 @@ exportModule bindingScript
                                  : "module HOC"
                                  : exportedSels ++ exportedProtos
                                  ++ map ("module "++) superClassModules
-                                 ++ additionalExports
-                                 ))
+                                 ++ [additionalExport | '-':'-':'X':additionalExport <- additionalCodeLines ]))
                     <+> text "where",
                 text "import Prelude hiding" <+>
                     parens (sep $ punctuate comma $ map text $ setToList $
@@ -269,7 +199,7 @@ exportModule bindingScript
                 text "import HOC",
                 text "import" <+> text (moduleName ++ ".Forward")
             ]
-            ++ (map text $ additionalCodeAbove)
+            ++ (map text $ takeWhile (/= "-- CUT HERE") additionalCodeLines)
             ++ [text "-- superclasses"]
             ++ map pprImport superClassImports
             -- ++ map pprImportAll superClassModules
@@ -277,8 +207,6 @@ exportModule bindingScript
             ++ map pprImport adoptedProtoImports
             ++ [text "-- classes mentioned in type signatures"]                    
             ++ map pprImport mentionedClassImports
-            ++ [text "-- plain types mentioned in type signatures"]
-            ++ map pprImport mentionedTypeImports
             ++ [text "-- selectors that are reexported"]
             ++ map pprImport selImports
             ++ [text "-- selectors from adopted protocols"]
@@ -293,7 +221,7 @@ exportModule bindingScript
             ++ map pprProtocolDecl protocolsToDeclare
             ++ [text "-- protocol adoptions"]
             ++ map pprProtoAdoption protoAdoptions
-            ++ (map text $ additionalCodeBelow)
+            ++ (map text $ dropWhile (/= "-- CUT HERE") additionalCodeLines)
     
 
         
