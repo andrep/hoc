@@ -5,6 +5,13 @@ module BindingScript(
         readBindingScript
     ) where
 
+import SyntaxTree(
+        SelectorListItem(InstanceMethod, ClassMethod),
+        Selector(..)
+    )
+import qualified Parser(selector)
+
+import Control.Monad(when)
 import Data.FiniteMap
 import Data.Set
 
@@ -14,19 +21,34 @@ import Text.ParserCombinators.Parsec
 
 data BindingScript = BindingScript {
         bsHiddenFromPrelude :: Set String,
-        bsTopLevelOptions :: SelectorOptions
+        bsTopLevelOptions :: SelectorOptions,
+        bsClassSpecificOptions :: FiniteMap String SelectorOptions
     }
     
 data SelectorOptions = SelectorOptions {
         soNameMappings :: FiniteMap String String,
         soCovariantSelectors :: Set String,
-        soHiddenSelectors :: Set String
+        soHiddenSelectors :: Set String,
+        soChangedSelectors :: FiniteMap String Selector
     }
     
 getSelectorOptions :: BindingScript -> String -> SelectorOptions
 
 getSelectorOptions bindingScript clsName =
-    bsTopLevelOptions bindingScript
+        case lookupFM (bsClassSpecificOptions bindingScript) clsName of
+            Just opt -> SelectorOptions {
+                            soNameMappings = soNameMappings top
+                                    `plusFM` soNameMappings opt,
+                            soCovariantSelectors = soCovariantSelectors top
+                                           `union` soCovariantSelectors opt,
+                            soHiddenSelectors = soHiddenSelectors top
+                                        `union` soHiddenSelectors opt,
+                            soChangedSelectors = soChangedSelectors top
+                                        `plusFM` soChangedSelectors opt
+                        }
+            Nothing -> top
+    where
+        top = bsTopLevelOptions bindingScript
 
 tokenParser = haskell
 
@@ -36,13 +58,15 @@ selector tp = lexeme tp $ do
                 return (c:s)
 
 idList keyword = do
-    symbol tokenParser keyword
+    try $ symbol tokenParser keyword
     many1 (identifier tokenParser)
 
 data Statement = HidePrelude String
                | Covariant String
                | Hide String
-               | Rename String String 
+               | Rename String String
+               | ClassSpecific String SelectorOptions
+               | ReplaceSelector Selector
 
 extractSelectorOptions statements =
     SelectorOptions {
@@ -50,7 +74,9 @@ extractSelectorOptions statements =
                                       | Rename objc haskell <- statements ],
             soCovariantSelectors = mkSet $ [ ident 
                                            | Covariant ident <- statements ],
-            soHiddenSelectors = mkSet $ [ ident | Hide ident <- statements ]
+            soHiddenSelectors = mkSet $ [ ident | Hide ident <- statements ],
+            soChangedSelectors = listToFM [ (selName sel, sel)
+                                          | ReplaceSelector sel <- statements ]
     }
 
 hidePrelude = fmap (map HidePrelude) $ idList "hidePrelude"
@@ -62,20 +88,45 @@ rename = do
     return [Rename objc haskell]
     
 covariant = fmap (map Covariant) $ idList "covariant"
-hide = fmap (map Hide) $ idList "hide"
+hide = do
+    try $ symbol tokenParser "hide"
+    fmap (map Hide) $ many1 (selector tokenParser)
 
-statement = do
+replaceSelector = do
+    thing <- try Parser.selector
+    let sel = case thing of
+                InstanceMethod sel -> sel
+                ClassMethod sel -> sel
+    return [ReplaceSelector sel]
+
+statement = classSpecificOptions <|> replaceSelector <|> do
     result <- hidePrelude <|> rename <|> covariant <|> hide
     semi tokenParser
     return result
 
+classSpecificOptions = do
+    try $ symbol tokenParser "class"
+    clsname <- identifier tokenParser
+    statements <- braces tokenParser (fmap concat $ many statement)
+    
+    let wrongThings = [ () | HidePrelude _ <- statements ]
+                   ++ [ () | ClassSpecific _ _ <- statements ]
+    
+    when (not $ null wrongThings) $ fail "illegal thing in class block"
+    
+    return [ClassSpecific clsname (extractSelectorOptions statements)]
+
 bindingScript = do
     statements <- fmap concat $ many statement
     eof
+
+    let wrongThings = [ () | ReplaceSelector _ <- statements ]
     
     return $ BindingScript {
             bsHiddenFromPrelude = mkSet [ ident | HidePrelude ident <- statements ],
-            bsTopLevelOptions = extractSelectorOptions statements
+            bsTopLevelOptions = extractSelectorOptions statements,
+            bsClassSpecificOptions = listToFM [ (cls, opt)
+                                              | ClassSpecific cls opt <- statements ]
         }
 
 readBindingScript fn = do

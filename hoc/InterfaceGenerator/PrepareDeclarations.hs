@@ -253,6 +253,10 @@ prepareDeclarations bindingScript modules = do
                         mangled = case mapped of
                                     Just x -> x
                                     Nothing -> mangleSelectorName name
+                        replacement = lookupFM (soChangedSelectors selectorOptions) name
+                        sel' = case replacement of
+                            Just x -> x
+                            Nothing -> sel
                     
                     when (name `elementOf` soHiddenSelectors selectorOptions) $ Nothing
                     
@@ -260,7 +264,7 @@ prepareDeclarations bindingScript modules = do
                         then getCovariantSelectorType factory classNames sel
                         else getSelectorType classNames sel
                     return $ (MangledSelector {
-                            msSel = sel,
+                            msSel = sel',
                             msMangled = mangled,
                             msType = typ
                         }, location)
