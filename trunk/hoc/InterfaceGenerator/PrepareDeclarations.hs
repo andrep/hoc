@@ -17,7 +17,8 @@ import NameCaseChange
 import HOC.SelectorNameMangling(mangleSelectorName)
 
 import Control.Monad(when)
-import Data.Set hiding (map)
+import Data.Set(Set, mkSet, setToList, union, minusSet, unionManySets,
+                emptySet, elementOf)
 import Data.FiniteMap
 import qualified Data.HashTable as HashTable
 import Data.Maybe(maybeToList, fromMaybe, mapMaybe)
@@ -122,16 +123,19 @@ cleanClassInfo outInfos inInfos name =
         case doneInfo of
             Just done -> return ()
             Nothing -> do
-                -- putStrLn $ "<" ++ name
-                Just ci <- HashTable.lookup inInfos name
-                (mbSuper, protocols, recheck) <- cleanSuper ci
-                if recheck
-                    then cleanClassInfo outInfos inInfos name
-                    else do
-                        -- putStrLn name
-                        let ci' = cleanClassInfo' ci mbSuper protocols
-                        HashTable.insert outInfos name ci'
-                                         
+                mbCi <- HashTable.lookup inInfos name
+                case mbCi of
+                    Just ci -> do
+                        (mbSuper, protocols, recheck) <- cleanSuper ci
+                        if recheck
+                            then cleanClassInfo outInfos inInfos name
+                            else do
+                                -- putStrLn name
+                                let ci' = cleanClassInfo' ci mbSuper protocols
+                                HashTable.insert outInfos name ci'
+                    Nothing -> do
+                        fail $ "Couldn't find class: " ++ name
+                        
     where
         cleanSuper ci = do
             (mbSuper,superRecheck) <- case (ciSuper ci) of
@@ -241,6 +245,7 @@ prepareDeclarations bindingScript modules = do
                                 | (name, mod) <- enumNamesAndLocations
                                                  ++ bsAdditionalTypes bindingScript ]
                                                             
+    print classNames
     putStrLn "collecting categories..."
     classHash <- HashTable.fromList HashTable.hashString classes
     mapM_ (updateClassInfoForCategory classHash) allDecls
