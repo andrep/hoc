@@ -25,7 +25,7 @@ stripPreprocessor = unlines . stripPP . lines
 findImports = mapMaybe checkImport . lines
     where
         checkImport line
-            | ("#import " `isPrefixOf` line) || ("#include " `isPrefixOf` line) =
+            | ("#import" `isPrefixOf` line) || ("#include" `isPrefixOf` line) =
                 Just $ init $ tail $ dropWhile (\c -> c /= '"' && c /= '<') line
             | otherwise = Nothing
 

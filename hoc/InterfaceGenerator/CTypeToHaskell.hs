@@ -28,16 +28,16 @@ newtype TypeEnvironment = TypeEnvironment (FiniteMap String (TypeNameKind, Modul
     -- (Set String) -- other known types
 
 isClassType (TypeEnvironment env) name =
-    case lookupFM env name of
+    case lookupFM env (nameToUppercase name) of
         Just (ClassTypeName, _) -> True
         _                       -> False
 isPlainType (TypeEnvironment env) name =
-    case lookupFM env name of
+    case lookupFM env (nameToUppercase name) of
         Just (PlainTypeName, _) -> True
         _                       -> False
         
 typeDefinedIn (TypeEnvironment env) name =
-    case lookupFM env name of
+    case lookupFM env (nameToUppercase name) of
         Just (_, loc) -> loc
 
 lookupTypeEnv (TypeEnvironment env) name = lookupFM env name

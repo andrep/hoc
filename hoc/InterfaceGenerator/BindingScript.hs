@@ -1,5 +1,5 @@
 module BindingScript(
-        BindingScript(bsHiddenFromPrelude, bsAdditionalTypes),
+        BindingScript(bsHiddenFromPrelude, bsHiddenEnums, bsAdditionalTypes),
         getSelectorOptions,
         SelectorOptions(..),
         readBindingScript
@@ -16,12 +16,13 @@ import Data.FiniteMap
 import Data.Set
 import Data.List(intersperse)
 
-import Text.ParserCombinators.Parsec.Language(haskell)
+import Text.ParserCombinators.Parsec.Language(haskellStyle)
 import Text.ParserCombinators.Parsec.Token
 import Text.ParserCombinators.Parsec
 
 data BindingScript = BindingScript {
         bsHiddenFromPrelude :: Set String,
+        bsHiddenEnums :: Set String,
         bsTopLevelOptions :: SelectorOptions,
         bsAdditionalTypes :: [(String, String)],
         bsClassSpecificOptions :: FiniteMap String SelectorOptions
@@ -52,10 +53,10 @@ getSelectorOptions bindingScript clsName =
     where
         top = bsTopLevelOptions bindingScript
 
-tokenParser = haskell
+tokenParser = makeTokenParser $ haskellStyle { identStart = letter <|> char '_' }
 
 selector tp = lexeme tp $ do
-                c <- letter
+                c <- letter <|> char '_'
                 s <- many (alphaNum <|> oneOf "_:")
                 return (c:s)
 qualified tp = do x <- identifier tp
@@ -73,6 +74,7 @@ data Statement = HidePrelude String
                | ClassSpecific String SelectorOptions
                | ReplaceSelector Selector
                | Type String String
+               | HideEnum String
 
 extractSelectorOptions statements =
     SelectorOptions {
@@ -98,6 +100,8 @@ hide = do
     try $ symbol tokenParser "hide"
     fmap (map Hide) $ many1 (selector tokenParser)
 
+hideEnums = fmap (map HideEnum) $ idList "hideEnums"
+    
 replaceSelector = do
     thing <- try Parser.selector
     let sel = case thing of
@@ -112,7 +116,7 @@ typ = do
     return [Type typ mod]
 
 statement = classSpecificOptions <|> replaceSelector <|> do
-    result <- hidePrelude <|> rename <|> covariant <|> hide <|> typ
+    result <- hidePrelude  <|> hideEnums <|> rename <|> covariant <|> hide <|> typ
     semi tokenParser
     return result
 
@@ -123,6 +127,7 @@ classSpecificOptions = do
     
     let wrongThings = [ () | HidePrelude _ <- statements ]
                    ++ [ () | ClassSpecific _ _ <- statements ]
+                   ++ [ () | HideEnum _ <- statements ]
     
     when (not $ null wrongThings) $ fail "illegal thing in class block"
     
@@ -136,6 +141,7 @@ bindingScript = do
     
     return $ BindingScript {
             bsHiddenFromPrelude = mkSet [ ident | HidePrelude ident <- statements ],
+            bsHiddenEnums = mkSet [ ident | HideEnum ident <- statements ],
             bsTopLevelOptions = extractSelectorOptions statements,
             bsAdditionalTypes = [ (typ, mod) | Type typ mod <- statements ],
             bsClassSpecificOptions = listToFM [ (cls, opt)
@@ -146,4 +152,4 @@ readBindingScript fn = do
     either <- parseFromFile bindingScript fn
     case either of
         Left err -> error (show err)
-        Right result -> return result
+        Right result -> print (setToList $ bsHiddenEnums result) >> return result
