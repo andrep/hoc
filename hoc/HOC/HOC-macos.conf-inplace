@@ -1,0 +1,20 @@
+[
+Package
+{
+    name = "HOC",
+    auto = True,
+    import_dirs = ["../HOC/build/imports"],
+    source_dirs = [],
+    library_dirs = ["../HOC", "../HOC_cbits"],
+    hs_libraries = ["HOC"],
+    extra_libraries = ["HOC_cbits"],
+    include_dirs = ["../HOC_cbits"],
+    c_includes = [],
+    package_deps = ["base","haskell-src"],
+    extra_ghc_opts = [],
+    extra_cc_opts = [],
+    extra_ld_opts = [],
+    framework_dirs = [],
+    extra_frameworks = ["Foundation"]
+}
+]
