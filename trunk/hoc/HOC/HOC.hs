@@ -38,7 +38,7 @@ module HOC (
         objectMapStatistics,
         
         -- things that shouldn't really be exported
-        InstanceVariables(..),
+        InstanceVariables,
         Typeable(..)
     ) where
 

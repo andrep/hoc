@@ -13,7 +13,7 @@ import Headers(ModuleName)
 import Enums(enumName, pprEnumType)
 import NameCaseChange
 
-import Data.Set
+import Data.Set hiding (map, null, filter, partition, empty)
 import qualified Data.HashTable as HashTable
 import Data.List(nub, partition, isPrefixOf)
 import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)

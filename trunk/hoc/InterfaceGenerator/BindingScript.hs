@@ -13,7 +13,7 @@ import qualified Parser(selector)
 
 import Control.Monad(when)
 import Data.FiniteMap
-import Data.Set
+import Data.Set hiding (map, null)
 import Data.List(intersperse)
 
 import Text.ParserCombinators.Parsec.Language(haskellStyle)

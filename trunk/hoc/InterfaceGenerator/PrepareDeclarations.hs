@@ -17,7 +17,7 @@ import NameCaseChange
 import HOC.SelectorNameMangling(mangleSelectorName)
 
 import Control.Monad(when)
-import Data.Set
+import Data.Set hiding (map)
 import Data.FiniteMap
 import qualified Data.HashTable as HashTable
 import Data.Maybe(maybeToList, fromMaybe, mapMaybe)
@@ -52,11 +52,6 @@ data ClassInfo = ClassInfo {
         ciNewClassMethods :: FiniteMap Selector SelectorLocation
     }
     deriving(Show)
-    
-instance (Show key, Show elem) => Show (FiniteMap key elem) where
-    show = show . fmToList
-instance (Show elem) => Show (Set elem) where
-    show = show . setToList
     
 classInfoForDeclaration (moduleName, SelectorList (Interface name super protocols) methods) =
     Just $ (nameToUppercase name, ClassInfo {
