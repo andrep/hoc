@@ -35,12 +35,7 @@ module HOC (
         
         -- debugging & statistics:
         
-        objectMapStatistics,
-        
-        -- things that shouldn't really be exported
-        InstanceVariables(..),
-	initializeInstanceVariables,
-        Typeable(..)
+        objectMapStatistics
     ) where
 
 import HOC.Base
@@ -56,6 +51,3 @@ import HOC.StdArgumentTypes
 import HOC.ExportClass
 import HOC.Utilities
 import HOC.NewlyAllocated
-
-import Data.Typeable
-
