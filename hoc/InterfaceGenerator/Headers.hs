@@ -14,7 +14,7 @@ type ModuleName = String
 data HeaderInfo = HeaderInfo ModuleName [ModuleName] [Declaration]
 
 stripPreprocessor = unlines . stripPP . lines
-	where
+    where
 		stripPP (x@('#':_) : xs) = dropPreprocessorLine x xs
 		stripPP (x : xs) = x : stripPP xs
 		stripPP [] = []
