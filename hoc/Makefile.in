@@ -55,15 +55,15 @@ libffi-src/build/src/raw_api.o:
 	( cd libffi-src/build && $(MAKE) )
 
 hoc-all:
-	for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) all) done
+	for dir in $(SUBDIRS); do (cd $$dir; echo "In directory $$dir"; $(MAKE) all) done
 	
 clean:
-	for dir in $(all_SUBDIRS); do (cd $$dir; $(MAKE) clean) done
+	for dir in $(all_SUBDIRS); do (cd $$dir; echo "In directory $$dir"; $(MAKE) clean) done
 	
 install:
-	for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) install) done
+	for dir in $(SUBDIRS); do (cd $$dir; echo "In directory $$dir"; $(MAKE) install) done
 
 .PHONY: samples
 samples:
-	for dir in $(Samples_SUBDIRS); do (cd $$dir; $(MAKE)) done
+	for dir in $(Samples_SUBDIRS); do (echo "In directory $$dir"; cd $$dir; $(MAKE)) done
 

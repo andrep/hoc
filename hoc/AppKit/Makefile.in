@@ -7,11 +7,11 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHSAppKit.a HSAppKit.o ../inplace.conf
+all: libHSAppKit.a HSAppKit.o register-inplace
 
-../inplace.conf: AppKit.conf-inplace
-	$(GHC_PKG) unregister --force --package-conf=../inplace.conf AppKit || true
-	$(GHC_PKG) register AppKit.conf-inplace \
+register-inplace: AppKit.conf-inplace
+	[ -f "../inplace.conf" ] || echo '[]' > ../inplace.conf
+	$(GHC_PKG) update AppKit.conf-inplace \
 		--package-conf=../inplace.conf
 
 exposed-modules.txt:
@@ -22,8 +22,8 @@ exposed-modules.txt:
 AppKit.conf-inplace: AppKit-$(PLATFORM).conf-inplace.in exposed-modules.txt
 	cat AppKit-$(PLATFORM).conf-inplace.in exposed-modules.txt > AppKit.conf-inplace
 
-AppKit.conf: AppKit-$(PLATFORM).conf.in exposed-modules.txt
-	cat AppKit-$(PLATFORM).conf.in exposed-modules.txt > AppKit.conf
+AppKit.conf: AppKit-$(PLATFORM).conf exposed-modules.txt
+	cat AppKit-$(PLATFORM).conf exposed-modules.txt > AppKit.conf
 
 ghcmake: ghcmake.build-stamp
 

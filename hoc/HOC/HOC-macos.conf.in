@@ -22,8 +22,8 @@ exposed-modules:
     HOC.ExportClass,
     HOC.NewClass
 
-import-dirs:        "$libdir/HOC/imports"
-library-dirs:       "$libdir/HOC"
+import-dirs:        "@GHC_LIB_PATH@/HOC/imports"
+library-dirs:       "@GHC_LIB_PATH@/HOC"
 
 hs-libraries:       "HOC", "HOC_cbits"
 extra-libraries:    "objc"

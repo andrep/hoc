@@ -2,8 +2,8 @@ name:               AppKit
 maintainer:         wolfgang.thaller@gmx.net
 exposed:            True
 
-import-dirs:	    "/usr/local/lib/ghc-6.4/AppKit/imports"
-library-dirs:	    "/usr/local/lib/ghc-6.4/AppKit/"
+import-dirs:	    "../AppKit/build/imports"
+library-dirs:	    "../AppKit"
 hs-libraries:	    "HSAppKit"
 frameworks:         "AppKit"
 depends:            HOC, Foundation
