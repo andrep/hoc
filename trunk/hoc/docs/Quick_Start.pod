@@ -204,13 +204,13 @@ still need to produce a F<.app> application bundle to run your
 GUI application though: to do this, you could manually make the
 F<.app> bundle, which is rather tedious.  A better idea would be
 to use Xcode to generate a boilerplate bundle for you and
-customise that, or use the F<hocnewapp> tool (described in the
-L<"Tools"> section) supplied with HOC, which performs a similar
-task.  Once you've produced the F<Contents/> directory layout
-required for the bundle, you can then use the F<hocwrap> tool
-(again described in L<"Tools">) to wrap your Haskell executable
-to produce the final L<.app> directory (or hand-roll it yourself,
-if you're into masochism).
+customise that, or steal one of the directory layouts from one of
+HOC's sample applications (in the F<Samples/> directory).  Once
+you've produced the F<Contents/> directory layout required for
+the bundle, you can then use the F<hocwrap> tool (described in
+the L<"Tools"> section) to wrap your Haskell executable in the
+final F<.app> directory (or hand-roll it yourself, if you're into
+masochism).
 
 For complete code examples, see the F<ExpressionParser>,
 F<Browser>, and F<Editor> applications in HOC's F<Samples/>
