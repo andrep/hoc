@@ -14,3 +14,14 @@ rename noteFileSystemChanged: noteFileSystemChanged_;
 rename close: close_;
 rename open: open_;
 rename setNeedsDisplay: setNeedsDisplay_;
+
+rename endEditing: endEditing_;
+rename stopSpeaking: stopSpeaking_;
+rename terminate: terminate_;
+rename hide: hide_;
+rename unhide: unhide_;
+rename defaultLineHeightForFont: defaultLineHeightForFont_;
+rename hideOtherApplications: hideOtherApplications_;
+rename stop: stop_;
+rename copy: copy_;
+rename beginSheetModalForWindow:modalDelegate:didEndSelector:contextInfo: beginModalSheet;
