@@ -6,6 +6,8 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
+all: uniqsort
+
 uniqsort: UniqSort.hs
 	ghc -o $@ --make $<
 	
