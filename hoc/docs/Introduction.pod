@@ -36,13 +36,14 @@ compilation a disturbingly large percentage of the time.
 
 =item * Automatically Generated
 
-HOC uses an I<interface generator> that communicates with the
-Objective-C runtime system, to produce Haskell source code that
-contains data types representing the Objective-C class hierarchy,
-and methods and selectors belonging to frameworks.  If you are
-familiar with other Haskell interface generators such as F<c2hs>
-or F<GreenCard>, HOC's I<ifgen> tool does the same job, but for
-creating bindings to Objective-C classes instead.
+HOC uses an I<interface generator> that parses Objective-C header
+files to produce Haskell source code.  The Haskell code contains
+data types representing the Objective-C class hierarchy, and
+methods and selectors which enable HOC to communicate with
+Objective-C frameworks.  If you are familiar with other Haskell
+interface generators such as F<c2hs> or F<GreenCard>, HOC's
+I<ifgen> tool does the same job, but for creating bindings to
+Objective-C classes instead.
 
 By default, HOC is configured to build bindings for the
 F<Foundation> and F<AppKit> frameworks (collectively named
