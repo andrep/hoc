@@ -123,7 +123,7 @@ distribution.  The code is short and schweet:
 
 Now, you want to wrap a GUI around this module so that people can
 use it without loading GHC or the Apple Terminal application: see
-L<http://localhost/~andrep/hoc/screenshots/ExpressionParser_view.png>
+L<http://hoc.sourceforge.net/screenshots/ExpressionParser_view.png>
 for a screenshot of what the GUI will look like.  From
 a programing perspective, the GUI consists of:
 
