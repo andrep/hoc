@@ -4,7 +4,7 @@ all: Editor.app
 
 Editor.app: Editor
 	hocwrap Editor
-	
+
 Editor: *.hs
 	mkdir -p build
 	ghc --make -fglasgow-exts Main.hs -odir build -hidir build -O -o Editor 
@@ -14,7 +14,9 @@ interpret:
 	hocwrap -i -- -fglasgow-exts Main.hs -odir build -hidir build
 
 zerolink: nolink interpret
-	
+
 nolink:
 	mkdir -p build
 	ghc --make -fglasgow-exts Main.hs -odir build -hidir build -O -pgml true
+clean:
+	rm -rf build Editor Editor.app 'Interpreted Haskell Application.app/'
