@@ -7,9 +7,6 @@ import ExpressionParser
 import Selectors
 import Text.ParserCombinators.Parsec (parse)
 
-import GHC.Ptr
-import HOC.Base
-
 $(declareClass "EPController" "NSObject")
 
 $(exportClass "EPController" "ep_"
@@ -22,14 +19,10 @@ $(exportClass "EPController" "ep_"
 obj #. var = obj # getIVar var
 
 ep_evaluateExpression _ self = do
-  expressionTextField <- (self #. _expressionEntry)
-  expression <- expressionTextField # stringValue >>= haskellString
-  evaluation <- self #. _evaluation
+  expression <- self #. _expressionEntry >>= stringValue >>= haskellString
   case (parse expr "" expression) of
-    Left err ->
-      self #. _evaluation >>=
-        setStringValue (toNSString $ "Error " ++ show err)
+    Left e -> 
+      self #. _evaluation >>= setStringValue (toNSString $ "Error " ++ show e)
     Right answer ->
-      self #. _evaluation >>=
-        setStringValue (toNSString $ show answer)
+      self #. _evaluation >>= setStringValue (toNSString $ show answer)
 
