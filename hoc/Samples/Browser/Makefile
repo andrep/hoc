@@ -2,12 +2,12 @@ include ../../config.mk
 
 all: Browser.app
 
-Browser.app: Browser
+Browser.app: Browser Contents/Resources/all-selectors.txt
 	hocwrap Browser
 
 Browser: *.hs
 	mkdir -p build
-	ghc --make -fglasgow-exts Main.hs -odir build -hidir build -O -o Browser 
+	ghc --make -fglasgow-exts Main.hs -odir build -hidir build -O -o Browser
 
 interpret:
 	mkdir -p build
@@ -19,5 +19,9 @@ nolink:
 	mkdir -p build
 	ghc --make -fglasgow-exts Main.hs -odir build -hidir build -O -pgml true
 
+Contents/Resources/all-selectors.txt: ../../Bindings/all-selectors.txt
+	cp $< $@
+
 clean:
-	rm -rf build/ Browser Browser.app/ 'Interpreted Haskell Application.app/'
+	rm -rf build/ Browser Browser.app/ 'Interpreted Haskell Application.app/' Contents/Resources/all-selectors.txt
+	

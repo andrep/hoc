@@ -48,10 +48,13 @@ bc_awakeFromNib self = do
     self #. _sideBarDataSource >>= setTVDataSourceData sideBarThings
     self #. _sideBarTableView >>= reloadData
 
-    putStrLn "Loading selectors..."
-    allSels <- fmap (map read . lines) $
-               readFile $
-               "../../Bindings/all-selectors.txt"
+    resourcePathAsNSString <- _NSBundle # mainBundle >>= bundlePath
+    resourcePath <- haskellString resourcePathAsNSString
+    let selectorsPath = resourcePath ++
+                        "/Contents/Resources/all-selectors.txt"
+
+    putStrLn $ "Loading selectors from `" ++ selectorsPath ++ "'"
+    allSels <- fmap (map read . lines) $ readFile $ selectorsPath
     putStrLn $ show (Prelude.length allSels) ++ " selectors total."
     let classifiedSels = sort $ map (
             \(haskell, objc, typ, mod) ->
