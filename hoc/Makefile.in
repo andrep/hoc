@@ -22,6 +22,7 @@ all_SUBDIRS = $(SUBDIRS) $(Samples_SUBDIRS)
 
 dist_srcdir = .
 dist_FILES = \
+	AUTHORS.txt \
 	LICENSE \
 	Makefile.in \
 	README.txt \
