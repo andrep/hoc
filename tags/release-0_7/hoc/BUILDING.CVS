@@ -1,0 +1,20 @@
+CVS BUILDING INSTRUCTIONS
+=========================
+
+These are build instructions if you've checked out HOC from CVS
+(instead of downloading a source distribution tarball).
+
+1. Check out the libffi module from HOC's CVS repository into
+   a directory named libffi-src/ in the HOC source tree:
+
+   cvs -d :pserver:anonymous@cvs.sf.net:/cvsroot/hoc co -d libffi-src libffi
+
+   You can also check out libffi into another directory: if you
+   do this, just make sure that 
+
+2. Execute autogen.sh to generate the GNU ./configure script:
+
+   ./autogen.sh
+
+3. Build HOC as usual with ./configure && make && make install.
+
