@@ -1,7 +1,5 @@
 module Main where
 
-import ArrayHelper
-
 import List (genericLength)
 import System
 
@@ -14,7 +12,11 @@ import HOC.ID (isNil)
 -- int main (int argc, const char * argv[]) {
 main = do
 --   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-     pool <- newAutoreleasePool
+--   ...
+--   [pool release];
+     withAutoreleasePool main'
+
+main' = do
 --   NSArray *args = [[[NSProcessInfo processInfo] arguments];
      args <- _NSProcessInfo # processInfo >>= arguments
 --   NSCountedSet *cset = [[NSCountedSet alloc] initWithArray:args];
@@ -39,8 +41,6 @@ main = do
 --   [cset release];
      -- Don't need to release anything: HOC manages memory for you via
      -- Haskell's garbage collector!
---   [pool release];
-     releaseObject pool
 --   return 0;
      return ()
 -- }

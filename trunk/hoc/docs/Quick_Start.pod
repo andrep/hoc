@@ -32,7 +32,11 @@ things like emulate a C<while()> loop):
   -- int main (int argc, const char * argv[]) {
   main = do
   --   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-       pool <- newAutoreleasePool
+  --   ...
+  --   [pool release];
+       withAutoreleasePool main'
+
+  main' = do
   --   NSArray *args = [[[NSProcessInfo processInfo] arguments];
        args <- _NSProcessInfo # processInfo >>= arguments
   --   NSCountedSet *cset = [[NSCountedSet alloc] initWithArray:args];
@@ -57,8 +61,6 @@ things like emulate a C<while()> loop):
   --   [cset release];
        -- Don't need to release anything: HOC manages memory for you via
        -- Haskell's garbage collector!
-  --   [pool release];
-       releaseObject pool
   --   return 0;
        return ()
   -- }
@@ -185,12 +187,8 @@ and not C<"initWithURLByReference">.
 
 =head2 Autorelease Pools
 
-The code shown for the uniquing sorting command-line tool above
-imported the C<newAutoreleasePool> and C<releaseObject> functions
-from the module C<HOC.Base>.  You normally won't use these two
-functions at all: to create a new autorelease pool, use the
-higher-level function C<withAutoreleasePool :: IO a>, which takes
-an IO action as a parameter and runs that:
+Use the function C<withAutoreleasePool :: IO a> to create an
+autorelease pool and run an IO action which which use the pool:
 
   main = do
     withAutoreleasePool main'
@@ -199,8 +197,9 @@ an IO action as a parameter and runs that:
     args <- _NSProcessInfo # processInfo >>= arguments
     ...
 
-Using C<withAutoreleasePool> saves you from remembering to
-release the pool: after your action has been run, the pool is
+Using C<withAutoreleasePool> instead of an explict C<alloc> and
+C<release> for the pool saves you from remembering to
+release it: after your action has been run, the pool is
 automatically released.
 
 =for comment XXX: link to autorelease pool section
