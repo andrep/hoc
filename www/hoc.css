@@ -29,6 +29,11 @@ p.center {
   align: center;
 }
 
+pre {
+  font-size: 95%;
+  line-height: 95%;
+}
+
 ul {
   /* same as inner-box */
   margin: 12px 12px;
