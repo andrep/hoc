@@ -46,8 +46,6 @@ usageHeader prog = unlines $ [
         "    " ++ prog ++ " --interactive [-c Contents] -- [ghci arguments]"
     ]
 
-forceDotApp x | ".app" `isSuffixOf` x = x
-              | otherwise = x ++ ".app"
 
 main = handleJust userErrors (\err -> putStrLn err) $ do
     prog <- getProgName
@@ -62,20 +60,28 @@ main = handleJust userErrors (\err -> putStrLn err) $ do
             | null args -> putStrLn usage
             | any (==Help) opts -> putStrLn usage
 
-            | otherwise -> do
-                let contents = head $ [ s | Contents s <- opts ] ++ ["Contents"]
-                if any (`elem` [Interpret, Interactive]) opts
-                    then do
-                        let appName = forceDotApp $ head $ [ s | OutputApp s <- opts ]
-                                                    ++ ["Interactive Haskell Application"]
-                        runApp moreArgs appName contents (any (==Interpret) opts)
-                    else do
-                        let executable = head (moreArgs ++ ["a.out"])
-                            appName = forceDotApp $ head $ [ s | OutputApp s <- opts ]
-                                                        ++ [executable ++ ".app"]
-                        when (length moreArgs > 1) $
-                            fail "Too many arguments."
-                        wrapApp executable appName contents
+            | any (`elem` [Interpret, Interactive]) opts ->
+                runApp moreArgs
+                       (appName "Interactive Haskell Application")
+                       contents
+                       (not $ any (==Interactive) opts)            
+
+            | otherwise ->
+                do
+                    let executable = head (moreArgs ++ ["a.out"])
+                    when (length moreArgs > 1) $ fail "Too many arguments."
+                    wrapApp executable (appName executable) contents
+                
+            where
+                contents = head $ [ s | Contents s <- opts ]
+                               ++ ["Contents"]
+                               
+                appName def = forceDotApp $
+                              head $ [ s | OutputApp s <- opts ]
+                                  ++ [def]
+
+                forceDotApp x | ".app" `isSuffixOf` x = x
+                              | otherwise = x ++ ".app"
             
 failOnFalse _ True = return ()
 failOnFalse err False = fail err
