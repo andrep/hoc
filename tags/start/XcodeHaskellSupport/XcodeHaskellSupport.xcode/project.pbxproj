@@ -1,0 +1,470 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 39;
+	objects = {
+		014CEA420018CDE011CA2923 = {
+			buildRules = (
+			);
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OPTIMIZATION_CFLAGS = "-O0";
+				ZERO_LINK = YES;
+			};
+			isa = PBXBuildStyle;
+			name = Development;
+		};
+		014CEA430018CDE011CA2923 = {
+			buildRules = (
+			);
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				ZERO_LINK = NO;
+			};
+			isa = PBXBuildStyle;
+			name = Deployment;
+		};
+//010
+//011
+//012
+//013
+//014
+//080
+//081
+//082
+//083
+//084
+		089C1669FE841209C02AAC07 = {
+			buildSettings = {
+			};
+			buildStyles = (
+				014CEA420018CDE011CA2923,
+				014CEA430018CDE011CA2923,
+			);
+			hasScannedForEncodings = 1;
+			isa = PBXProject;
+			mainGroup = 089C166AFE841209C02AAC07;
+			projectDirPath = "";
+			targets = (
+				7B4E947204D7896600D246EF,
+			);
+		};
+		089C166AFE841209C02AAC07 = {
+			children = (
+				7BFB12DA04DA4B5E00A84572,
+				7BFA78B304D7861C0083102C,
+				32C88E010371C26100C91783,
+				089C167CFE841241C02AAC07,
+				089C1671FE841209C02AAC07,
+				19C28FB8FE9D52D311CA2CBB,
+				7B4E947F04D7896600D246EF,
+				7BF128CE04D78E8600C04080,
+				7BCF8AD4065DEE9300FF104E,
+				7BCF8AD5065DEE9300FF104E,
+				7B942876065E8B4100C7A539,
+				7B942877065E8B4100C7A539,
+				7B942881065E8CA500C7A539,
+				7B13B323065E94BF00029B64,
+			);
+			isa = PBXGroup;
+			name = XcodeHaskellSupport;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		089C1671FE841209C02AAC07 = {
+			children = (
+				1058C7ACFEA557BF11CA2CBB,
+			);
+			isa = PBXGroup;
+			name = "Frameworks and Libraries";
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		089C167CFE841241C02AAC07 = {
+			children = (
+				089C167DFE841241C02AAC07,
+			);
+			isa = PBXGroup;
+			name = Resources;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		089C167DFE841241C02AAC07 = {
+			children = (
+				089C167EFE841241C02AAC07,
+			);
+			isa = PBXVariantGroup;
+			name = InfoPlist.strings;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		089C167EFE841241C02AAC07 = {
+			fileEncoding = 10;
+			isa = PBXFileReference;
+			lastKnownFileType = text.plist.strings;
+			name = English;
+			path = English.lproj/InfoPlist.strings;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		08FB77B6FE84183AC02AAC07 = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			path = main.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+//080
+//081
+//082
+//083
+//084
+//100
+//101
+//102
+//103
+//104
+		1058C7ACFEA557BF11CA2CBB = {
+			children = (
+				1058C7ADFEA557BF11CA2CBB,
+			);
+			isa = PBXGroup;
+			name = "Linked Frameworks";
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		1058C7ADFEA557BF11CA2CBB = {
+			fallbackIsa = PBXFileReference;
+			isa = PBXFrameworkReference;
+			lastKnownFileType = wrapper.framework;
+			name = Cocoa.framework;
+			path = /System/Library/Frameworks/Cocoa.framework;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+//100
+//101
+//102
+//103
+//104
+//190
+//191
+//192
+//193
+//194
+		19C28FB8FE9D52D311CA2CBB = {
+			children = (
+				7B4E948004D7896600D246EF,
+			);
+			isa = PBXGroup;
+			name = Products;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+//190
+//191
+//192
+//193
+//194
+//320
+//321
+//322
+//323
+//324
+		32C88E010371C26100C91783 = {
+			children = (
+				32DBCF630370AF2F00C91783,
+				08FB77B6FE84183AC02AAC07,
+				7BFA78B604D7868D0083102C,
+				7BFA78B704D7868D0083102C,
+				7B4E94E804D78C5E00D246EF,
+			);
+			isa = PBXGroup;
+			name = Sources;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		32DBCF630370AF2F00C91783 = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = XcodeHaskellSupport_Prefix.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+//320
+//321
+//322
+//323
+//324
+//7B0
+//7B1
+//7B2
+//7B3
+//7B4
+		7B13B323065E94BF00029B64 = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = text;
+			path = MethodsToImplement;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7B14F9710660899E0005BE02 = {
+			fileRef = 7BCF8AD5065DEE9300FF104E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		7B14F9720660899E0005BE02 = {
+			fileRef = 7BCF8AD4065DEE9300FF104E;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		7B4E947204D7896600D246EF = {
+			buildPhases = (
+				7B4E947304D7896600D246EF,
+				7B4E947704D7896600D246EF,
+				7B4E947904D7896600D246EF,
+				7B4E947B04D7896600D246EF,
+				7B4E947D04D7896600D246EF,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = "\"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks\"";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = XcodeHaskellSupport_Prefix.h;
+				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
+				GCC_WARN_UNKNOWN_PRAGMAS = NO;
+				HEADER_SEARCH_PATHS = "";
+				INFOPLIST_FILE = "Info-XcodeHaskellSupport.plist";
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = XcodeHaskellSupport;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost";
+				WRAPPER_EXTENSION = bundle;
+			};
+			dependencies = (
+			);
+			isa = PBXNativeTarget;
+			name = XcodeHaskellSupport;
+			productInstallPath = "$(HOME)/Library/Bundles";
+			productName = XcodeHaskellSupport;
+			productReference = 7B4E948004D7896600D246EF;
+			productType = "com.apple.product-type.bundle";
+		};
+		7B4E947304D7896600D246EF = {
+			buildActionMask = 2147483647;
+			files = (
+				7B4E947404D7896600D246EF,
+				7B4E947604D7896600D246EF,
+				7B14F9720660899E0005BE02,
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7B4E947404D7896600D246EF = {
+			fileRef = 32DBCF630370AF2F00C91783;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		7B4E947604D7896600D246EF = {
+			fileRef = 7BFA78B604D7868D0083102C;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		7B4E947704D7896600D246EF = {
+			buildActionMask = 2147483647;
+			files = (
+				7BFB12DB04DA4B5E00A84572,
+				7B8C6E8106607F3E00BA9E8D,
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7B4E947904D7896600D246EF = {
+			buildActionMask = 2147483647;
+			files = (
+				7B4E947A04D7896600D246EF,
+				7B14F9710660899E0005BE02,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7B4E947A04D7896600D246EF = {
+			fileRef = 7BFA78B704D7868D0083102C;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		7B4E947B04D7896600D246EF = {
+			buildActionMask = 2147483647;
+			files = (
+				7B4E947C04D7896600D246EF,
+				7BF128D004D78E8A00C04080,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7B4E947C04D7896600D246EF = {
+			fileRef = 1058C7ADFEA557BF11CA2CBB;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		7B4E947D04D7896600D246EF = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7B4E947F04D7896600D246EF = {
+			isa = PBXFileReference;
+			lastKnownFileType = text.plist;
+			path = "Info-XcodeHaskellSupport.plist";
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7B4E948004D7896600D246EF = {
+			explicitFileType = wrapper.cfbundle;
+			includeInIndex = 0;
+			isa = PBXFileReference;
+			path = XcodeHaskellSupport.bundle;
+			refType = 3;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		7B4E94E804D78C5E00D246EF = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = PBXCompilerSpecification.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7B8C6E8106607F3E00BA9E8D = {
+			fileRef = 089C167DFE841241C02AAC07;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		7B942876065E8B4100C7A539 = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = PBXCompilerSpecificationYaccLogging.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7B942877065E8B4100C7A539 = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.objc;
+			path = PBXCompilerSpecificationYaccLogging.m;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7B942881065E8CA500C7A539 = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = PBXCompilerSpecificationYacc.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7BCF8AD4065DEE9300FF104E = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = PBXCompilerSpecificationGccLogging.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7BCF8AD5065DEE9300FF104E = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.objc;
+			path = PBXCompilerSpecificationGccLogging.m;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7BF128CE04D78E8600C04080 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = DevToolsCore.framework;
+			path = /System/Library/PrivateFrameworks/DevToolsCore.framework;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		7BF128D004D78E8A00C04080 = {
+			fileRef = 7BF128CE04D78E8600C04080;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		7BFA78B304D7861C0083102C = {
+			children = (
+				7BFA78B404D786300083102C,
+			);
+			isa = PBXGroup;
+			name = "Class-Dumps";
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7BFA78B404D786300083102C = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = DevToolsCore.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7BFA78B604D7868D0083102C = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = PBXCompilerSpecificationGHC.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7BFA78B704D7868D0083102C = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.objc;
+			path = PBXCompilerSpecificationGHC.m;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7BFB12DA04DA4B5E00A84572 = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = text;
+			path = README.txt;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		7BFB12DB04DA4B5E00A84572 = {
+			fileRef = 7BFB12DA04DA4B5E00A84572;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+	};
+	rootObject = 089C1669FE841209C02AAC07;
+}

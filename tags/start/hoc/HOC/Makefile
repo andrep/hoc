@@ -1,0 +1,38 @@
+include ../config.mk
+
+all: libHOC.a HOC.o
+
+libHOC.a: ghcmake
+	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHOC.a
+
+#libHOC.dylib: ghcmake
+#	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \#
+#       | xargs libtool -dynamic -o libHOC.dylib -undefined dynamic_lookup
+
+HOC.o: libHOC.a
+	ld -r -x -o HOC.o $(ALL_LOAD) libHOC.a
+
+ghcmake:
+	mkdir -p build/objects
+	mkdir -p build/imports
+	ghc --make HOC.hs	\
+		-odir build/objects -hidir build/imports	\
+		-fglasgow-exts -package-name HOC \
+		../HOC_cbits/HOC_cbits.o	\
+		-I../HOC_cbits	\
+		-I../libffi-src/build/include	\
+		$(FOUNDATION_INCLUDES) \
+		$(FOUNDATION_LIBS)
+		
+
+clean:
+	rm -rf libHOC.a HOC.o build \
+	    HOC/NewClass_stub.c HOC/NewClass_stub.h
+
+install: all
+	mkdir -p `ghc --print-libdir`/HOC
+	cp -R libHOC.a HOC.o build/imports \
+		`ghc --print-libdir`/HOC/
+	ranlib `ghc --print-libdir`/HOC/libHOC.a
+	ghc-pkg --update-package	\
+			--input-file=HOC-$(PLATFORM).conf

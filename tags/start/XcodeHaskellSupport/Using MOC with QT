@@ -1,0 +1,14 @@
+Yes, I have it working just fine with XCode. Here are the steps I took (which may not be the smartest:-)
+
+1) For all the header files that I want processed with the MOC, I use the extension .hq.hpp instead of .hpp which I usually use for C++ header files.
+
+2) In XCode I select the target and in Info edit the Rules section. I add a rule that applies to *.hq.hpp, and select "Custom script:" 
+/Developer/qt/bin/moc $INPUT_FILE_PATH -o $DERIVED_FILES_DIR/moc_$INPUT_FILE_BASE.cpp 
+with output files:
+$(DERIVED_FILES_DIR)/moc_$(INPUT_FILE_BASE).cpp
+
+3) The last trick is to make sure that XCode recognizes the .hq.hpp files as sources that must be processed by the compiler. That is done by adding the .hq.hpp files to the Targets-<mytarget>-Sources group in XCode's Groups and Files list.
+
+I think that's all it takes. Let me know if it doesn't work - maybe I forgot something. It's been working perfectly for me with this setup.
+
+- Rene
