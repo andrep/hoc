@@ -40,6 +40,12 @@ instance Object (ID a) where
     fromID (ID a) = ID a
     fromID Nil = Nil
 
+failNilMessage :: ID a -> String -> IO ()
+failNilMessage target selectorName
+    | target == nil = fail $ "Message sent to nil: " ++ selectorName
+    | otherwise = return ()
+
+
 {-
     *
     * WARNING: Arcane Magic Follows

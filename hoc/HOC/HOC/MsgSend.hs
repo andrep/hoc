@@ -2,8 +2,7 @@
 module HOC.MsgSend(
         sendMessageWithRetval,
         sendMessageWithStructRetval,
-        sendMessageWithoutRetval,
-        failNilMessage
+        sendMessageWithoutRetval
     ) where
 
 import HOC.Base
@@ -24,10 +23,6 @@ sendMessageWithStructRetval :: ObjCArgument a b
 sendMessageWithoutRetval :: FFICif
                          -> Ptr (Ptr ())
                          -> IO ()
-
-failNilMessage target selector
-    | target == nullPtr = fail "Message sent to nil"
-    | otherwise = return ()
 
 #ifdef GNUSTEP
 
