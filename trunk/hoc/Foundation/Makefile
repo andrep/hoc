@@ -5,8 +5,10 @@ all: libHSFoundation.a HSFoundation.o
 ghcmake:
 	ln -sf ../Bindings/ifgen-output/Foundation.hs .
 	ln -sf ../Bindings/ifgen-output/Foundation .
-	-test -d ../Bindings/ifgen-output/GNUstepBase && \
+	test ! -d ../Bindings/ifgen-output/GNUstepBase || \
 		ln -sf ../Bindings/ifgen-output/GNUstepBase .
+	test ! -r ../Bindings/ifgen-output/GNUstepBase.hs || \
+		ln -sf ../Bindings/ifgen-output/GNUstepBase.hs .
 	mkdir -p build/objects
 	mkdir -p build/imports
 	ghc --make Foundation.hs	\
@@ -15,13 +17,22 @@ ghcmake:
 		-hidir build/imports	\
 		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
 		-fglasgow-exts
+	test ! -r GNUstepBase.hs || \
+		ghc --make GNUstepBase.hs	\
+			-package-name Foundation	\
+			-odir build/objects \
+			-hidir build/imports	\
+			-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
+			-fglasgow-exts
 
 HSFoundation.o: ghcmake
 	find build/objects/ -name \*.o | xargs ld -r -x -o HSFoundation.o
 #libHSFoundation.a: ghcmake
 #	find build/objects/ -name \*.o | xargs libtool -static -o libHSFoundation.a	
 libHSFoundation.a: HSFoundation.o
-	libtool -static -o libHSFoundation.a HSFoundation.o
+	rm -f libHSFoundation.a
+	ar cq libHSFoundation.a HSFoundation.o
+	ranlib libHSFoundation.a
 
 clean:
 	rm -rf build libHSFoundation.a HSFoundation.o Foundation.hs Foundation

@@ -6,8 +6,10 @@ ghcmake:
 	ln -sf ../Bindings/ifgen-output/Cocoa.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit .
-	-test -d ../Bindings/ifgen-output/GNUstepGUI && \
+	test ! -d ../Bindings/ifgen-output/GNUstepGUI || \
 		ln -sf ../Bindings/ifgen-output/GNUstepGUI .
+	test ! -r ../Bindings/ifgen-output/GNUstepGUI.hs || \
+		ln -sf ../Bindings/ifgen-output/GNUstepGUI.hs .
 	mkdir -p build/objects
 	mkdir -p build/imports
 	ghc --make AppKit.hs	\
@@ -17,6 +19,14 @@ ghcmake:
 		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
 		-package-conf ../Foundation/Foundation.conf-inplace \
 		-fglasgow-exts
+	test ! -r GNUstepGUI.hs || \
+		ghc --make GNUstepGUI.hs	\
+			-package-name AppKit	\
+			-odir build/objects \
+			-hidir build/imports	\
+			-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
+			-package-conf ../Foundation/Foundation.conf-inplace \
+			-fglasgow-exts
 	ghc -c Cocoa.hs \
 		-package-name AppKit	\
 		-ibuild/imports	   \
@@ -32,7 +42,9 @@ HSAppKit.o: ghcmake
 #libHSAppKit.a: ghcmake
 #	find build/objects/ -name \*.o | xargs libtool -static -o libHSAppKit.a
 libHSAppKit.a: HSAppKit.o
-	libtool -static -o libHSAppKit.a HSAppKit.o
+	rm -f libHSAppKit.a
+	ar cq libHSAppKit.a HSAppKit.o
+	ranlib libHSAppKit.a
 
 clean:
 	rm -rf build libHSAppKit.a HSAppKit.o AppKit.hs AppKit Cocoa.hs
@@ -43,4 +55,4 @@ install: all
 		`ghc --print-libdir`/AppKit/
 	ranlib `ghc --print-libdir`/AppKit/libHSAppKit.a
 	ghc-pkg --update-package	\
-			--input-file=AppKit.conf
+			--input-file=AppKit-$(PLATFORM).conf

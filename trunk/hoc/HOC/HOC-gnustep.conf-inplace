@@ -6,7 +6,7 @@ Package
     import_dirs = ["../HOC/build/imports"],
     source_dirs = [],
     library_dirs = ["../HOC", "../HOC_cbits",
-                    "/usr/lib/gcc-lib/i386-redhat-linux/3.2",
+                    "/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.3",
                     "/usr/GNUstep/System/Library/Libraries"],
     hs_libraries = ["HOC"],
     extra_libraries = ["HOC_cbits","objc","gnustep-base"],

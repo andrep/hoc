@@ -1,5 +1,6 @@
 module ExportModule(
         exportModule,
+        getModuleDependencies,
         idsForSel
     ) where
 
@@ -18,6 +19,26 @@ import Data.List(nub, partition, isPrefixOf)
 import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)
 import Data.FiniteMap(lookupFM)
 import Text.PrettyPrint.HughesPJ
+
+getModuleDependencies :: PreparedDeclarations -> ModuleName -> IO [ModuleName]
+getModuleDependencies (PreparedDeclarations { 
+                        pdCleanClassInfos = cleanClassInfos,
+                        pdCleanClassInfoHash = cleanClassInfoHash
+                      })
+                      moduleName = do
+    let definedClassInfos = [ ci | (_,ci) <- cleanClassInfos, ciDefinedIn ci == moduleName ]
+        superClasses = nub $ catMaybes $ map ciSuper definedClassInfos
+        adoptedProtocols = map (++ "Protocol") $
+                           setToList $
+                           unionManySets $
+                           map ciNewProtocols $
+                           definedClassInfos
+    
+    infos <- mapM (HashTable.lookup cleanClassInfoHash) (superClasses ++ adoptedProtocols)
+    let superModules = map ciDefinedIn $ catMaybes $ infos
+    
+    
+    return $ nub $ filter (/= moduleName) $ superModules
 
 orderClassInfos [] = []
 orderClassInfos cis = ok ++ orderClassInfos notOK

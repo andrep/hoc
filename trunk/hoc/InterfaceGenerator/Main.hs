@@ -7,6 +7,7 @@ import qualified Data.HashTable as HashTable
 import Data.List(isPrefixOf,isSuffixOf,partition)
 import Data.Maybe(fromMaybe,mapMaybe,isJust,isNothing,catMaybes,maybeToList)
 import Data.Set
+import Control.Monad(unless)
 
 import System.Info(os)
 
@@ -69,10 +70,21 @@ main = do
     foundationModules <- loadHeaders foundationHeaders
     appKitModules <- loadHeaders appKitHeaders
     
-    let modules = orderModules foundationModules ++ orderModules appKitModules
-    
-    preparedDeclarations <- prepareDeclarations bindingScript modules
+    preparedDeclarations <- prepareDeclarations bindingScript (foundationModules ++ appKitModules)
  
+    let headerNames = map (\(HeaderInfo name _ _) -> name)
+    
+    let orderModules2 mods = do
+            deps <- mapM (getModuleDependencies preparedDeclarations) mods
+            let order [] = []
+                order xs | null ok = error $ "nothing OK:" ++ show xs
+                         | otherwise = ok ++ order notOK
+                    where (notOK, ok) = partition (\(name,imports) -> any (`elem` names) imports) xs
+                          names = map fst xs
+            return $ map fst $ order $ zip mods deps
+            
+    modules <- fmap concat $ mapM (orderModules2 . headerNames) [foundationModules, appKitModules]
+            
     selsDefinedWhere <- HashTable.new (==) (\sel -> HashTable.hashString (selName sel))
     
     allSelNames <- HashTable.new (==) HashTable.hashString
@@ -87,14 +99,19 @@ main = do
                                            preparedDeclarations
                                            selsDefinedWhere
                                            noteSelDefinition ) $
-                       pdModuleNames preparedDeclarations
+                       modules
     
     selNamesList <- HashTable.toList allSelNames
     
         -- this is cheap: it would be nicer to generate the bindings for
         -- AppKit & Foundation separately, and without hard-coded names.
-    writeMasterModule "Foundation" (filter ("Foundation." `isPrefixOf`) realModuleNames) selNamesList
-    writeMasterModule "AppKit" (filter ("AppKit." `isPrefixOf`) realModuleNames) selNamesList
+    let writeMasterModule' name = writeMasterModule name
+                                                    (filter ((name++".") `isPrefixOf`) realModuleNames)
+                                                    selNamesList
+    writeMasterModule' "Foundation"
+    unless (System.Info.os == "darwin") $ writeMasterModule' "GNUstepBase"
+    writeMasterModule' "AppKit"
+    unless (System.Info.os == "darwin") $ writeMasterModule' "GNUstepGUI"
     writeMasterModule "Cocoa" realModuleNames selNamesList
     
     let manglingConflicts :: [(String, [(String, [ModuleName])])]

@@ -12,6 +12,7 @@ import BindingScript
 import CTypeToHaskell
 import Headers(HeaderInfo(..), ModuleName)
 import Enums
+import NameCaseChange
 
 import HOC.SelectorNameMangling(mangleSelectorName)
 
@@ -24,7 +25,6 @@ import Data.List(partition,isPrefixOf)
 import Data.Char(isLower)
 
 data PreparedDeclarations = PreparedDeclarations {
-        pdModuleNames :: [ModuleName],
         pdCleanClassInfos :: [(String, ClassInfo)],
         pdCleanClassInfoHash :: HashTable.HashTable String ClassInfo, {- used read only -}
         pdAllInstanceSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])],
@@ -59,11 +59,11 @@ instance (Show elem) => Show (Set elem) where
     show = show . setToList
     
 classInfoForDeclaration (moduleName, SelectorList (Interface name super protocols) methods) =
-    Just $ (name, ClassInfo {
+    Just $ (nameToUppercase name, ClassInfo {
         ciProtocol = False,
-        ciName = name,
-        ciSuper = super,
-        ciProtocols = mkSet protocols,
+        ciName = nameToUppercase name,
+        ciSuper = fmap nameToUppercase super,
+        ciProtocols = mkSet (map nameToUppercase protocols),
         ciDefinedIn = moduleName,
         ciInstanceMethods = listToFM [ (sel, SelectorLocation moduleName moduleName)
                                      | InstanceMethod sel <- methods ],
@@ -74,11 +74,11 @@ classInfoForDeclaration (moduleName, SelectorList (Interface name super protocol
         ciNewClassMethods = error "ciNewClassMethods 1"
     })
 classInfoForDeclaration (moduleName, SelectorList (Protocol name protocols) methods) =
-    Just $ (name ++ "Protocol", ClassInfo {
+    Just $ (nameToUppercase name ++ "Protocol", ClassInfo {
         ciProtocol = True,
-        ciName = name ++ "Protocol",
+        ciName = nameToUppercase name ++ "Protocol",
         ciSuper = Nothing,
-        ciProtocols = mkSet protocols,
+        ciProtocols = mkSet (map nameToUppercase protocols),
         ciDefinedIn = moduleName,
         ciInstanceMethods = listToFM [ (sel, SelectorLocation moduleName cantHappen)
                                      | InstanceMethod sel <- methods ],
@@ -234,13 +234,12 @@ prepareDeclarations :: BindingScript -> [HeaderInfo] -> IO PreparedDeclarations
 
 prepareDeclarations bindingScript modules = do
     let allDecls = concatMap (\(HeaderInfo mod _ decls) -> map ((,) mod) decls) modules
-        moduleNames = map (\(HeaderInfo name _ _) -> name) $ modules
 
         classes = mapMaybe classInfoForDeclaration $ allDecls
         
-        classNames = [ (name, (ClassTypeName, mod))
+        classNames = [ (nameToUppercase name, (ClassTypeName, mod))
                      | (mod, SelectorList (Interface name _ _) _) <- allDecls ]
-        (enumNamesAndLocations, enumDefinitions) = extractEnums modules
+        (enumNamesAndLocations, enumDefinitions) = extractEnums bindingScript modules
         
         typeEnv = TypeEnvironment $ listToFM $
                   classNames ++ [ (name, (PlainTypeName, mod))
@@ -301,7 +300,6 @@ prepareDeclarations bindingScript modules = do
                 selectorOptions = getSelectorOptions bindingScript clsName
     
     return $ PreparedDeclarations {
-                 pdModuleNames = moduleNames,
                  pdCleanClassInfos = cleanClassInfos,
                  pdCleanClassInfoHash = cleanClassInfoHash,
                  pdAllInstanceSels = allInstanceSels,

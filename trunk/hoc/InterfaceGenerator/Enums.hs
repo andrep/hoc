@@ -8,27 +8,33 @@ module Enums(
 import Headers(HeaderInfo(..), ModuleName)
 import SyntaxTree
 import NameCaseChange
+import BindingScript    ( BindingScript(bsHiddenEnums) )
 
 import Data.Char        ( toUpper )
 import Data.Maybe       ( mapMaybe )
 import Data.FiniteMap   ( FiniteMap, listToFM )
-import Data.Set         ( Set, mkSet )
+import Data.Set         ( Set, mkSet, elementOf )
 import Text.PrettyPrint.HughesPJ
+import Debug.Trace
 
-extractEnums :: [HeaderInfo] -> ([(String, ModuleName)], FiniteMap ModuleName [EnumType])
+extractEnums :: BindingScript -> [HeaderInfo] -> ([(String, ModuleName)], FiniteMap ModuleName [EnumType])
 
-data EnumType = EnumType (Maybe String) [(String, Integer)]
+data EnumType = EnumType (Maybe String) [(String, Integer)] deriving(Show)
 
 enumName (EnumType mbName _) = mbName
 
-extractEnums headers =
+extractEnums bs headers =
         ( [ (name, mod) | (mod, types) <- enums, Just name <- map enumName types ]
         , listToFM enums
         )
-    where enums = [ (moduleName, mapMaybe extractEnumType decls)
+    where enums = [ (moduleName, mapMaybe (filterEnumType bs . extractEnumType) decls)
                   | HeaderInfo moduleName _ decls <- headers ]
 
 
+filterEnumType :: BindingScript -> Maybe EnumType -> Maybe EnumType
+filterEnumType bs (Just (EnumType (Just name) _)) | name `elementOf` bsHiddenEnums bs = Nothing
+filterEnumType _ mbTy = mbTy
+                  
 extractEnumType :: Declaration -> Maybe EnumType
 
 extractEnumType (CTypeDecl t) = handleCType t

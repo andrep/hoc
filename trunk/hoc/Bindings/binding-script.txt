@@ -66,3 +66,21 @@ rename rawMimeData: rawMimeData_;
 rename setContent:type: setContentAndType;
 rename setContent:type:name: setContentAndTypeAndName;
 rename removePort:forName: removePort_forName;
+
+class GSXMLNamespace {
+    rename next nextNamespace;
+}
+rename parse: parse_;
+hidePrelude break;
+
+class NSMenuValidationProtocol {
+    - (BOOL) validateMenuItem: (NSMenuItem*) item;
+}
+
+class GSDisplayServer {
+    rename window::: window3;
+    rename window:::: window4;
+}
+
+
+hideEnums _NSGNUstepStringEncoding NSGNUstepStringEncoding;
