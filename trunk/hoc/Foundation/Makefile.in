@@ -40,7 +40,8 @@ libHSFoundation.a: HSFoundation.o
 	ranlib libHSFoundation.a
 
 clean:
-	rm -rf build libHSFoundation.a HSFoundation.o Foundation.hs Foundation
+	rm -rf build libHSFoundation.a HSFoundation.o Foundation.hs \
+	    Foundation ghcmake.build-stamp
 	
 install: all
 	mkdir -p `ghc --print-libdir`/Foundation
