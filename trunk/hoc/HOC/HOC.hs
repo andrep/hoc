@@ -32,7 +32,8 @@ module HOC (
         NewlyAllocated,
         
         -- things that shouldn't really be exported
-        InstanceVariables(..)
+        InstanceVariables(..),
+        Typeable(..)
     ) where
 
 import HOC.Base
@@ -47,3 +48,5 @@ import HOC.StdArgumentTypes
 import HOC.ExportClass
 import HOC.Utilities
 import HOC.NewlyAllocated
+
+import Data.Typeable
