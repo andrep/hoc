@@ -40,6 +40,12 @@ HOC.html: $(SOURCE_PODS) $(SOURCE_PMGS)
 	  --outfile "$@" \
 	  $+
 
+# documentation.html is similar to HOC.html, but without the <body> tags
+# (suitable for inclusion into a SSI'ed webpage)
+
+documentation.html: HOC.html
+	sed -e '1,/^<body.*>$$/d' -e '/^<\/body>.*$$/,$$d' < $+ > $@
+
 view: HOC.html
 	open $+
 
@@ -49,5 +55,5 @@ install:
 	true
 
 clean:
-	-rm HOC.html pod2htm*
+	-rm HOC.html pod2htm* documentation.html
 
