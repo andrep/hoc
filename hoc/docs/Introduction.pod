@@ -57,7 +57,7 @@ with F<ifgen> if required.
 HOC was designed from the very beginning to be as 'Haskell-like'
 as possible: after all, you are writing Haskell code, not
 Objective-C code!  We make heavy use of key Haskell features such
-as type classes and partial evaluation, to ensure that you don't
+as type classes and partial application, to ensure that you don't
 have to do evil things like method name mangling or understand
 a whole new bunch of syntax, just to do something simple like
 embed an I<NSMovie> in your application.
@@ -77,9 +77,7 @@ HOC requires the Glasgow Haskell Compiler (GHC) 6.2 or later to
 build.  We use the latest features provided by GHC, such as
 Template Haskell, to implement many parts of HOC, and it would be
 impossible (as opposed to just plain hard) to port these
-implementations to work with older versions of GHC.  If you're
-not keeping up with GHC, you're not keeping up with the times!
-:-)
+implementations to work with older versions of GHC.
 
 =for comment XXX: insert link to GHC
 
@@ -100,8 +98,6 @@ doesn't pretend to understand monads ...
 =head2 Getting Started
 
 TODO: Building HOC.
-
-TODO: A small (hello object world) example.
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65

@@ -1,11 +1,25 @@
 =head1 Mapping Objective-C Concepts to Haskell's Type System
 
-=head2 A Simple Example: I<NSMovie>
-
-
 =head2 Objective-C Objects
 
 =head3 Classes
+
+An Objective-C class C<foo> has a corresponding Haskell type
+C<foo ()>: the type signature for a function which takes in an
+I<NSArray> (and I<only> an I<NSArray>) and outputs an I<NSMovie>
+will look like C<< NSArray () -> NSMovie () >>.
+
+To permit a function to use a I<NSArray> or any of its subclasses
+such as I<NSMutableArray> (which is the behaviour you'd expect
+from an object-oriented language), use a type variable in place
+of the C<()>: e.g. I<NSArray a>.
+
+=head3 Class Objects
+
+Class objects are represented in HOC by preprending an underscore
+to the class name: I<_classname>.  For example, to send the
+C<alloc> message to the I<NSMovie> class object, write
+C<_NSMovie # alloc>.
 
 =head3 Protocols
 
@@ -24,23 +38,62 @@ often...
 
 =head3 Protocol Adoptions
 
+=head3 Specific Classes
+
+=head4 I<NSString> vs. I<String>
+
+HOC provides the two functions C<< toNSString :: String -> NSString
+() >>, and C<< fromNSString :: NSString () -> String >>, to
+convert to and from Haskell strings and the Foundation
+framework's C<NSString> objects.
+
+Note that C<fromNSString> is a pure function, and that it will not
+accept a subclass of C<NSString> as an argument, because subclasses
+may be mutable. Make sure you never pass a casted I<NSMutableString>
+to C<fromNSString>.
+
+If you want to work with (potentially) mutable string objects,
+you can use the functions C<< haskellString :: NSString a -> IO
+String >> and C<< stringWithHaskellString :: String ->
+NSStringClass a -> IO (NSString a) >>.  Use them as if they were
+Objective-C methods in the I<NSString> class.
+
+
+
 =head2 Object Messaging
-
-=head3 Selectors
-
-=head3 Methods
 
 =head3 Sending Messages to Objects
 
-=head4 Do not Resist the Monad
+The Objective-C syntax C<[receiver method:arg1 with:arg2]> that
+is used to send a message to a receiving object, is translated to
+Haskell as C<methodWith arg1 arg2 receiver>.
 
-=head2 Miscellanea
+The receiving object goes I<last> in the parameter last, because
+then you can use ye olde trick of defining an infix function "C<x
+# f = f x>" to produce the more object-oriented-looking code
+C<receiver # methodWith arg1 arg2>.  (The C<#> infix function is
+defined for you by HOC already, so you don't need to define it
+yourself).
 
-=head3 Autorelease Pools
+Note that sending messages is an IO operation, so you'll need to
+be in the IO monad to use it.  Purely functional (non-mutable)
+objects such as an C<NSArray> or a C<NSString> provide their own
+specialised non-IO functions, which can be used outside of
+monadic code.  See their documentation (or source code
+implementation) for details.
 
-=head3 C<enum> Types
+=head3 Message Chaining
 
-=head3 C<struct> Types
+I<Message chaining> is a very common phenomenon in Objective-C:
+syntactically, it looks like C<< [[NSCountedSet alloc]
+initWithArray:args] >>.  You first send an C<alloc> message to
+the C<NSCountedSet> (class) object, and then send
+C<initWithArray:args> to the result of that.
+
+Experienced Haskell programmers will realise that this is
+analagous to the I<monadic bind> operator, C<E<gt>E<gt>=>, so the
+above message chain could be written as C<<< _NSCountedSet
+# alloc >>= initWithArray args >>>.
 
 =head3 Ambiguous Function Names
 
@@ -57,6 +110,96 @@ If you wish to use the C<arguments> method from multiple classes,
 use the C<import qualified> or C<import X as Y> constructs, just
 as if you were importing a same-named function from different
 Haskell modules normally.
+
+=head3 Selectors
+
+An Objective-C selector name is translated to a Haskell function
+name as follows:
+
+=over 4
+
+=item Colons (C<:>) disappear
+
+e.g. The Objective-C method name "C<mouseDragged:>" is translated to
+"C<mouseDragged>".
+
+=item Initial lower-case characters after a colon (C<:>) become upper-case
+
+e.g. The Objective-C method name "C<initWithURL:byReference:>" is
+translated to "C<initWithURLByReference>".
+
+=item Leading upper-case characters become lower-case
+
+e.g. The Objective-C method name
+"C<TIFFRepresentationUsingCompression:factor:>" is translated to
+"C<tiffrepresentationUsingCompressionFactor>".
+
+=back
+
+Use the C<< getSelectorForName :: String -> SEL >> function to
+generate a Haskell C<SEL> datatype from a raw Haskell string.  As
+you can guess, the Haskell C<SEL> type is the same as
+Objective-C's C<SEL> type: it represents a selector (method
+name).
+
+Note that the string you pass to C<getSelectorForName> is the
+I<Objective-C> selector name (with all the colons in the
+appropriate places), not the translated Haskell function name.
+For example, you should pass in C<"initWithURL:byReference:">,
+and not C<"initWithURLByReference">.
+
+
+=begin comment
+
+XXX: Put this back in when HOC.Marshal is written ...
+
+=for comment =head3 Generalised Marshaling
+
+The C<HOC.Marshal> module provides a function C<< marshal :: a ->
+b >>, which can be used to try to marshal (convert) any type to
+any other type.  Be careful with the C<marshal> function: since
+its output type is ambiguous (it's a type variable), Haskell's
+type inference engine greatly relies on context to figure out
+what the output type should really be.  You may have to I<fix>
+the output type explicitly by appending the C<:: t> syntax to
+expression.  For example, C<marshal "Foo"> on its own may
+generate an error, but C<marshal "Foo" :: NSString ()> may not.
+
+You can also define marshalling for your own data types, by
+making them part of C<HOC.Marshal>'s C<ObjCMarshal> type class:
+
+  import HOC.Marshal
+
+  instance ObjCMarshal FiniteMap ( NSDictionary () ) where
+    marshal fm = -- conversion code from FiniteMap to NSDictionary
+  instance ObjCMarshal ( NSDictionary () ) FiniteMap where
+    marshal dict = -- conversion code from NSDictionary to FiniteMap
+
+=end comment
+
+
+=head2 Miscellanea
+
+=head3 Autorelease Pools
+
+Use the function C<withAutoreleasePool :: IO a> to create an
+autorelease pool and run an IO action which which use the pool:
+
+  main = do
+    withAutoreleasePool main'
+  
+  main' = do
+    args <- _NSProcessInfo # processInfo >>= arguments
+    ...
+
+Using C<withAutoreleasePool> instead of an explict C<alloc> and
+C<release> for the pool saves you from remembering to
+release it: after your action has been run, the pool is
+automatically released.
+
+=head3 C<enum> Types
+
+=head3 C<struct> Types
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65
