@@ -1,5 +1,11 @@
 include ../config.mk
 
+dist_srcdir = Tools
+dist_FILES = \
+	HOCWrap.hs \
+	Makefile.in \
+	$(NULL)
+
 all: hocwrap
 
 hocwrap: *.hs

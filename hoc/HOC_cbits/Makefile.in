@@ -1,45 +1,56 @@
 include ../config.mk
 
-SRCS=\
-	Class.m\
-	GetNewHaskellData.m\
-	MemoryManagement.m\
-	ObjectMap.m\
-	Selector.m\
-	FFICallInterface.m\
-	Invocation.m\
-	NewClass.m\
-	RetainedHaskellPart.m\
-	Marshalling.m
-OBJS=$(SRCS:%.m=%.o)
+SRCS =  \
+	Class.m \
+	GetNewHaskellData.m \
+	MemoryManagement.m \
+	ObjectMap.m \
+	Selector.m \
+	FFICallInterface.m \
+	Invocation.m \
+	NewClass.m \
+	RetainedHaskellPart.m \
+	Marshalling.m \
+	$(NULL)
 
-CFLAGS+=-g -I../libffi-src/build/include
+dist_srcdir = HOC_cbits
+dist_FILES = \
+	$(SRCS) \
+	Makefile.in \
+	$(wildcard *.h) \
+	$(NULL)
+	
+OBJS = $(SRCS:%.m=%.o)
 
-all:	libHOC_cbits.a HOC_cbits.o
+CFLAGS + =-g -I../libffi-src/build/include
+
+#
+
+all: libHOC_cbits.a HOC_cbits.o
 
 clean:
-		rm -rf libHOC_cbits.a HOC_cbits.o $(OBJS) depend
+	rm -rf libHOC_cbits.a HOC_cbits.o $(OBJS) depend
 
 HOC_cbits.o: libHOC_cbits.a
-		ld -r -x -o HOC_cbits.o $(ALL_LOAD) libHOC_cbits.a
-		if test $(PLATFORM) == gnustep; then \
-			strip --strip-debug HOC_cbits.o; \
-		fi
+	ld -r -x -o HOC_cbits.o $(ALL_LOAD) libHOC_cbits.a
+	if test $(PLATFORM) == gnustep; then \
+	  strip --strip-debug HOC_cbits.o; \
+	fi
 
 libHOC_cbits.a: $(OBJS)
-		cp ../libffi-src/build/.libs/libffi.a libHOC_cbits.a
-		ar qs libHOC_cbits.a $(OBJS)
+	cp ../libffi-src/build/.libs/libffi.a libHOC_cbits.a
+	ar qs libHOC_cbits.a $(OBJS)
 
- %.o:	%.m
-		gcc -c $(CFLAGS) -o $@ $<
+%.o: %.m
+	gcc -c $(CFLAGS) -o $@ $<
 		
 depend: $(SRCS)
 	cc -MM $(CFLAGS) $(SRCS) > depend
 		
 install: all
 	mkdir -p $(GHC_LIB_PATH)/HOC
-	cp -R libHOC_cbits.a HOC_cbits.o \
-		$(GHC_LIB_PATH)/HOC/
+	cp -R libHOC_cbits.a HOC_cbits.o $(GHC_LIB_PATH)/HOC/
 	ranlib $(GHC_LIB_PATH)/HOC/libHOC_cbits.a
 	
 -include depend
+

@@ -1,5 +1,12 @@
 include ../config.mk
 
+dist_srcdir = Foundation
+dist_FILES = \
+	Foundation.conf \
+	Foundation.conf-inplace \
+	Makefile.in \
+	$(NULL)
+
 all: libHSFoundation.a HSFoundation.o
 
 ghcmake: ghcmake.build-stamp

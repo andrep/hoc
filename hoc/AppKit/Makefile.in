@@ -1,5 +1,12 @@
 include ../config.mk
 
+dist_srcdir = AppKit
+dist_FILES = \
+	AppKit-gnustep.conf \
+	AppKit-macos.conf \
+	Makefile.in \
+	$(NULL)
+
 all: libHSAppKit.a HSAppKit.o
 
 ghcmake: ghcmake.build-stamp

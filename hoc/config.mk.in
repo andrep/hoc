@@ -1,3 +1,5 @@
+NULL =
+
 PLATFORM=@HOC_PLATFORM@
 ALL_LOAD=@HOC_LD_ALL_LOAD@
 MAKE_STATIC_LIB=@HOC_MAKE_STATIC_LIB@
@@ -12,4 +14,10 @@ GHC_LIB_PATH=@GHC_LIB_PATH@
 
 DOT=@DOT@
 POD2HTML=@POD2HTML@
+
+# distribution tarball information
+dist_dir = @abs_top_builddir@/hoc-@PACKAGE_VERSION@
+dist-recursive:
+	mkdir -p "$(dist_dir)/$(dist_srcdir)"
+	cp -R $(dist_FILES) "$(dist_dir)/$(dist_srcdir)"
 

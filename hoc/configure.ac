@@ -165,6 +165,8 @@ AC_SUBST(HOC_CFLAGS)
 # Output configuration files and Makefiles
 #
 
+AC_SUBST(PACKAGE_VERSION)
+
 AC_CONFIG_FILES([config.mk
                  Makefile
                  AppKit/Makefile
