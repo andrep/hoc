@@ -6,6 +6,8 @@ ghcmake:
 	ln -sf ../Bindings/ifgen-output/Cocoa.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit .
+	-test -d ../Bindings/ifgen-output/GNUstepGUI && \
+		ln -sf ../Bindings/ifgen-output/GNUstepGUI .
 	mkdir -p build/objects
 	mkdir -p build/imports
 	ghc --make AppKit.hs	\
