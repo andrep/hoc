@@ -70,10 +70,16 @@ exportClass name prefix members = sequence $ [
             [normalC (mkName instanceDataName) strictTypes] [''Typeable],
         valD (varP $ mkName tyConVar) (normalB [| mkTyCon instanceDataName |]) [],
         instanceD (cxt []) (conT ''InstanceVariables
-                            `appT` clsTy `appT` instTy) `whereQ`
-            [d|
-                initializeInstanceVariables = $(initIVars)
-            |]
+                            `appT` clsTy `appT` instTy) 
+                [
+--                  All we want to do is this:
+--                      initializeInstanceVariables = $(initIVars)
+--                  But we want the name initializeInstanceVariables refer directly
+--                  to this module, so that we don't have to export it, but keep it
+--                  private.
+                    do e <- initIVars
+                       return (ValD (VarP 'initializeInstanceVariables) (NormalB e) [])
+                ]
     ] ++ declaredIVars
     where
         exportFunName = "initializeClass_" ++ name
