@@ -9,3 +9,6 @@ all:
 		
 clean:
 	rm -rf ifgen build
+
+install: all
+	echo "Interface Generator will be used in-place."
