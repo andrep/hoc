@@ -9,6 +9,19 @@
 
 =head3 Protocols
 
+=begin comment
+
+Yes, formal protocols. Luckily, they're very rarely used in
+Cocoa.  It's only an ifgen issue; the current ifgen just
+generates ID for all id<Foo> types.  For id<Foo,Bar> used as
+a parameter, it should generate (Foo (ID a), Bar (ID a)) => ID a.
+For return values id<Foo,Bar>, we'll have to define a special
+type ID_Bar_Foo and declare instances for Foo and Bar for it. The
+only difficult part should be to avoid defining those types too
+often...
+
+=end comment
+
 =head3 Protocol Adoptions
 
 =head2 Object Messaging
