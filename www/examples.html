@@ -1,0 +1,74 @@
+<!--#set var="title" value="Examples" -->
+<!--#set var="active-tab" value="Examples" -->
+
+<!--#include virtual="/templates.hoc/header.shtml" -->
+
+<h1>Cocoa Examples</h1>
+
+<h2>Adding a GUI to an Expression Parser</h2>
+
+<p>You've probably seen many examples of Haskell GUI libraries
+which show you how to create a simple graphical application with
+menus, and a cute little button that prints "Hello, world!" when
+you click on it:</p>
+
+TODO: Insert picture
+
+<p>Well, we'd show you that, but the truth is it's so easy to do
+with Cocoa that it'd just be boring.  (Really!)  So, let's do
+something a bit more practical with our first example: put a simple
+GUI around a basic Haskell program, which is something you're more
+likely to be interested in.</p>
+
+<p>Let's assume that you've written a useful Haskell module: say
+a simple calculator (or <em>expression parser</em>).  To do this,
+we could use Daan Leijen's most excellent <a
+  href="http://www.cs.uu.nl/~daan/parsec.html">Parsec</a> parser
+combinator library.  In fact, Parsec comes with such excellent
+documentation that it even gives <a
+  href="http://www.cs.uu.nl/~daan/download/parsec/parsec.html#Expressions">example
+  code</a> which shows how to do this.  So, imagine the following
+code is in an <code>ExpressionParser.hs</code> Haskell module:</a>
+
+<div class="inner-box">
+  <pre>module ExpressionParser
+
+where
+
+import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec.Expr
+
+expr :: Parser Integer
+expr = buildExpressionParser table factor &lt;?&gt; "expression"
+
+table = [ [op "*" (*) AssocLeft, op "/" div AssocLeft]
+	, [op "+" (+) AssocLeft, op "-" (-) AssocLeft] ]
+  where
+    op s f assoc = Infix (do { string s; return f }) assoc
+
+factor = do { char '('; x &lt;- expr; char ')'; return x }
+	 &lt;|&gt; number
+	 &lt;?&gt; "simple expression"
+
+number :: Parser Integer
+number = do { ds &lt;- many1 digit; return (read ds) } &lt;?&gt; "number"
+</pre>
+</div>
+
+<p>There's probably around 10 lines of code there, but if you
+run the code in GHCi, it seems to work quite well:</p>
+
+<div class="inner-box">
+<pre>*ExpressionParser&gt; parseTest expr "2+5*2"
+12
+*ExpressionParser&gt; parseTest expr "69/3+1"
+24
+</pre>
+</div>
+
+<p>So, you have a working expression parser.  Unfortunately, you have to to run
+this from GHCI.  Wouldn't it be nicer if you could run it from a Haskell GUI
+instead?</p>
+
+<!--#include virtual="/templates.hoc/footer.shtml" -->
+

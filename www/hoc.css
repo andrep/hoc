@@ -19,7 +19,14 @@ a.plain {
 p {
   font-size:100%;
   margin: 12px 0;
-  align: justify;
+  text-align: justify;
+}
+
+p.center {
+  font-size:100%;
+  margin: 12px 0;
+  text-align: center;
+  align: center;
 }
 
 li {
@@ -36,9 +43,9 @@ h1 {
 
 h2 {
   font-family: Verdana, sans-serif;
-  font-size:130%;
-  line-height: 130%;
-  color: #000066;
+  font-size:120%;
+  line-height: 120%;
+  /* color: #000066; */
   text-align: center;
 }
 
@@ -64,6 +71,13 @@ img {
   border: none;
 }
 
+img.bordered {
+  border: 1px solid #BDBDBD;
+  padding: 12px 12px;
+  background-image: url("bg-stripes-verydark.png");
+  background-repeat: repeat;
+}
+
 /* :: header graphics :: */
 
 img.site-header {
@@ -80,6 +94,9 @@ img.site-logo {
   top: 27px;
   z-index: 30;
   border: none;
+}
+
+img.screenshot {
 }
 
 /* :: outer boxes :: */
