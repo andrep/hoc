@@ -3,32 +3,74 @@
 
 <!--#include virtual="/templates.hoc/header.shtml" -->
 
-<h1>Cocoa Examples</h1>
+<h1>Adding a GUI to an Expression Parser</h1>
 
-<h2>Adding a GUI to an Expression Parser</h2>
+<p>You've probably seen many examples of Haskell GUI libraries which show you
+how to create a simple graphical application that has a cute little button
+which prints "Hello, world!" when you click on it.  Well, we'd show you that,
+but the truth is it's so easy to do with Cocoa that it'd just be boring (as
+well as being useless).  So, let's do something a bit more practical with our
+first example: our mission is to put a simple GUI around a basic Haskell
+program, which is something you're more likely to be interested in.</p>
 
-<p>You've probably seen many examples of Haskell GUI libraries
-which show you how to create a simple graphical application with
-menus, and a cute little button that prints "Hello, world!" when
-you click on it:</p>
+<p>For this quick tour, let's write a GUI program that allows a user to type in
+arithmetic expressions (e.g. <code>2+5</code> or <code>69*33/3+15</code>), and
+print its result.  Something like this will do:</p>
 
-TODO: Insert picture
+<p>
+<table align="center" border="0" cellpadding="4">
+  <tr>
+    <td>
+      <img src="screenshots/ExpressionParser.png" class="bordered">
+    </td>
 
-<p>Well, we'd show you that, but the truth is it's so easy to do
-with Cocoa that it'd just be boring.  (Really!)  So, let's do
-something a bit more practical with our first example: put a simple
-GUI around a basic Haskell program, which is something you're more
-likely to be interested in.</p>
+    <td>
+      <img src="screenshots/ExpressionParser_error.png" class="bordered">
+    </td>
+  </tr>
+</table>
+</p>
 
-<p>Let's assume that you've written a useful Haskell module: say
-a simple calculator (or <em>expression parser</em>).  To do this,
-we could use Daan Leijen's most excellent <a
-  href="http://www.cs.uu.nl/~daan/parsec.html">Parsec</a> parser
-combinator library.  In fact, Parsec comes with such excellent
-documentation that it even gives <a
+<h2>Preface</h2>
+
+<p>In comparison to other GUI toolkits available for Haskell, there's a bit
+more of a learning curve to use HOC for writing GUIs, because Cocoa enforces
+good design by separating your application logic cleanly using design patterns
+such as <a
+  href="http://developer.apple.com/documentation/Cocoa/Conceptual/ObjCTutorial/chapter02/chapter_2_section_3.html">Model-View-Controller</a>
+(which we will use in this example).  So, while this quick tour may seem a bit
+longer than you expect, the really good news is that Cocoa's design patterns
+<em>scale</em> very well: writing a small GUI may take 50-100 lines of code,
+but writing a much bigger, fancy GUI with lots of widgets and controls may only
+take 100-200 lines rather than 500-1000, because much of the GUI code is
+handled for you by Interface Builder's target-action/outlet design.  In Mac OS
+X Panther, you can even use <a
+  href="http://developer.apple.com/documentation/Cocoa/Conceptual/CocoaBindings/CocoaBindings.html">Cocoa
+  Bindings</a> with your Haskell application, and cut down your code size even
+further.</p>
+
+<p>Note that HOC is also a lower-level binding than higher-level GUI toolkits
+such as <a
+  href="http://www.cs.chalmers.se/ComputingScience/Research/Functional/Fudgets/">Fudgets</a>
+or even <a href="http://wxhaskell.sourceforge.net/">wxHaskell</a>: it is really
+a bridge which enables you to use Objective-C objects from Haskell (and thus
+gives you much more functionality than simply being able to write GUIs!).  In
+the future, we hope to layer a higher-level interface on top of HOC to provide
+a more functional API, so you're not forced into imperative style of coding as
+you would write Objective-C code.  Even so, the Cocoa framework is so well
+designed that the resulting imperative code is still far shorter than it would
+be compared to most other frameworks .</p>
+
+<h2>The Model: an Arithmetic Expression Parser</h2>
+
+<p>Our first step is to write the arithmetic expression parser.  To do this, we
+could use Daan Leijen's most excellent <a
+  href="http://www.cs.uu.nl/~daan/parsec.html">Parsec</a> parser combinator
+library.  In fact, Parsec comes with such excellent documentation that it even
+gives <a
   href="http://www.cs.uu.nl/~daan/download/parsec/parsec.html#Expressions">example
-  code</a> which shows how to do this.  So, imagine the following
-code is in an <code>ExpressionParser.hs</code> Haskell module:</a>
+  code</a> which shows how to do this.  So, imagine the following code is in an
+<code>ExpressionParser.hs</code> Haskell module:</a>
 
 <div class="inner-box">
   <pre>module ExpressionParser
@@ -67,8 +109,160 @@ run the code in GHCi, it seems to work quite well:</p>
 </div>
 
 <p>So, you have a working expression parser.  Unfortunately, you have to to run
-this from GHCI.  Wouldn't it be nicer if you could run it from a Haskell GUI
-instead?</p>
+this from GHCi to use it.  You could write a command-line interface to it, but
+wouldn't it be nicer if you could run it from a Haskell GUI instead?</p>
+
+<h2>The View: a GUI for the Expression Parser</h2>
+
+<p>Now that you've written the model, it's time to write the <em>view</em>,
+which lets the user interact with the model by clicking on buttons, selecting
+menu items, and all that fancy GUI stuff.  Luckily, the Cocoa framework on Mac
+OS X makes this quite trivial: instead of writing tedious layout code to draw
+the view, set up the menus, etc., we use <a
+  href="http://developer.apple.com/tools/interfacebuilder/">Interface
+  Builder</a>, a GUI design tool.  Briefly, the steps involved with Interface
+Builder are:</p>
+
+<ul>
+
+  <li>Drag the text fields and buttons from the Cocoa Controls palette into
+  your window.</li>
+
+  <li>Tell Interface Builder that you'll be writing a class called
+  <code>EPController</code> to handle events such as the user clicking on
+  buttons.  To do this, you simply subclass and instantiate the
+  <code>NSObject</code> class (the root of all of Cocoa's classes) in Interface
+  Builder's Classes window.</li>
+
+  <li>Add two <em>outlets</em> to the <code>EPController</code> class, which
+  are pointers to the two text fields in the window.  This enables your
+  controller class to read the user's typed-in expression from the first text
+  field, and write its output to the second text field.</li>
+
+  <li>Add an <em>action</em> to the <code>EPController</code> class, which
+  contains the expression-evaluation code that will run when the user clicks on
+  the "Evaluate" button (or presses the <em>Enter</em> key in the input text
+  field).</li>
+
+  <li><em>Connect</em> the text fields to <code>EPController</code>'s outlets
+  by Ctrl-dragging from the instantiated <code>EPController</code> object to
+  the text field, and setting the outlet appropriately.  You also want to
+  connect the Evaluate button and text field entry to
+  <code>EPController</code>'s, again by Ctrl-dragging from them to the
+  instantiated <code>EPController</code> object icon.</li>
+
+</ul>
+
+<p>That's it: your view's done.  You could write all this code programmatically
+of course, but why bother?  Interface Builder allows you to add GUIs to your
+code very rapidly, and also handles issues such as window re-sizing elegantly.
+(This is often quoted as a reason to manually write code&mdash;so you can use
+a geometry manager&mdash;rather than using a GUI designer tool.  Truth is,
+Cocoa and Interface Builder's re-sizing controls are so easy and powerful that
+you'll very rarely have to write any geometry management code&mdash;I've
+<em>never</em> had to, even when writing a full-fledged media player
+application!)  Here's a screenshot of what Interface Builder will look like as
+you're designing your view with it:</p>
+
+<p class="center" align="center">
+<a href="screenshots/ExpressionParser_view.png" class="plain">
+  <img src="screenshots/ExpressionParser_view.png" width="90%">
+</a>
+</p>
+
+<p class="center" align="center">
+<a href="screenshots/ExpressionParser_view.png">
+  (Click to enlarge.)
+</a>
+<p>
+
+<h2>The Controller: Handling User Interaction</h2>
+
+<p>Now that you've written the model and the view, it's time to write the
+<em>controller</em>, which the view sends messages to in response to user
+interactions.  The controller is responsible for calling the appopriate
+functions in the model, and delivering the model's outputs to the view.  In
+this case, that means delivering the expression the user typed in to the
+<code>ExpressionParser</code> module's parsing code, taking the parser's
+output, and displaying that back in the view.</p>
+
+<p>HOC enables you to write the controller's code in pure Haskell: first, you
+need to write a <code>Selectors.hs</code> file which declares all the
+<em>selectors</em> (method names) that you will be using:</p>
+
+<div class="inner-box">
+<pre>{-# OPTIONS -fglasgow-exts #-}
+
+module Selectors where
+
+import AppKit.NSButton
+
+$(declareSelector "evaluateExpression:" [t| forall a. NSButton a -&gt; IO () |])
+</pre>
+</div>
+
+<p>This enables better static checking of method names, and prevents scenarios
+such as pondering why your method wasn't being called when you actually
+misspelled it (which can happen with Objective-C).  After this, it's time to
+write the controller code:</p>
+
+<div class="inner-box">
+<pre>{-# OPTIONS -fglasgow-exts #-}
+
+module EPController where
+
+import Cocoa hiding (parse)
+import ExpressionParser
+import Selectors
+import Text.ParserCombinators.Parsec (parse)
+
+$(declareClass "EPController" "NSObject")
+
+$(exportClass "EPController" "ep_"
+  [ Outlet "expressionEntry" [t| NSTextField () |]
+  , Outlet "evaluation"      [t| NSTextField () |]
+  , InstanceMethod Selectors.info_evaluateExpression ])
+
+obj #. var = obj # getIVar var
+
+ep_evaluateExpression _ self = do
+  -- Get the expressionEntry outlet text field from this object, and get
+  -- what the user typed as a Haskell string
+  expression &lt;- self #. _expressionEntry &gt;&gt;= stringValue &gt;&gt;= haskellString
+  -- Parse the expression
+  case (parse expr "" expression) of
+    Left err -&gt;
+      -- Parsing returned an error: display it in the output text field      
+      self #. _evaluation &gt;&gt;= setStringValue (toNSString $ "Error " ++ show err)
+    Right answer -&gt;
+      -- Parsing was successful: display the answer
+      self #. _evaluation &gt;&gt;= setStringValue (toNSString $ show answer)
+</pre>
+</div>
+
+<p>That's it: you've just added a pretty GUI to your expression parser.  Once
+again, here's what the result looks like:</p>
+
+<p>
+<table align="center" border="0" cellpadding="4">
+  <tr>
+    <td>
+      <img src="screenshots/ExpressionParser.png" class="bordered">
+    </td>
+
+    <td>
+      <img src="screenshots/ExpressionParser_error.png" class="bordered">
+    </td>
+  </tr>
+</table>
+</p>
+
+<p>Of course, this is only a quick overview on how to use HOC: this brief look
+at HOC is expanded upon in the HOC <a
+  href="documentation.html">documentation</a>, where we describe the exact
+steps involved in building this arithmetic expression parser.  We hope that
+this example gives you an idea of how you can use HOC to easily implement a GUI
+for your existing Haskell applications!</p>
 
 <!--#include virtual="/templates.hoc/footer.shtml" -->
 
