@@ -22,7 +22,7 @@ dist_FILES = \
 	
 OBJS = $(SRCS:%.m=%.o)
 
-CFLAGS + =-g -I../libffi-src/build/include
+CFLAGS += -g -I../libffi-src/build/include
 
 #
 
