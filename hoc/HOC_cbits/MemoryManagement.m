@@ -36,6 +36,9 @@ NSAutoreleasePool *newAutoreleasePool()
 /* attempt to get it to work in GHCi by avoiding Objective C syntax
    (GHCi can't handle objc sections yet) */
 
+#ifdef GNUSTEP
+#define objc_msgSend(self,sel) (*objc_msg_lookup(self,sel))(self,sel)
+#endif
 
 static SEL selRetain = 0;
 static SEL selRelease = 0;
