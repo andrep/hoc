@@ -2,7 +2,7 @@ include ../config.mk
 
 dist_srcdir = Bindings
 dist_FILES = \
-	AdditionalCode/ \
+	AdditionalCode \
 	Makefile.in \
 	binding-script.txt \
 	$(NULL)

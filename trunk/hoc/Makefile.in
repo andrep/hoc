@@ -27,7 +27,7 @@ dist_FILES = \
 	README.txt \
 	aclocal.m4 \
 	autogen.sh \
-	autotools/ \
+	autotools \
 	config.mk.in \
 	configure \
 	configure.ac \
@@ -40,10 +40,10 @@ dist:
 	-test -d "$(dist_dir)" && rm -rf "$(dist_dir)"
 	$(MAKE) dist-recursive
 	for dir in $(all_SUBDIRS); do (cd $$dir; $(MAKE) dist-recursive); done
-	find "$(dist_dir)" -type d -name 'CVS' -delete
-	find "$(dist_dir)" -name '*~' -delete
 	cp -HRp libffi-src "$(dist_dir)"
 	rm -rf "$(dist_dir)"/libffi-src/build
+	find "$(dist_dir)" -type d -name 'CVS' -exec rm -rf '{}' ';' -prune
+	find "$(dist_dir)" -type d -name '*~'  -exec rm -rf '{}' ';' -prune
 	tar jcvf @abs_top_builddir@/hoc-@PACKAGE_VERSION@.tar.bz2 \
 	  ./hoc-@PACKAGE_VERSION@
 

@@ -2,7 +2,7 @@ include ../config.mk
 
 dist_srcdir = HOC
 dist_FILES = \
-	HOC/ \
+	HOC \
 	HOC-gnustep.conf \
 	HOC-gnustep.conf-inplace \
 	HOC-macos.conf \
