@@ -31,6 +31,10 @@ module HOC (
         
         NewlyAllocated,
         
+        -- debugging & statistics:
+        
+        objectMapStatistics,
+        
         -- things that shouldn't really be exported
         InstanceVariables(..),
         Typeable(..)

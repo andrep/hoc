@@ -11,8 +11,9 @@ import System.IO.Unsafe(unsafePerformIO)
 import System.Mem.Weak
 import Foreign.Ptr
 import Foreign.StablePtr
-import Foreign.C.Types(CUInt,CChar {- ObjC BOOL is typedefed to char -})
+import Foreign.C.Types(CInt,CUInt,CChar {- ObjC BOOL is typedefed to char -})
 import Foreign.Storable
+import Foreign.Marshal.Alloc(alloca)
 import Data.Dynamic
 import Data.Maybe(fromMaybe, isJust)
 
@@ -68,9 +69,11 @@ objectMapLock = unsafePerformIO $ newMVar ()
 foreign import ccall unsafe "ObjectMap.h getHaskellPart"
     getHaskellPart :: Ptr ObjCObject -> IO (StablePtr (Weak HSO))
 foreign import ccall unsafe "ObjectMap.h setHaskellPart"
-    setHaskellPart :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
+    setHaskellPart :: Ptr ObjCObject -> StablePtr (Weak HSO) -> CInt -> IO ()
 foreign import ccall unsafe "ObjectMap.h removeHaskellPart"
     removeHaskellPart :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
+foreign import ccall unsafe "ObjectMap.h objectMapStatistics"
+    c_objectMapStatistics :: Ptr CUInt -> Ptr CUInt -> IO ()
 
     -- must be "safe", because it calls methods implemented in Haskell
 foreign import ccall safe "GetNewHaskellData.h getNewHaskellData"
@@ -133,7 +136,7 @@ importArgument' immortal p
                               | otherwise = Just $ finalizeID p new_sptr
                 wptr <- mkWeakPtr haskellObj finalizer
                 new_sptr <- newStablePtr wptr
-                setHaskellPart p new_sptr
+                setHaskellPart p new_sptr (if immortal then 1 else 0)
                 
                 case haskellData of
                     Just _ -> haskellObject_retain p
@@ -257,3 +260,12 @@ releaseExtraReference obj = do
         ID (HSO ptr _) -> releaseObject ptr
         Nil -> return ()
     return obj
+
+objectMapStatistics =
+    alloca $ \pAllocated ->
+    alloca $ \pImmortal ->
+    do
+        c_objectMapStatistics pAllocated pImmortal
+        allocated <- peek pAllocated
+        immortal <- peek pImmortal
+        return (allocated, immortal)
