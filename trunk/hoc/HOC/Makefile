@@ -22,7 +22,8 @@ ghcmake:
 		-I../HOC_cbits	\
 		-I../libffi-src/build/include	\
 		$(FOUNDATION_INCLUDES) \
-		$(FOUNDATION_LIBS)
+		$(FOUNDATION_LIBS)      \
+                $(DEFINES)
 		
 
 clean:

@@ -1,4 +1,7 @@
 #include "Selector.h"
+#ifdef GNUSTEP
+#include <objc/objc-api.h>
+#endif
 
 SEL getSelectorForName(const char* name)
 {

@@ -53,8 +53,10 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure =
         collectArgs e = [| withArray $(listE (map varE marshalledArguments))
                                      $(lamE [varP "args"] e) |]
 
-        invoke | isUnit = [| callWithoutRetval (selectorInfoCif $(infoVar)) objc_msgSendPtr $(argsVar) |]
-               | otherwise = [| callWithRetval (selectorInfoCif $(infoVar)) objc_msgSendPtr $(argsVar) |]
+        invoke | isUnit = [| sendMessageWithoutRetval (selectorInfoCif $(infoVar))
+                                                      $(argsVar)|]
+               | otherwise = [| sendMessageWithRetval (selectorInfoCif $(infoVar))
+                                                      $(argsVar)|]
             where argsVar = varE "args"
 
         purify e | isPure = [| unsafePerformIO $(e) |]
