@@ -38,13 +38,13 @@ fi
 
 
 #
-# Test for GHC: this handy autoconf macro blatantly stolen from HDoc
+# Test for GHC: this handy autoconf macro blatantly stolen from HDoc:
 # http://www.fmi.uni-passau.de/~groessli/hdoc/
 #
 
 AC_ARG_WITH(ghc,
-            [  --with-ghc=GHC          where to find ghc],
-            [GHC=$withval])
+  [  --with-ghc=...          command to run ghc (e.g. $HOME/bin/ghc-6.2.1)],
+  [GHC=$withval])
 
 if test -z "$GHC"; then
   AC_CHECK_TOOL(GHC, ghc, ghc)
@@ -53,30 +53,40 @@ fi
 GHC_FLAGS=""
 
 if test "$GHC"; then
-        AC_MSG_CHECKING([for ghc version])
-        changequote(<<, >>)
-        ghc_version=`$GHC --version 2>&1 | sed -n -e 's/.* version \([0-9.][0-9.]*\).*/\1/p'`
-        ghc_major=`echo "$ghc_version" | sed -n -e 's/\([0-9][0-9]*\).*/\1/p'`
-        ghc_minor=`echo "$ghc_version" | sed -n -e 's/[0-9][0-9]*\.\([0-9][0-9]*\).*/\1/p'`
-        changequote([, ])
-        AC_MSG_RESULT([$ghc_version])
-        if test '(' "$ghc_major" -ge 6 -a "$ghc_minor" -ge 2 ')' -o \
+  AC_MSG_CHECKING([for ghc version])
+  changequote(<<, >>)
+  ghc_version=`$GHC --version 2>&1 | sed -n -e 's/.* version \([0-9.][0-9.]*\).*/\1/p'`
+  ghc_major=`echo "$ghc_version" | sed -n -e 's/\([0-9][0-9]*\).*/\1/p'`
+  ghc_minor=`echo "$ghc_version" | sed -n -e 's/[0-9][0-9]*\.\([0-9][0-9]*\).*/\1/p'`
+  changequote([, ])
+  AC_MSG_RESULT([$ghc_version])
+  if test '(' "$ghc_major" -ge 6 -a "$ghc_minor" -ge 2 ')' -o \
           '(' "$ghc_major" -ge 6 ')'; then
-                AC_MSG_CHECKING([for ghc library directory])
-                GHC_LIB_PATH=`$GHC --print-libdir`
-                AC_MSG_RESULT([$GHC_LIB_PATH])
-        else
-                AC_MSG_ERROR([** Sorry, your GHC is too old. GHC >= 6.2 required.])
-                GHC=""
-        fi
+    AC_MSG_CHECKING([for ghc library directory])
+    GHC_LIB_PATH=`$GHC --print-libdir`
+    AC_MSG_RESULT([$GHC_LIB_PATH])
+  else
+    AC_MSG_ERROR([** Sorry, your GHC is too old. GHC >= 6.2 required.])
+    GHC=""
+  fi
 else
-        AC_MSG_ERROR([** Could not find GHC.])
+  AC_MSG_ERROR([** Could not find GHC.])
 fi
 
 AC_SUBST(GHC)
 AC_SUBST(GHC_LIB_PATH)
 
-AC_CHECK_TOOL(GHC_PKG, ghc-pkg, ghc-pkg)
+# Check for ghc-pkg
+AC_ARG_WITH(ghc-pkg,
+  [  --with-ghc-pkg=...      command to run ghc-pkg (e.g. $HOME/bin/ghc-pkg-6.2.1)],
+  [GHC_PKG="$withval"])
+
+if test -n "$GHC_PKG"; then
+  AC_SUBST(GHC_PKG)
+  true
+else
+  AC_CHECK_TOOL(GHC_PKG, ghc-pkg, ghc-pkg)
+fi
 
 
 #

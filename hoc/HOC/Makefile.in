@@ -17,7 +17,7 @@ ghcmake: ghcmake.build-stamp
 ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
-	ghc --make HOC.hs	\
+	$(GHC) --make HOC.hs	\
 		-odir build/objects -hidir build/imports	\
 		-fglasgow-exts -package-name HOC \
 		../HOC_cbits/HOC_cbits.o	\
@@ -34,9 +34,9 @@ clean:
 	    ghcmake.build-stamp
 
 install: all
-	mkdir -p `ghc --print-libdir`/HOC
+	mkdir -p $(GHC_LIB_PATH)/HOC
 	cp -R libHOC.a HOC.o build/imports \
-		`ghc --print-libdir`/HOC/
-	ranlib `ghc --print-libdir`/HOC/libHOC.a
-	ghc-pkg --update-package	\
+		$(GHC_LIB_PATH)/HOC/
+	ranlib $(GHC_LIB_PATH)/HOC/libHOC.a
+	$(GHC_PKG) --update-package	\
 			--input-file=HOC-$(PLATFORM).conf

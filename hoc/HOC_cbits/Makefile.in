@@ -37,9 +37,9 @@ depend: $(SRCS)
 	cc -MM $(CFLAGS) $(SRCS) > depend
 		
 install: all
-	mkdir -p `ghc --print-libdir`/HOC
+	mkdir -p $(GHC_LIB_PATH)/HOC
 	cp -R libHOC_cbits.a HOC_cbits.o \
-		`ghc --print-libdir`/HOC/
-	ranlib `ghc --print-libdir`/HOC/libHOC_cbits.a
+		$(GHC_LIB_PATH)/HOC/
+	ranlib $(GHC_LIB_PATH)/HOC/libHOC_cbits.a
 	
 -include depend

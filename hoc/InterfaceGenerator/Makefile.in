@@ -4,7 +4,7 @@ all: ifgen
 
 ifgen:
 	mkdir -p build
-	ghc --make Main.hs	\
+	$(GHC) --make Main.hs	\
 		-odir build -hidir build \
 		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
 		-o $@

@@ -22,10 +22,10 @@ SOURCE_PNGS = \
 all: view
 
 %.png: %.dot
-	@DOT@ -Tpng
+	$(DOT) -Tpng
 
 HOC.html: $(SOURCE_PODS) $(SOURCE_PMGS)
-	@POD2HTML@ \
+	$(POD2HTML) \
 	  --index \
 	  --header \
 	  --title="${TITLE}" \

@@ -4,7 +4,7 @@ all: hocwrap
 
 hocwrap: *.hs
 	mkdir -p build/hocwrap
-	ghc --make HOCWrap.hs	\
+	$(GHC) --make HOCWrap.hs	\
 		-fglasgow-exts	\
 		-o hocwrap	\
 		-odir build/hocwrap -hidir build/hocwrap	\
