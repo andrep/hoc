@@ -1,6 +1,6 @@
 /* :: general text formatting :: */
 
-a {
+a:link {
   color: 0000CC;
   text-decoration: none;
   border: none;
@@ -18,8 +18,7 @@ a.plain {
 
 p {
   font-size:100%;
-  margin: 12px 0;
-  text-align: justify;
+  margin: 6px 0;
 }
 
 p.center {
@@ -57,33 +56,31 @@ h1 {
   font-size:150%;
   line-height: 150%;
   color: #000066;
-  text-align: center; 
 }
 
 h2 {
   font-family: Verdana, sans-serif;
   font-size:120%;
   line-height: 120%;
-  /* color: #000066; */
-  text-align: center;
+  color: #000000;
 }
 
 h3 {
   font-family: Verdana, sans-serif;
   font-size:120%;
-  color: #333333;
+  color: #000000;
 }
 
 h4 {
   font-family: Verdana, sans-serif;
   font-size:110%;
-  color: #333333;
+  color: #000000;
 }
 
 h5 {
   font-family: Verdana, sans-serif;
   font-size:110%;
-  color: #3A3A3A;
+  color: #000000;
 }
 
 img {
