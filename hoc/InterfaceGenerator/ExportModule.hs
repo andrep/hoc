@@ -14,7 +14,7 @@ import NameCaseChange
 
 import Data.Set
 import qualified Data.HashTable as HashTable
-import Data.List(nub, partition)
+import Data.List(nub, partition, isPrefixOf)
 import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)
 import Data.FiniteMap(lookupFM)
 import Text.PrettyPrint.HughesPJ
@@ -170,7 +170,7 @@ exportModule bindingScript
         mentionedClassNames = filter (isClassType typeEnv) mentionedTypeNames
         
         
-        mentionedEnumImports = importsToForward $
+        mentionedTypeImports = importsToForward $
                                groupImports moduleName $
                                [ (loc, name)
                                | (name, Just (PlainTypeName, loc))
@@ -183,6 +183,24 @@ exportModule bindingScript
 
     additionalCode <- readFileOrEmpty (additionalCodePath (dotToSlash moduleName ++ ".hs"))
 
+    let additionalCodeLines = lines $ concat $ maybeToList additionalCode
+        [additionalCodeAbove, additionalCodeBelow,
+         additionalCodeAboveForward, additionalCodeBelowForward]
+            = take 4 $ (splitAt "-- CUT HERE" additionalCodeLines) ++ repeat []
+
+        splitAt s xs 
+                | null xs'' = [xs']
+                | otherwise = xs' : splitAt s (tail xs'')
+            where (xs', xs'') = span (not . (s `isPrefixOf`)) xs
+            
+        additionalExports = [ additionalExport
+                            | '-':'-':'X':additionalExport
+                              <- additionalCodeAbove ++ additionalCodeBelow ]
+        additionalForwardExports = [ additionalExport
+                                   | '-':'-':'X':additionalExport
+                                     <- additionalCodeAboveForward
+                                        ++ additionalCodeBelowForward ]
+
     let enumDefinitions = fromMaybe [] $ lookupFM allEnumDefinitions moduleName
 
     let anythingGoingOn = not $ and [null methodInstances,
@@ -192,24 +210,25 @@ exportModule bindingScript
                                      isNothing additionalCode,
                                      null enumDefinitions]
         
-        additionalCodeLines = lines $ concat $ maybeToList additionalCode
-        
         forwardModule = render $ vcat $ [
                 text "module " <+> text (moduleName ++ ".Forward")
                     <+> parens (sep $ punctuate comma $
                         map text (exportedClasses
                                  ++ [ nameToUppercase enum ++ "(..)"
                                     | enum <- mapMaybe enumName enumDefinitions ]
+                                 ++ additionalForwardExports
                                  ))
                     <+> text "where",
                 if null enumDefinitions then empty
                                         else text "import Foreign.C.Types(CInt)",
                 text "import HOC"
             ] 
+            ++ (map text $ additionalCodeAboveForward)
             ++ map pprImport superClassForwardImports
             ++ map pprClassDecl (orderClassInfos $ filter (not . ciProtocol) $ definedClassInfos)
             ++ [text "-- enum definitions"]
             ++ map pprEnumType enumDefinitions
+            ++ (map text $ additionalCodeBelowForward)
             
         declarationModule = render $ vcat $ [
                 text "module" <+> text moduleName
@@ -218,7 +237,7 @@ exportModule bindingScript
                                  : "module HOC"
                                  : exportedSels ++ exportedProtos
                                  ++ map ("module "++) superClassModules
-                                 ++ [additionalExport | '-':'-':'X':additionalExport <- additionalCodeLines ]
+                                 ++ additionalExports
                                  ))
                     <+> text "where",
                 text "import Prelude hiding" <+>
@@ -229,7 +248,7 @@ exportModule bindingScript
                 text "import HOC",
                 text "import" <+> text (moduleName ++ ".Forward")
             ]
-            ++ (map text $ takeWhile (/= "-- CUT HERE") additionalCodeLines)
+            ++ (map text $ additionalCodeAbove)
             ++ [text "-- superclasses"]
             ++ map pprImport superClassImports
             -- ++ map pprImportAll superClassModules
@@ -237,8 +256,8 @@ exportModule bindingScript
             ++ map pprImport adoptedProtoImports
             ++ [text "-- classes mentioned in type signatures"]                    
             ++ map pprImport mentionedClassImports
-            ++ [text "-- enums mentioned in type signatures"]
-            ++ map pprImport mentionedEnumImports
+            ++ [text "-- plain types mentioned in type signatures"]
+            ++ map pprImport mentionedTypeImports
             ++ [text "-- selectors that are reexported"]
             ++ map pprImport selImports
             ++ [text "-- selectors from adopted protocols"]
@@ -253,7 +272,7 @@ exportModule bindingScript
             ++ map pprProtocolDecl protocolsToDeclare
             ++ [text "-- protocol adoptions"]
             ++ map pprProtoAdoption protoAdoptions
-            ++ (map text $ dropWhile (/= "-- CUT HERE") additionalCodeLines)
+            ++ (map text $ additionalCodeBelow)
     
 
         

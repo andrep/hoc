@@ -235,11 +235,11 @@ prepareDeclarations bindingScript modules = do
                      | (mod, SelectorList (Interface name _ _) _) <- allDecls ]
         (enumNamesAndLocations, enumDefinitions) = extractEnums modules
         
-        typeEnv = TypeEnvironment (listToFM $ classNames
-                                              ++ [ (name, (PlainTypeName, mod))
-                                                 | (name, mod) <- enumNamesAndLocations ])
+        typeEnv = TypeEnvironment $ listToFM $
+                  classNames ++ [ (name, (PlainTypeName, mod))
+                                | (name, mod) <- enumNamesAndLocations
+                                                 ++ bsAdditionalTypes bindingScript ]
                                                             
-        
     putStrLn "collecting categories..."
     classHash <- HashTable.fromList HashTable.hashString classes
     mapM_ (updateClassInfoForCategory classHash) allDecls
