@@ -56,8 +56,13 @@ setVarCif = getCifForSelector (undefined :: SetVarImpType (ID ()) (ID ()))
 getVarCif = getCifForSelector (undefined :: GetVarImpType (ID ()) (ID ()))
 
 
-exportClass :: String -> String -> [ClassMember] -> Q [Dec]
-
+exportClass :: String -- ^ Name of class you're exporting, e.g. "MyDocument"
+            -> String -- ^ A prefix for function names which are methods 
+	              --   belonging to this class, e.g. "md_"
+	    -> [ClassMember] -- ^ A list of class members, such as outlets
+	                     --   and instance variables
+	    -> Q [Dec] -- ^ A Haskell declaration, which can be spliced in
+	               --   with Template Haskell's $(...) syntax
 exportClass name prefix members = sequence $ [
         valD (VarP exportFunName) (normalB (mkClassExportAction name prefix members)) [],
         dataD (cxt []) instanceDataName [] [normalC instanceDataName strictTypes] [],
