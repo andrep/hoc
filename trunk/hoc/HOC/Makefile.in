@@ -1,5 +1,16 @@
 include ../config.mk
 
+dist_srcdir = HOC
+dist_FILES = \
+	HOC/ \
+	HOC-gnustep.conf \
+	HOC-gnustep.conf-inplace \
+	HOC-macos.conf \
+	HOC-macos.conf-inplace \
+	HOC.hs \
+	Makefile.in \
+	$(NULL)
+
 all: libHOC.a HOC.o
 
 libHOC.a: ghcmake.build-stamp
