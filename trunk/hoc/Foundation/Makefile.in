@@ -7,7 +7,23 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHSFoundation.a HSFoundation.o
+all: libHSFoundation.a HSFoundation.o ../inplace.conf
+
+../inplace.conf: Foundation.conf-inplace
+	$(GHC_PKG) unregister --force --package-conf=../inplace.conf Foundation || true
+	$(GHC_PKG) register Foundation.conf-inplace \
+		--package-conf=../inplace.conf
+
+exposed-modules.txt:
+	find build/imports | grep '\.hi' \
+            | sed 's@build/imports/@ ,@g' | sed 's/\.hi//g' | sed 's@/@.@g' \
+            > exposed-modules.txt
+
+Foundation.conf-inplace: Foundation-$(PLATFORM).conf-inplace.in exposed-modules.txt
+	cat Foundation-$(PLATFORM).conf-inplace.in exposed-modules.txt > Foundation.conf-inplace
+
+Foundation.conf: Foundation-$(PLATFORM).conf.in exposed-modules.txt
+	cat Foundation-$(PLATFORM).conf.in exposed-modules.txt > Foundation.conf
 
 ghcmake: ghcmake.build-stamp
 
@@ -21,40 +37,40 @@ ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
 	$(GHC) --make Foundation.hs	\
-		-package-name Foundation	\
 		-odir build/objects \
+		-ignore-package Foundation \
 		-hidir build/imports	\
-		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
+		-package-conf ../inplace.conf \
 		-fglasgow-exts
+                
 	test ! -r GNUstepBase.hs || \
 		$(GHC) --make GNUstepBase.hs	\
-			-package-name Foundation	\
+			-ignore-package Foundation	\
 			-odir build/objects \
 			-hidir build/imports	\
-			-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
+			-package-conf ../inplace.conf \
 			-fglasgow-exts
 	touch $@
 
 HSFoundation.o: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs ld -r -x -o HSFoundation.o
 
-#libHSFoundation.a: ghcmake
-#	find build/objects/ -name \*.o | xargs libtool -static -o libHSFoundation.a	
+libHSFoundation.a: ghcmake
+	find build/objects/ -name \*.o | xargs libtool -static -o libHSFoundation.a	
 
-libHSFoundation.a: HSFoundation.o
-	rm -f libHSFoundation.a
-	ar cq libHSFoundation.a HSFoundation.o
-	ranlib libHSFoundation.a
+#libHSFoundation.a: HSFoundation.o
+#	rm -f libHSFoundation.a
+#	ar cq libHSFoundation.a HSFoundation.o
+#	ranlib libHSFoundation.a
 
 clean:
 	rm -rf build libHSFoundation.a HSFoundation.o Foundation.hs \
 	    Foundation ghcmake.build-stamp
 	
-install: all
+install: all Foundation.conf
 	mkdir -p $(GHC_LIB_PATH)/Foundation
 	cp -R libHSFoundation.a HSFoundation.o build/imports \
 		$(GHC_LIB_PATH)/Foundation/
 	ranlib $(GHC_LIB_PATH)/Foundation/libHSFoundation.a
-	$(GHC_PKG) --update-package	\
-			--input-file=Foundation.conf
+	$(GHC_PKG) register Foundation.conf
 

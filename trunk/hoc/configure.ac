@@ -60,13 +60,13 @@ if test "$GHC"; then
   ghc_minor=`echo "$ghc_version" | sed -n -e 's/[0-9][0-9]*\.\([0-9][0-9]*\).*/\1/p'`
   changequote([, ])
   AC_MSG_RESULT([$ghc_version])
-  if test '(' "$ghc_major" -ge 6 -a "$ghc_minor" -ge 2 ')' -o \
-          '(' "$ghc_major" -ge 6 ')'; then
+  if test '(' "$ghc_major" -ge 6 -a "$ghc_minor" -ge 3 ')' -o \
+          '(' "$ghc_major" -gt 6 ')'; then
     AC_MSG_CHECKING([for ghc library directory])
     GHC_LIB_PATH=`$GHC --print-libdir`
     AC_MSG_RESULT([$GHC_LIB_PATH])
   else
-    AC_MSG_ERROR([** Sorry, your GHC is too old. GHC >= 6.2 required.])
+    AC_MSG_ERROR([** Sorry, your GHC is too old. GHC >= 6.3 (Dec. 04 snapshot) required.])
     GHC=""
   fi
 else

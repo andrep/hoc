@@ -8,7 +8,7 @@ import Foreign.ForeignPtr
 import Foreign.Ptr
 import System.IO.Unsafe(unsafePerformIO)
 
-import Language.Haskell.THSyntax
+import HOC.TH
 
 class (Storable b, FFITypeable b) => ObjCArgument a b | a -> b where
     withExportedArgument :: a -> (b -> IO c) -> IO c
@@ -28,9 +28,19 @@ class (Storable b, FFITypeable b) => ObjCArgument a b | a -> b where
 -}
 
 declareStorableObjCArgument :: TypeQ -> String -> Q [Dec]
+
+{- This is what we'd like to do.
+declareStorableObjCArgument ty str =
+    [d| instance ObjCArgument $(ty) $(ty) where
+            exportArgument = return
+            importArgument = return
+            objCTypeString = str
+    |]
+-}
+
 declareStorableObjCArgument ty str = do
-    argInst <- instanceD (cxt []) (conT (thModulePrefix "Arguments" "ObjCArgument")
-                                   `appT` ty `appT` ty)
+    argInst <- instanceD (cxt []) (conT ''ObjCArgument
+        `appT` ty `appT` ty)
             `whereQ` [d|
                 {- withExportedArgument = flip ($) -}
                 exportArgument = return

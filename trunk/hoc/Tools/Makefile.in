@@ -14,8 +14,7 @@ hocwrap: *.hs
 		-fglasgow-exts	\
 		-o hocwrap	\
 		-odir build/hocwrap -hidir build/hocwrap	\
-		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace	\
-		-package-conf ../Foundation/Foundation.conf-inplace
+		-package-conf ../inplace.conf
 
 clean:
 	rm -rf hocwrap build

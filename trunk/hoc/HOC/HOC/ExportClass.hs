@@ -1,6 +1,5 @@
 module HOC.ExportClass where
 
-import Language.Haskell.THSyntax
 import Foreign
 import Foreign.C.String
 import Control.Concurrent.MVar
@@ -16,6 +15,7 @@ import HOC.Invocation
 import HOC.SelectorMarshaller
 import HOC.Class
 import HOC.NewClass
+import HOC.TH
 
 data ClassMember =
         InstanceMethod SelectorInfo
@@ -64,12 +64,12 @@ exportClass :: String -- ^ Name of class you're exporting, e.g. "MyDocument"
 	    -> Q [Dec] -- ^ A Haskell declaration, which can be spliced in
 	               --   with Template Haskell's $(...) syntax
 exportClass name prefix members = sequence $ [
-        valD (VarP exportFunName) (normalB (mkClassExportAction name prefix members)) [],
-        dataD (cxt []) instanceDataName [] [normalC instanceDataName strictTypes] [],
-        valD (VarP tyConVar) (normalB [| mkTyCon instanceDataName |]) [],
-        instanceD (cxt []) (conT "Data.Typeable:Typeable" `appT` instTy) `whereQ`
-            [d| typeOf _ = mkAppTy $(varE tyConVar) [] |],
-        instanceD (cxt []) (conT (thModulePrefix "ExportClass" "InstanceVariables")
+        valD (varP $ mkName exportFunName)
+            (normalB (mkClassExportAction name prefix members)) [],
+        dataD (cxt []) (mkName instanceDataName) []
+            [normalC (mkName instanceDataName) strictTypes] [''Typeable],
+        valD (varP $ mkName tyConVar) (normalB [| mkTyCon instanceDataName |]) [],
+        instanceD (cxt []) (conT ''InstanceVariables
                             `appT` clsTy `appT` instTy) `whereQ`
             [d|
                 initializeInstanceVariables = $(initIVars)
@@ -82,22 +82,24 @@ exportClass name prefix members = sequence $ [
         strictTypes = map (strictType (return IsStrict)) wrappedIvarTypes
         ivars = [ (name, ty, [| nil |]) | Outlet name ty <- members ]
              ++ [ (name, ty, initial)   | InstanceVariable name ty initial <- members ]
-        wrappedIvarTypes = [ conT "GHC.IOBase:MVar" `appT` ty | (_,ty,_) <- ivars ]
+        wrappedIvarTypes = [ conT ''MVar `appT` ty | (_,ty,_) <- ivars ]
         ivarNames = [ name | (name,_,_) <- ivars ]
-        clsTy = conT name `appT` conT "GHC.Base:()"
-        instTy = conT instanceDataName
+        clsTy = conT (mkName name) `appT` [t| () |]
+        instTy = conT (mkName instanceDataName)
         nIVars = length ivarNames
         
         declaredIVars = zipWith declareIVar ivarNames [1..]
-        declareIVar ivar n = valD (VarP ('_' : ivar)) (normalB [| IVar $(getNth n) |]) []
+        declareIVar ivar n = valD (varP $ mkName ('_' : ivar))
+                                   (normalB [| IVar $(getNth n) |]) []
             where
-                getNth n = lamE [conP instanceDataName args] (varE $ "arg" ++ show n)
-                args = [ varP $ "arg" ++ show i | i <- [1..nIVars] ]
+                getNth n = lamE [conP (mkName instanceDataName) args]
+                                (varE $ mkName $ "arg" ++ show n)
+                args = [ varP $ mkName $ "arg" ++ show i | i <- [1..nIVars] ]
         
         initIVars = doE (map initIVar ivars ++ [noBindS [| return $(wrap) |]])
             where
-                wrap = foldl appE (conE instanceDataName) (map varE ivarNames)
-                initIVar (ivar,ty,initial) = bindS (varP ivar) [| newMVar $(initial) |]
+                wrap = foldl appE (conE $ mkName instanceDataName) (map (varE.mkName) ivarNames)
+                initIVar (ivar,ty,initial) = bindS (varP $ mkName ivar) [| newMVar $(initial) |]
 
 data Method = ImplementedMethod SelectorInfo String
             | GetterMethod String
@@ -106,7 +108,7 @@ data Method = ImplementedMethod SelectorInfo String
 mkClassExportAction name prefix members =
         [| 
             do
-                super <- getClassByName $(varE $ "super_" ++ name)
+                super <- getClassByName $(varE $ mkName $ "super_" ++ name)
                 ivars <- makeDefaultIvarList
                 imethods <- makeMethodList (nIMethods+3)
                 cmethods <- makeMethodList nCMethods
@@ -121,7 +123,8 @@ mkClassExportAction name prefix members =
                 newClass super clsname defaultIvarSize ivars imethods cmethods
         |]
     where
-        typedInitIvars = [|initializeInstanceVariables|] `sigE` (conT "GHC.IOBase:IO" `appT` conT (name ++ "_IVARS"))
+        typedInitIvars = [|initializeInstanceVariables|]
+            `sigE` (conT ''IO `appT` conT (mkName $ name ++ "_IVARS"))
     
         outlets = [ name | Outlet name _ <- members ]
         classMethods =    [ ImplementedMethod info (prefix ++ selectorInfoHaskellName info)
@@ -152,28 +155,28 @@ mkClassExportAction name prefix members =
                 exportMethod' isClassMethod objCMethodList num methodBody
                               nArgs isUnit impTypeName selExpr cifExpr
             where
-                methodBody = varE methodDefinition
+                methodBody = varE $ mkName methodDefinition
                 selName = selectorInfoHaskellName selectorInfo
                 nArgs = selectorInfoNArgs selectorInfo
                 isUnit = selectorInfoIsUnit selectorInfo
                 
-                impTypeName = "ImpType_" ++ selName
-                selExpr = [| selectorInfoSel $(varE $ "info_" ++ selName) |]
-                cifExpr = [| selectorInfoCif $(varE $ "info_" ++ selName) |]
+                impTypeName = mkName $ "ImpType_" ++ selName
+                selExpr = [| selectorInfoSel $(varE $ mkName $ "info_" ++ selName) |]
+                cifExpr = [| selectorInfoCif $(varE $ mkName $ "info_" ++ selName) |]
         
         exportMethod isClassMethod objCMethodList (GetterMethod ivarName, num) =
                 exportMethod' isClassMethod objCMethodList num
-                              (varE (thModulePrefix "ExportClass" "getAsID") `appE` varE ('_':ivarName))
-                              0 False (thModulePrefix "ExportClass" "GetVarImpType")
+                              ([| getAsID |] `appE` varE (mkName ('_':ivarName)))
+                              0 False (''GetVarImpType)
                               [| getSelectorForName ivarName |]
-                              (varE (thModulePrefix "ExportClass" "getVarCif"))
+                              [| getVarCif |]
             
         exportMethod isClassMethod objCMethodList (SetterMethod ivarName, num) =
                 exportMethod' isClassMethod objCMethodList num
-                              (varE (thModulePrefix "ExportClass" "setAsID") `appE` varE ('_':ivarName))
-                              1 True (thModulePrefix "ExportClass" "SetVarImpType")
+                              ([| setAsID |] `appE` varE (mkName ('_':ivarName)))
+                              1 True (''SetVarImpType)
                               [| getSelectorForName setterName |]
-                              (varE (thModulePrefix "ExportClass" "setVarCif"))
+                              [| setVarCif |]
             where
                 setterName = setterNameFor ivarName
         
@@ -188,7 +191,7 @@ mkClassExportAction name prefix members =
                                 $(selExpr)
                                 (objCMethodType $(typed [|undefined|]))
                                 $(cifExpr)
-                                ($(lamE [varP "cif", varP "ret", varP "args"] marshal))
+                                ($(lamE (map (varP.mkName) ["cif","ret","args"]) marshal))
             |]
             where
                 marshal = [| exceptionHaskellToObjC $(marshal') |]
@@ -204,29 +207,30 @@ mkClassExportAction name prefix members =
                         [noBindS typedBodyWithArgs]
                     | otherwise =
                         [
-                            bindS (VarP "result") typedBodyWithArgs,
+                            bindS (varP $ mkName "result") typedBodyWithArgs,
                             noBindS [| setMarshalledRetval
-                                            $(varE "ret") $(varE "result") |]
+                                            $(varE $ mkName "ret")
+                                            $(varE $ mkName "result") |]
                         ]
                 
                 typedBodyWithArgs = foldl1 appE (typed methodBody
-                                                : map varE (arguments ++ ["self"])) 
+                                                : map (varE.mkName)(arguments ++ ["self"])) 
                     where
                         arguments = ["arg" ++ show i | i <- [1..nArgs]]
                 
                 typed thing = thing
                             `sigE` (conT impTypeName
                                     `appT` (targetType
-                                            `appT` conT "GHC.Base:()")
+                                            `appT` [t| () |])
                                     `appT` (instanceType
-                                            `appT` conT "GHC.Base:()")
+                                            `appT` [t| () |])
                                      )
                 
-                targetType   | isClassMethod = conT $ name ++ "Class"
+                targetType   | isClassMethod = conT $ mkName $ name ++ "Class"
                              | otherwise     = instanceType
                              
-                instanceType = conT name
+                instanceType = conT $ mkName name
                 
                 getArg (argname, argnum) =
-                    bindS (VarP argname)
-                          [| getMarshalledArgument $(varE "args") argnum |]
+                    bindS (varP (mkName argname))
+                          [| getMarshalledArgument $(varE $ mkName "args") argnum |]
