@@ -22,7 +22,7 @@ data EnumType = EnumType (Maybe String) [(String, Integer)]
 enumName (EnumType mbName _) = mbName
 
 extractEnums headers =
-        ( [ (mod, name) | (mod, types) <- enums, Just name <- map enumName types ]
+        ( [ (name, mod) | (mod, types) <- enums, Just name <- map enumName types ]
         , listToFM enums
         )
     where enums = [ (moduleName, mapMaybe extractEnumType decls)
