@@ -23,7 +23,9 @@ nil = Nil
 castObject (ID a) = ID a
 
 instance Eq (ID a) where
-    (ID (HSO a _)) == (ID (HSO b _)) = a == b
+    (ID (HSO a _)) == (ID (HSO b _))    = a == b
+    Nil == Nil                          = True
+    _ == _                              = False
 
 class ObjCArgument a (Ptr ObjCObject) => Object a where
 	toID :: a -> ID ()
