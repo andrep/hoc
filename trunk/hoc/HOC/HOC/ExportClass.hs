@@ -113,7 +113,7 @@ mkClassExportAction name prefix members =
                 $(fillMethodList False 3 [|imethods|] instanceMethods) 
                 $(fillMethodList True 0 [|cmethods|] classMethods)
                 clsname <- newCString name
-                newClass super clsname 0 ivars imethods cmethods
+                newClass super clsname defaultIvarSize ivars imethods cmethods
         |]
     where
         typedInitIvars = [|initializeInstanceVariables|] `sigE` (conT "GHC.IOBase:IO" `appT` conT (name ++ "_IVARS"))
