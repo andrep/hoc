@@ -71,7 +71,7 @@ been lightly toasted, err, tested, with GNUstep on Linux.
 
 =head2 Requirements
 
-HOC requires the Glasgow Haskell Compiler (GHC) 6.2
+HOC requires the Glasgow Haskell Compiler (GHC) 6.4
 <L<http://www.haskell.org/ghc/>> or later to build.  We use the
 latest features provided by GHC, such as Template Haskell, to
 implement many parts of HOC, and it would be impossible (as
