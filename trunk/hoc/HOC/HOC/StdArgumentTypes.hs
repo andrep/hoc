@@ -5,6 +5,7 @@ import HOC.Invocation
 import HOC.Arguments
 import HOC.FFICallInterface
 
+import Control.Exception        ( bracket )
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
@@ -69,7 +70,12 @@ foreign import ccall unsafe "Marshalling.h utf8ToNSString"
     utf8ToNSString :: CString -> IO (Ptr ObjCObject)
 
 instance ObjCArgument String (Ptr ObjCObject) where
-    exportArgument arg = withCString arg utf8ToNSString
+    withExportedArgument arg action =
+        bracket (withCString arg utf8ToNSString) releaseObject action
+    exportArgument arg = do
+        nsstr <- withCString arg utf8ToNSString
+        autoreleaseObject nsstr
+        return nsstr
     importArgument arg = nsStringToUTF8 arg >>= peekCString
     
     objCTypeString _ = "*"
