@@ -14,6 +14,7 @@ import Headers(HeaderInfo(..), ModuleName)
 
 import HOC.SelectorNameMangling(mangleSelectorName)
 
+import Control.Monad(when)
 import Data.Set
 import Data.FiniteMap
 import qualified Data.HashTable as HashTable
@@ -248,15 +249,19 @@ prepareDeclarations bindingScript modules = do
         mangleSelectors factory sels =
             mapMaybe (\(sel, location) -> do
                     let name = selName sel
-                        mangled = mangleSelectorName name
                         mapped = lookupFM (bsNameMappings bindingScript) name
+                        mangled = case mapped of
+                                    Just x -> x
+                                    Nothing -> mangleSelectorName name
+                    
+                    when (name `elementOf` bsHiddenSelectors bindingScript) $ Nothing
                     
                     typ <- if mangled `elementOf` bsCovariantSelectors bindingScript
                         then getCovariantSelectorType factory classNames sel
                         else getSelectorType classNames sel
                     return $ (MangledSelector {
                             msSel = sel,
-                            msMangled = case mapped of Just x -> x ; Nothing -> mangled,
+                            msMangled = mangled,
                             msType = typ
                         }, location)
                 ) $ fmToList sels
