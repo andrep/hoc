@@ -8,6 +8,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT(HOC, 0.2, ozone@algorithm.com.au)
+AC_CONFIG_AUX_DIR(autotools)
 
 # Check we're in the right directory
 AC_CONFIG_SRCDIR([HOC/HOC/NewClass.hs])
