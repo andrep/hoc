@@ -1,0 +1,18 @@
+include ../config.mk
+
+all: hocwrap
+
+hocwrap: *.hs
+	mkdir -p build/hocwrap
+	ghc --make HOCWrap.hs	\
+		-fglasgow-exts	\
+		-o hocwrap	\
+		-odir build/hocwrap -hidir build/hocwrap	\
+		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace	\
+		-package-conf ../Foundation/Foundation.conf-inplace
+
+clean:
+	rm -rf hocwrap build
+
+install: all
+	install -s hocwrap /usr/local/bin/
