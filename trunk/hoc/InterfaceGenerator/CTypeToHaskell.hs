@@ -22,6 +22,7 @@ import Text.PrettyPrint
 import Debug.Trace
 
 data TypeNameKind = ClassTypeName | PlainTypeName
+    deriving (Show)
 
 newtype TypeEnvironment = TypeEnvironment (FiniteMap String (TypeNameKind, ModuleName))
     -- (Set String) -- known classes
