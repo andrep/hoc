@@ -7,13 +7,14 @@ module BindingScript(
 
 import Data.FiniteMap
 import Data.Set
-import Data.Char(isSpace)
+
+import Text.ParserCombinators.Parsec.Language(haskell)
+import Text.ParserCombinators.Parsec.Token
+import Text.ParserCombinators.Parsec
 
 data BindingScript = BindingScript {
-        bsNameMappings :: FiniteMap String String,
         bsHiddenFromPrelude :: Set String,
-        bsCovariantSelectors :: Set String,
-        bsHiddenSelectors :: Set String
+        bsTopLevelOptions :: SelectorOptions
     }
     
 data SelectorOptions = SelectorOptions {
@@ -25,28 +26,60 @@ data SelectorOptions = SelectorOptions {
 getSelectorOptions :: BindingScript -> String -> SelectorOptions
 
 getSelectorOptions bindingScript clsName =
+    bsTopLevelOptions bindingScript
+
+tokenParser = haskell
+
+selector tp = lexeme tp $ do
+                c <- letter
+                s <- many (alphaNum <|> oneOf "_:")
+                return (c:s)
+
+idList keyword = do
+    symbol tokenParser keyword
+    many1 (identifier tokenParser)
+
+data Statement = HidePrelude String
+               | Covariant String
+               | Hide String
+               | Rename String String 
+
+extractSelectorOptions statements =
     SelectorOptions {
-        soNameMappings = bsNameMappings bindingScript,
-        soCovariantSelectors = bsCovariantSelectors bindingScript,
-        soHiddenSelectors = bsHiddenSelectors bindingScript
+            soNameMappings = listToFM [ (objc, haskell)
+                                      | Rename objc haskell <- statements ],
+            soCovariantSelectors = mkSet $ [ ident 
+                                           | Covariant ident <- statements ],
+            soHiddenSelectors = mkSet $ [ ident | Hide ident <- statements ]
     }
+
+hidePrelude = fmap (map HidePrelude) $ idList "hidePrelude"
     
--- TODO: replace this by a proper parser, or at least report errors
+rename = do
+    symbol tokenParser "rename"
+    objc <- selector tokenParser
+    haskell <- identifier tokenParser
+    return [Rename objc haskell]
     
-readBindingScript fn = do
-    scriptLines <- fmap (map words .
-                        filter ((/= '#') . head) .
-                        filter (any (not . isSpace)) .
-                        lines) $
-                  readFile fn
+covariant = fmap (map Covariant) $ idList "covariant"
+hide = fmap (map Hide) $ idList "hide"
+
+statement = do
+    result <- hidePrelude <|> rename <|> covariant <|> hide
+    semi tokenParser
+    return result
+
+bindingScript = do
+    statements <- fmap concat $ many statement
+    eof
+    
     return $ BindingScript {
-            bsNameMappings = listToFM [ (objc, haskell)
-                                      | ["rename", objc, haskell] <- scriptLines ],
-            bsHiddenFromPrelude = mkSet $ concat 
-                                  [ xs | ("hidePrelude" : xs) <- scriptLines ],
-            bsCovariantSelectors = mkSet $
-                                   concat [ xs 
-                                          | ("covariant" : xs) <- scriptLines ],
-            bsHiddenSelectors = mkSet $ concat [ xs | ("hide" : xs) <- scriptLines ]
+            bsHiddenFromPrelude = mkSet [ ident | HidePrelude ident <- statements ],
+            bsTopLevelOptions = extractSelectorOptions statements
         }
 
+readBindingScript fn = do
+    either <- parseFromFile bindingScript fn
+    case either of
+        Left err -> error (show err)
+        Right result -> return result
