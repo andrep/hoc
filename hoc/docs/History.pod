@@ -1,5 +1,0 @@
-=head1 History
-
-=for comment Modeline for vi(m)
-vi:sw=2 tw=65
-

@@ -2,7 +2,16 @@
 
 =head2 F<hocwrap>
 
-=head2 F<hocnewapp>
+The F<hocwrap> tool takes an executable and "wraps" it in a Mac OS
+X F<.app> application bundle.  You'll need to tell hocwrap where the
+bundle's F<Contents/> directory using the C<-c> command-line parameter.
+F<hocwrap> can also run the resulting application bundle using GHCi in an
+interactive fashion: more documentation about this will be coming in the
+future, but for now, check out the I<Browser> and I<Editor> applications'
+F<Makefile>s in HOC's F<Samples/> directory, for an idea of how to use the
+GHCi interaction feature.
+
+See C<hocwrap --help> for the definitive reference on F<hocwrap>.
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65
