@@ -1,0 +1,170 @@
+#!/usr/bin/perl
+
+use strict;
+
+# - (id)precompFileNameForHeaderPath:(id)fp8 inTargetBuildContext:(id)fp12;
+
+my $class_or_instance_method_regex = qr/ ^ ( [-+] ) \s+ /x;
+my $return_type_regex = qr/ \( ( [^)]+ ) \) /x;
+my $selector_and_arg_regex = qr/ ([^:]+) \: \(([^)]+)\) \s* ([^\s;]+) \s* /x;
+my $selector_regex = qr/ ([^;]+) ; /x;
+my $interface_regex = qr/ ^ \@interface \s+ ([^\s\(\:]+) \s* ( \: \s* (\S+) )? /x;
+
+# this is true if we're in the middle of parsing an interface (between
+# @interface and @end)
+my $parsing_interface = 0;
+my $in_brackets = 0;
+
+sub spec_for_type
+{
+  my ($type) = @_;
+  return "%d" if ($type eq "int");
+  return "%s" if ($type eq "char *");
+  return "%d" if ($type eq "BOOL");
+  return "\%\@";
+}
+
+my $class_name;
+
+while (<>)
+{
+  # skip input until we see a "@interface" declaration
+  if (not $parsing_interface)
+  {
+    next if (not /$interface_regex/);
+  }
+
+  if (/$interface_regex/)
+  {
+    # got a @interface declaration: read the classname etc.
+    /$interface_regex/;
+    $class_name = $1;
+    my $superclass_name = $2 || "";
+    # print "class name: $class_name\n";
+    # print "superclass name: $superclass_name\n";
+
+    # print "\@implementation $class_name (Logger)\n\n";
+
+    $parsing_interface = 1;
+    $in_brackets = 1;
+    next;
+  }
+
+  if ($in_brackets)
+  {
+    # skip anything between { and }
+    if (/^[-+]/)
+    {
+      $in_brackets = 0;
+      # print "now in method signature reading\n";
+      goto PARSE_METHOD_SIG;
+    }
+    next if (not /^}$/);
+    $in_brackets = 0;
+    # print "now in method signature reading\n";
+  }
+
+  PARSE_METHOD_SIG:
+
+  if (not /$class_or_instance_method_regex/)
+  {
+    if (/^\@end/)
+    {
+      # print "\@end\n\n\n";
+      $parsing_interface = 0;
+    }
+    next;
+  }
+
+  # parse method signature
+  s/$class_or_instance_method_regex//;
+  my $class_or_instance_method = $1;
+  # print "$class_or_instance_method\n";
+
+  s/$return_type_regex//;
+  my $return_type = $1;
+
+  my $selector;
+  my @selector_fields;
+  my @method_args_type;
+  my @method_args;
+
+  my @fields = split /\:/, $_;
+  # print "default field is \"$_\"\n";
+  my $number_of_colons = $#fields;
+  # print "colons: $number_of_colons\n";
+
+  if ($number_of_colons != 0)
+  {
+    for (my $i = 0; $i < $number_of_colons; $i++)
+    {
+      s/$selector_and_arg_regex//;
+      $selector_fields[$i] = $1;
+      $selector = "MULTI_ARGS";
+      $method_args_type[$i] = $2;
+      $method_args[$i] = $3;
+    }
+    # print "$class_or_instance_method ($return_type) ";
+    for (my $i = 0; $i < $number_of_colons; $i++)
+    {
+      # print "$selector_fields[$i]:($method_args_type[$i])$method_args[$i] ";
+    }
+    if ($selector eq "MULTI_ARGS")
+    {
+      $selector = join (':', @selector_fields);
+      $selector .= ':';
+    }
+    
+    my $shadowed_selector = $selector;
+    $shadowed_selector =~ tr/:/_/;
+
+    # print "static IMP shadowed_$selector;\n";
+
+    print "shadowed_$shadowed_selector = [$class_name instanceMethodForSelector:\@selector($selector)];\n";
+    print "NSLog(\@\"    IMP $selector = (IMP) %p\", shadowed_$shadowed_selector);\n\n";
+
+    # print "\n";
+  }
+  else
+  {
+    s/$selector_regex//;
+    $selector = $1;
+    # print "$class_or_instance_method ($return_type) $selector\n";
+  }
+
+  # print << 'END';
+  if ($selector eq "MULTI_ARGS")
+  {
+    # has multiple arguments: display them
+    for (my $i = 0; $i < $number_of_colons; $i++)
+    {
+      # print "  NSLog (\@\"  $selector_fields[$i]: " .
+      #       spec_for_type($method_args_type[$i]) .
+      #       "\", $method_args[$i]);\n";
+    }
+    $selector = join ('_', @selector_fields);
+    $selector .= '_';
+    if ($return_type ne "void")
+    {
+      # print "  $return_type retval = shadowed_$selector ( self, \@selector(_cmd), " .
+	      (join (', ', @method_args)) . " );\n";
+    }
+  }
+  else
+  {
+    if ($return_type ne "void")
+    {
+      # print "  $return_type retval = shadowed_$selector ( self, \@selector(_cmd) );\n";
+    }
+  }
+
+  if ($return_type ne "void")
+  {
+    # print "  NSLog (\@\"  Returns: " . spec_for_type($return_type) . "\", retval);\n";
+  }
+
+  # print "  NSLog (\@\"}\");\n";
+  # print "}\n\n";
+
+}
+
