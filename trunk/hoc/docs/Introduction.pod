@@ -41,7 +41,9 @@ files to produce Haskell source code.  The Haskell code contains
 data types representing the Objective-C class hierarchy, and
 methods and selectors which enable HOC to communicate with
 Objective-C frameworks.  If you are familiar with other Haskell
-interface generators such as F<c2hs> or F<GreenCard>, HOC's
+interface generators such as F<c2hs>
+<L<http://www.cse.unsw.edu.au/~chak/haskell/c2hs/>> or
+F<GreenCard> <L<http://www.haskell.org/greencard/>>, HOC's
 I<ifgen> tool does the same job, but for creating bindings to
 Objective-C classes instead.
 
@@ -49,8 +51,6 @@ By default, HOC is configured to build bindings for the
 F<Foundation> and F<AppKit> frameworks (collectively named
 F<Cocoa> on S<Mac OS X>), but you can build your own bindings
 with F<ifgen> if required.
-
-=for comment XXX insert hyperlink to c2hs etc
 
 =item * Haskell-Friendly
 
@@ -66,20 +66,17 @@ embed an I<NSMovie> in your application.
 
 HOC's primary platform is S<Mac OS X>, Apple's modern UNIX-based
 operating system.  However, HOC does provides preliminary support
-for the GNUstep platform, and has been lightly toasted, err,
-tested, with GNUstep on Linux.
-
-=for comment XXX insert link to GNUstep
+for the GNUstep platform <L<http://www.gnustep.org/>>, and has
+been lightly toasted, err, tested, with GNUstep on Linux.
 
 =head2 Requirements
 
-HOC requires the Glasgow Haskell Compiler (GHC) 6.2 or later to
-build.  We use the latest features provided by GHC, such as
-Template Haskell, to implement many parts of HOC, and it would be
-impossible (as opposed to just plain hard) to port these
-implementations to work with older versions of GHC.
-
-=for comment XXX: insert link to GHC
+HOC requires the Glasgow Haskell Compiler (GHC) 6.2
+<L<http://www.haskell.org/ghc/>> or later to build.  We use the
+latest features provided by GHC, such as Template Haskell, to
+implement many parts of HOC, and it would be impossible (as
+opposed to just plain hard) to port these implementations to work
+with older versions of GHC.
 
 =head2 Assumed Knowledge
 
@@ -94,10 +91,6 @@ should have actually I<written> a few Haskell tools which use
 IO).  That doesn't mean you have to understand monads, by the
 way.  Hell, this author has done IO in Haskell for years and
 doesn't pretend to understand monads ...
-
-=head2 Getting Started
-
-TODO: Building HOC.
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65

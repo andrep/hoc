@@ -1,7 +1,16 @@
 =head1 Accessing Other Frameworks from Haskell
 
-=head2 Using F<ifgen>
+This section is not written yet: please write to the I<hoc-users>
+mailing list (see L<http://hoc.sourceforge.net/support.html>) for
+assistance or, have a look at the HOC source code yourself.
 
-=head3 Binding Scripts
+=begin comment
 
+TODO :)
+
+=for comment =head2 Using F<ifgen>
+
+=for comment =head3 Binding Scripts
+
+=end comment
 

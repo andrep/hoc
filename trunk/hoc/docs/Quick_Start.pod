@@ -77,11 +77,144 @@ it for yourself:
 
 Hopefully, the code listing above will give you a good idea about
 how to write Haskell code that sends messages to Objective-C
-objects.  For more detail, see Chapter 3.
-
-=for comment XXX: link to chapter 3
+objects.  For more detail, see the chapter on
+L<"Mapping Objective-C Concepts to Haskell">.
 
 =head2 A Simple GUI Application
+
+Preface: This section presumes that you've written a Cocoa
+application before with Objective-C, so that you understand the
+basic development process and design patterns involved with Cocoa
+programs, such as Model-View-Controller and how to use Interface
+Builder.  If you don't know any of this, you'll have to do some
+background reading on Cocoa.  Apple provides a simple tutorial at
+L<http://developer.apple.com/documentation/Cocoa/Conceptual/ObjCTutorial/index.html?http://developer.apple.com/documentation/Cocoa/Conceptual/ObjCTutorial/chapter01/chapter_1_section_1.html>,
+but if you're after something more comprehensive, this author has
+read and highly recommends the book "Cocoa Programming for Mac OS
+X", by Aaron Hillegass:
+L<http://www.bignerdranch.com/products/cocoa1.shtml>.
+
+Say you've got a simple Haskell module: for this example, we'll
+use the F<ExpressionParser.hs> module from the
+F<Samples/ExpressionParser> directory of the HOC source
+distribution.  The code is short and schweet:
+
+  module ExpressionParser
+
+  where
+
+  import Text.ParserCombinators.Parsec
+  import Text.ParserCombinators.Parsec.Expr
+
+  expr :: Parser Integer
+  expr = buildExpressionParser table factor <?> "expression"
+
+  table = [ [op "*" (*) AssocLeft, op "/" div AssocLeft]
+	  , [op "+" (+) AssocLeft, op "-" (-) AssocLeft] ]
+    where
+      op s f assoc = Infix (do { string s; return f }) assoc
+
+  factor = do { char '('; x <- expr; char ')'; return x }
+	   <|> number
+	   <?> "simple expression"
+
+  number :: Parser Integer
+  number = do { ds <- many1 digit; return (read ds) } <?> "number"
+
+Now, you want to wrap a GUI around this module so that people can
+use it without loading GHC or the Apple Terminal application: see
+L<http://localhost/~andrep/hoc/screenshots/ExpressionParser_view.png>
+for a screenshot of what the GUI will look like.  From
+a programing perspective, the GUI consists of:
+
+=over 4
+
+=item An I<expressionEntry> outlet
+
+This is where the user types in the expression which they want
+the answer to.
+
+=item An I<evaluateExpression> action
+
+The method which will be called when the user clicks on the
+button, or presses Enter in the I<expressionEntry> text field.
+
+=item An I<evaluation> outlet
+
+Where the answer to the expression evaluation will be displayed.
+
+=back
+
+For this example, we assume that you've created and instantiated
+an C<EPController> object in Interface Builder which the GUI view
+will be connected to.  The question is, of course: how do you
+write this C<EPController> object in Haskell?  The answer: like
+this ...
+
+  {-# OPTIONS -fglasgow-exts #-}
+
+  module EPController where
+
+  import Cocoa hiding (parse)
+  import ExpressionParser
+  import Selectors
+  import Text.ParserCombinators.Parsec (parse)
+
+  $(declareClass "EPController" "NSObject")
+
+  $(exportClass "EPController" "ep_"
+    [ Outlet "expressionEntry" [t| NSTextField () |]
+    , Outlet "evaluation"      [t| NSTextField () |]
+    , InstanceMethod Selectors.info_evaluateExpression ])
+
+  obj #. var = obj # getIVar var
+
+  ep_evaluateExpression _ self = do
+    -- Get the expressionEntry outlet text field from this object, and get
+    -- what the user typed as a Haskell string
+    expression <- self #. _expressionEntry >>= stringValue >>= haskellString
+    -- Parse the expression
+    case (parse expr "" expression) of
+      Left err ->
+	-- Parsing returned an error: display it in the output text field      
+	self #. _evaluation >>= setStringValue (toNSString $ "Error " ++ show err)
+      Right answer ->
+	-- Parsing was successful: display the answer
+	self #. _evaluation >>= setStringValue (toNSString $ show answer)
+
+Additionally, you'll need to write a C<Selectors.hs> module, which
+contains any additional selector names that aren't in Cocoa.
+This enables HOC to statically type check your function names and
+make sure that they exist.  You can call the module whatever you
+like: the important bit is that the C<declareSelector> function
+you'll be using I<must> be in a different module from the
+C<declareClass> and C<exportClass> functions, due to a limitation
+of Template Haskell.  e.g.:
+
+  {-# OPTIONS -fglasgow-exts #-}
+
+  module Selectors where
+
+  import AppKit.NSButton
+
+  $( declareSelector "evaluateExpression:" [t| forall a. NSButton a -> IO () |] )
+
+That comprises the code for your graphical application.  You'll
+still need to produce a F<.app> application bundle to run your
+GUI application though: to do this, you could manually make the
+F<.app> bundle, which is rather tedious.  A better idea would be
+to use Xcode to generate a boilerplate bundle for you and
+customise that, or use the F<hocnewapp> tool (described in the
+L<"Tools"> section) supplied with HOC, which performs a similar
+task.  Once you've produced the F<Contents/> directory layout
+required for the bundle, you can then use the F<hocwrap> tool
+(again described in L<"Tools">) to wrap your Haskell executable
+to produce the final L<.app> directory (or hand-roll it yourself,
+if you're into masochism).
+
+For complete code examples, see the F<ExpressionParser>,
+F<Browser>, and F<Editor> applications in HOC's F<Samples/>
+directory.
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65
