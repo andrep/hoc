@@ -1,7 +1,10 @@
-all:
+all: ifgen-output/Foundation.hs
+
+ifgen-output/Foundation.hs:
 	../InterfaceGenerator/ifgen
 
 clean:
-	rm -rf ifgen-output
+	-rm -rf ifgen-output all-selectors.txt
 
 install: all
+

@@ -1,11 +1,13 @@
 include ../config.mk
 
-all:
+all: ifgen
+
+ifgen:
 	mkdir -p build
 	ghc --make Main.hs	\
 		-odir build -hidir build \
 		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
-		-o ifgen
+		-o $@
 		
 clean:
 	rm -rf ifgen build

@@ -2,7 +2,7 @@ include ../config.mk
 
 all: libHOC.a HOC.o
 
-libHOC.a: ghcmake
+libHOC.a: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHOC.a
 
 #libHOC.dylib: ghcmake
@@ -12,7 +12,9 @@ libHOC.a: ghcmake
 HOC.o: libHOC.a
 	ld -r -x -o HOC.o $(ALL_LOAD) libHOC.a
 
-ghcmake:
+ghcmake: ghcmake.build-stamp
+
+ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
 	ghc --make HOC.hs	\
@@ -24,7 +26,7 @@ ghcmake:
 		$(FOUNDATION_INCLUDES) \
 		$(FOUNDATION_LIBS)      \
                 $(DEFINES)
-		
+	touch $@
 
 clean:
 	rm -rf libHOC.a HOC.o build \
