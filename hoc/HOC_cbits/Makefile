@@ -13,7 +13,7 @@ SRCS=\
 	Marshalling.m
 OBJS=$(SRCS:%.m=%.o)
 
-CFLAGS=-g $(FOUNDATION_INCLUDES) -I../libffi-src/build/include
+CFLAGS+=-g -I../libffi-src/build/include
 
 all:	libHOC_cbits.a HOC_cbits.o
 
@@ -22,12 +22,14 @@ clean:
 
 HOC_cbits.o: libHOC_cbits.a
 		ld -r -x -o HOC_cbits.o $(ALL_LOAD) libHOC_cbits.a
+		strip --strip-debug HOC_cbits.o
 
-libHOC_cbits.a:	$(OBJS)
-		$(MAKE_STATIC_LIB) libHOC_cbits.a $(OBJS) ../libffi-src/build/.libs/libffi.a
+libHOC_cbits.a: $(OBJS)
+		cp ../libffi-src/build/.libs/libffi.a libHOC_cbits.a
+		ar qs libHOC_cbits.a $(OBJS)
 
-# %.o:	%.m %.h
-#		gcc -c $(CFLAGS) -o $@ $<
+ %.o:	%.m
+		gcc -c $(CFLAGS) -o $@ $<
 		
 depend: $(SRCS)
 	cc -MM $(CFLAGS) $(SRCS) > depend
