@@ -50,7 +50,7 @@ distcheck: dist
 	( cd "$(dist_dir)" && ./configure && make && make install )
 
 libffi-src/build/src/raw_api.o:
-	$(MAKE) -C libffi-src/build
+	( cd libffi-src/build && $(MAKE) )
 
 hoc-all:
 	for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) all) done
