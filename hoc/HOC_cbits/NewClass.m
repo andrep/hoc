@@ -9,6 +9,19 @@
 #define CLS_META _CLS_META
 #endif
 
+static struct objc_class * getSuper(struct objc_class *class)
+{
+#ifdef GNUSTEP
+    if(CLS_ISRESOLV(class))
+        return class->super_class;
+    else
+        return getClassByName((const char*) class->super_class);
+        
+#else
+    return class->super_class;
+#endif
+}
+
 void newClass(struct objc_class * super_class,
                 const char * name,
 				int instance_size,
@@ -25,7 +38,7 @@ void newClass(struct objc_class * super_class,
 	
 	for(root_class = super_class;
 		root_class->super_class != nil;
-		root_class = root_class->super_class)
+		root_class = getSuper(root_class))
 		;
 		
 	new_class = calloc( 2, sizeof(struct objc_class) );
