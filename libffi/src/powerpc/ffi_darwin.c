@@ -363,7 +363,8 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
 	      /*@dependent@*/ void **avalue)
 {
   extended_cif ecif;
-
+  unsigned ret;
+  
   ecif.cif = cif;
   ecif.avalue = avalue;
 
@@ -378,8 +379,19 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
       /*@=sysunrecog@*/
     }
   else
-    ecif.rvalue = rvalue;
-
+    {
+      switch (cif->rtype->type)
+        {
+        case FFI_TYPE_UINT8:
+        case FFI_TYPE_SINT8:
+        case FFI_TYPE_UINT16:
+        case FFI_TYPE_SINT16:
+          ecif.rvalue = &ret;
+          break;
+        default:
+          ecif.rvalue = rvalue;
+        }
+    }
   switch (cif->abi)
     {
     case FFI_AIX:
@@ -396,6 +408,17 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
       break;
     default:
       FFI_ASSERT(0);
+      break;
+    }
+  switch (cif->rtype->type)
+    {
+    case FFI_TYPE_UINT8:
+    case FFI_TYPE_SINT8:
+      *(unsigned char*)rvalue = ret;  /* signedness doesn't matter */
+      break;
+    case FFI_TYPE_UINT16:
+    case FFI_TYPE_SINT16:
+      *(unsigned short*)rvalue = ret;  /* signedness doesn't matter */
       break;
     }
 }
