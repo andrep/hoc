@@ -1,6 +1,13 @@
+include ../config.mk
+
+dist_srcdir = docs
+dist_FILES = \
+	$(SOURCE_PODS) \
+	Makefile.in \
+	$(NULL)
+
 TITLE = HOC: a Haskell to Objective-C bridge
 
-NULL = 
 SOURCE_PODS = Introduction.pod \
 	      Quick_Start.pod \
 	      Mapping_Types.pod \
