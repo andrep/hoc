@@ -1,4 +1,4 @@
-{-# OPTIONS -cpp #-}
+{-# OPTIONS -cpp -fvia-C #-}
 module HOC.MsgSend(
         sendMessageWithRetval,
         sendMessageWithStructRetval,
@@ -47,9 +47,9 @@ sendMessageWithoutRetval cif args = do
 
 #else
 
-foreign import ccall "objc/objc-runtime.h &objc_msgSend"
+foreign import ccall "MsgSend.h &objc_msgSend"
     objc_msgSendPtr :: FunPtr (Ptr ObjCObject -> SEL -> IO ())
-foreign import ccall "objc/objc-runtime.h &objc_msgSend_stret"
+foreign import ccall "MsgSend.h &objc_msgSend_stret"
     objc_msgSend_stretPtr :: FunPtr (Ptr a -> Ptr ObjCObject -> SEL -> IO ())
 
 sendMessageWithRetval cif args =
