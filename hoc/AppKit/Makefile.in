@@ -7,7 +7,7 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHSAppKit.a libHSAppKit_dyn.dylib HSAppKit.o register-inplace
+all: libHSAppKit.a HSAppKit.o register-inplace
 
 register-inplace: AppKit.conf-inplace
 	[ -f "../inplace.conf" ] || echo '[]' > ../inplace.conf
@@ -38,7 +38,6 @@ ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
 	$(GHC) --make AppKit.hs	\
-		-fPIC -dynamic \
 		-ignore-package AppKit	\
 		-odir build/objects \
 		-hidir build/imports	\
@@ -83,7 +82,7 @@ clean:
 
 install: all AppKit.conf
 	mkdir -p $(GHC_LIB_PATH)/AppKit
-	cp -R libHSAppKit.a HSAppKit.o build/imports libHSAppKit_dyn.dylib \
+	cp -R libHSAppKit.a HSAppKit.o build/imports \
 	 $(GHC_LIB_PATH)/AppKit/
 	ranlib $(GHC_LIB_PATH)/AppKit/libHSAppKit.a
 	ghc-pkg --update-package	\
