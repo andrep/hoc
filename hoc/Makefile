@@ -4,7 +4,8 @@ SUBDIRS=\
 	InterfaceGenerator	\
 	Bindings			\
 	Foundation			\
-	AppKit
+	AppKit				\
+	Tools
 
 
 
