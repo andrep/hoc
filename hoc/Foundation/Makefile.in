@@ -7,7 +7,7 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHSFoundation.a HSFoundation.o register-inplace
+all: libHSFoundation.a libHSFoundation_dyn.dylib HSFoundation.o register-inplace
 
 register-inplace: Foundation.conf-inplace
 	[ -f "../inplace.conf" ] || echo '[]' > ../inplace.conf
@@ -37,6 +37,7 @@ ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
 	$(GHC) --make Foundation.hs	\
+	        -fPIC -dynamic \
 		-odir build/objects \
 		-ignore-package Foundation \
 		-hidir build/imports	\
@@ -58,6 +59,11 @@ HSFoundation.o: ghcmake.build-stamp
 libHSFoundation.a: ghcmake
 	find build/objects/ -name \*.o | xargs libtool -static -o libHSFoundation.a	
 
+libHSFoundation_dyn.dylib: ghcmake
+	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
+	 | xargs libtool -read_only_relocs suppress -dynamic -o $@ -undefined dynamic_lookup
+	install_name_tool -id "`pwd`/$@" $@
+
 #libHSFoundation.a: HSFoundation.o
 #	rm -f libHSFoundation.a
 #	ar cq libHSFoundation.a HSFoundation.o
@@ -69,8 +75,8 @@ clean:
 	
 install: all Foundation.conf
 	mkdir -p $(GHC_LIB_PATH)/Foundation
-	cp -R libHSFoundation.a HSFoundation.o build/imports \
-		$(GHC_LIB_PATH)/Foundation/
+	cp -R libHSFoundation.a HSFoundation.o libHSFoundation_dyn.dylib \
+	 build/imports $(GHC_LIB_PATH)/Foundation/
 	ranlib $(GHC_LIB_PATH)/Foundation/libHSFoundation.a
 	$(GHC_PKG) update Foundation.conf
 

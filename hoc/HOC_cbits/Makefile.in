@@ -26,7 +26,7 @@ CFLAGS += -g -I../libffi-src/build/include
 
 #
 
-all: libHOC_cbits.a HOC_cbits.o
+all: libHOC_cbits_dyn.dylib HOC_cbits.o
 
 clean:
 	rm -rf libHOC_cbits.a HOC_cbits.o $(OBJS) depend
@@ -40,6 +40,16 @@ HOC_cbits.o: libHOC_cbits.a
 libHOC_cbits.a: $(OBJS)
 	cp ../libffi-src/build/.libs/libffi.a libHOC_cbits.a
 	ar qs libHOC_cbits.a $(OBJS)
+
+libHOC_cbits_dyn.dylib: libHOC_cbits.a
+	export MACOSX_DEPLOYMENT_TARGET=10.3 && \
+	 libtool \
+	 -dynamic \
+	 -read_only_relocs suppress \
+	 -undefined dynamic_lookup \
+	 -o $@ \
+	 $<
+	install_name_tool -id "`pwd`/$@" $@
 
 %.o: %.m
 	gcc -c $(CFLAGS) -o $@ $<

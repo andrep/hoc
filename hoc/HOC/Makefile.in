@@ -11,7 +11,7 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHOC.a HOC.o ../inplace.conf
+all: libHOC_dyn.dylib HOC.o ../inplace.conf
 
 ../inplace.conf: HOC-$(PLATFORM).conf-inplace
 	[ -f "$@" ] || echo '[]' > $@
@@ -21,9 +21,14 @@ all: libHOC.a HOC.o ../inplace.conf
 libHOC.a: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHOC.a
 
-#libHOC.dylib: ghcmake
-#	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \#
-#       | xargs libtool -dynamic -o libHOC.dylib -undefined dynamic_lookup
+libHOC_dyn.dylib: ghcmake
+	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
+	 | xargs libtool \
+	   -dynamic \
+	   -read_only_relocs suppress \
+	   -undefined dynamic_lookup \
+	   -o $@
+	install_name_tool -id "`pwd`/$@" $@
 
 HOC.o: libHOC.a
 	ld -r -x -o HOC.o $(ALL_LOAD) libHOC.a
@@ -40,6 +45,7 @@ ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
 	$(GHC) --make HOC/Arguments.hs	\
+		-fPIC -dynamic \
 		-odir build/objects -hidir build/imports	\
 		-fglasgow-exts -fth \
 		../HOC_cbits/HOC_cbits.o	\
@@ -50,6 +56,7 @@ ghcmake.build-stamp:
 		$(FOUNDATION_LIBS)      \
                 $(DEFINES)
 	$(GHC) --make HOC.hs	\
+		-fPIC -dynamic \
 		-odir build/objects -hidir build/imports	\
 		-fglasgow-exts -fth \
 		../HOC_cbits/HOC_cbits.o	\

@@ -2,4 +2,5 @@ build
 ghcmake.build-stamp
 Makefile
 HOC-macos.conf
+libHOC_dyn.dylib
 

@@ -29,6 +29,7 @@ library-dirs:       "../HOC",
 hs-libraries:       "HOC", "HOC_cbits"
 extra-libraries:    "objc"
 frameworks:         "Foundation"
+ld-options:         "-read_only_relocs", "suppress"
 
 depends:            base, template-haskell
 

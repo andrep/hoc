@@ -27,5 +27,6 @@ library-dirs:       "@GHC_LIB_PATH@/HOC"
 
 hs-libraries:       "HOC", "HOC_cbits"
 extra-libraries:    "objc"
+ld-options:         "-read_only_relocs", "suppress"
 frameworks:         "Foundation"
 depends:            base, template-haskell
