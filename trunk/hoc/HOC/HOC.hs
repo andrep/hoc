@@ -13,6 +13,8 @@ module HOC (
         declareRenamedSelector,
         Covariant,
         CovariantInstance,
+        Allocated,
+        Inited,
 
         getSelectorForName,
         
@@ -26,6 +28,8 @@ module HOC (
 
         ClassMember(..),
         exportClass,
+        
+        NewlyAllocated,
         
         -- things that shouldn't really be exported
         InstanceVariables(..)
@@ -42,3 +46,4 @@ import HOC.DeclareSelector
 import HOC.StdArgumentTypes
 import HOC.ExportClass
 import HOC.Utilities
+import HOC.NewlyAllocated
