@@ -1,11 +1,7 @@
 hidePrelude init error minimum maximum null concat words print length;
 rename data data';
 rename type type';
-covariant alloc;
-covariant init initWithInt;
 
-covariant initWithUTF8String;
-covariant initWithCString initWithCStringLength initWithCStringNoCopyLengthFreeWhenDone;
 covariant stringWithCString stringWithCStringLength;
 covariant stringWithContentsOfFile stringWithContentsOfURL;
 covariant stringWithString;
@@ -25,3 +21,34 @@ rename hideOtherApplications: hideOtherApplications_;
 rename stop: stop_;
 rename copy: copy_;
 rename beginSheetModalForWindow:modalDelegate:didEndSelector:contextInfo: beginModalSheet;
+
+class NSDistributedNotificationCenter {
+    hide addObserver:selector:name:object: postNotificationName:object:
+         postNotificationName:object:userInfo: removeObserver:name:object: ;
+}
+
+class NSUserDefaults {
+    - (id) objectForKey: (id) key;
+    - (void) removeObjectForKey: (id) key;
+    - (void) setObject: (id) object forKey: (id) key;
+}
+
+class NSStatusItem {
+    hide setLength: length;
+}
+
+class NSToolbar {
+    - (id) initWithIdentifier: (id) ident;
+}
+
+class NSTabViewItem {
+    - (NSView*) initialFirstResponder;
+}
+
+class NSMenu {
+    - (BOOL) validateMenuItem: (NSMenuItem*) item;
+}
+
+class NSScrollView {
+    - (void) setContentView: (NSView*) view;
+}
