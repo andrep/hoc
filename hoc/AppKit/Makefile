@@ -14,7 +14,7 @@ ghcmake:
 		-hidir build/imports	\
 		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
 		-package-conf ../Foundation/Foundation.conf-inplace \
-		-fglasgow-exts -O
+		-fglasgow-exts
 	ghc -c Cocoa.hs \
 		-package-name AppKit	\
 		-ibuild/imports	   \
@@ -22,7 +22,7 @@ ghcmake:
 		-ohi build/imports/Cocoa.hi \
 		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
 		-package-conf ../Foundation/Foundation.conf-inplace \
-		-fglasgow-exts -O
+		-fglasgow-exts
 
 	
 HSAppKit.o: ghcmake
