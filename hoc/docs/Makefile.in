@@ -1,5 +1,8 @@
 include ../config.mk
 
+# require bash for building documentation.html
+SHELL = /bin/bash
+
 dist_srcdir = docs
 dist_FILES = \
 	$(SOURCE_PODS) \
@@ -44,7 +47,11 @@ HOC.html: $(SOURCE_PODS) $(SOURCE_PMGS)
 # (suitable for inclusion into a SSI'ed webpage)
 
 documentation.html: HOC.html
-	sed -e '1,/^<body.*>$$/d' -e '/^<\/body>.*$$/,$$d' < $+ > $@
+	cat \
+	  documentation-header.template \
+	  <(sed -e '1,/^<body.*>$$/d' -e '/^<\/body>.*$$/,$$d' < $+) \
+	  documentation-footer.template \
+	  > $@
 
 view: HOC.html
 	open $+
