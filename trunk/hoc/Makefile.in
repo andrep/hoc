@@ -48,7 +48,7 @@ dist:
 	  ./hoc-@PACKAGE_VERSION@
 
 distcheck: dist
-	( cd "$(dist_dir)" && ./configure && make && make install )
+	( cd "$(dist_dir)" && ./configure && make )
 
 libffi-src/build/src/raw_api.o:
 	( cd libffi-src/build && $(MAKE) )
