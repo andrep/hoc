@@ -148,7 +148,7 @@ simplifyType x = replaceVarByUnit x
 replaceVarByUnit (VarT var) = ConT "HOC.ID:ID" `AppT` ConT "GHC.Base:()"
 replaceVarByUnit (ConT "HOC.NewlyAllocated:NewlyAllocated" `AppT` ty) = 
     replaceVarByUnit ty
-replaceVarByUnit (ConT cls `AppT` VarT var) = ConT "HOC.ID:ID" `AppT` ConT "GHC.Base:()"
+replaceVarByUnit (ConT cls `AppT` VarT var) = ConT cls `AppT` ConT "GHC.Base:()"
 replaceVarByUnit x = x
 
 -- ===
