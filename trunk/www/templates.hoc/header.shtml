@@ -1,7 +1,7 @@
 <html>
 
   <head>
-    <title>HOC <!--#echo var="title" --></title>
+    <title>HOC: <!--#echo var="title" --></title>
   </head>
 
   <style type="text/css" media="screen">@import "hoc.css";</style>
@@ -79,9 +79,13 @@
 	      <!-- Download -->
 
 	      <td border="0">
+	      <!--#if expr="${active-tab} = Download" -->
+		<img src="tab-download-selected.png" alt="Download" border="0">
+	      <!--#else -->
 		<a href="download.html" class="plain">
 		  <img src="tab-download.png" alt="Download" border="0">
 		</a>
+	      <!--#endif -->
 	      </td>
 
 	      <!--#if expr="${active-tab} = Download || ${active-tab} = Examples" -->

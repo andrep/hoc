@@ -29,6 +29,15 @@ p.center {
   align: center;
 }
 
+ul {
+  /* same as inner-box */
+  margin: 12px 12px;
+  padding: 12px 35px 12px 35px;
+  border: 1px solid #BDBDBD;
+  background-image: url("bg-stripes-dark.png");
+  background-repeat: repeat;
+}
+
 li {
   margin: 8px 0;
 }
