@@ -109,7 +109,7 @@ main = do
         
         typeConflicts = filter ((>1) . length . snd) $
                         mapSnd (groupByFirst . mapFst msType) $
-                        map (\(_, selsAndExps@((sel,exp):_)) -> (msMangled sel, selsAndExps)) $
+                        map (\(_, selsAndExps@((sel,exp):_)) -> (msName sel, selsAndExps)) $
                         groupByFirst $
                         map (\(sel,exp) -> (msName sel, (sel, exp))) $
                         concatMap (snd . snd) $
