@@ -1,24 +1,67 @@
-SUBDIRS=\
-	HOC_cbits			\
-	HOC					\
-	InterfaceGenerator	\
-	Bindings			\
-	Foundation			\
-	AppKit				\
-	Tools
+include config.mk
 
+SUBDIRS = \
+	HOC_cbits \
+	HOC \
+	InterfaceGenerator \
+	Bindings \
+	Foundation \
+	AppKit \
+	Tools \
+	docs \
+	$(NULL)
 
+Samples_SUBDIRS = \
+	Samples/Browser \
+	Samples/Editor \
+	Samples/ExpressionParser \
+	Samples/UniqSort \
+	$(NULL)
+
+all_SUBDIRS = $(SUBDIRS) $(Samples_SUBDIRS)
+
+dist_srcdir = .
+dist_FILES = \
+	LICENSE \
+	Makefile.in \
+	aclocal.m4 \
+	autogen.sh \
+	autotools/ \
+	config.mk.in \
+	configure \
+	configure.ac \
+	objc.m4 \
+	$(NULL)
 
 all: libffi-src/build/src/raw_api.o hoc-all
-	
+
+dist:
+	-test -d "$(dist_dir)" && rm -rf "$(dist_dir)"
+	$(MAKE) dist-recursive
+	for dir in $(all_SUBDIRS); do (cd $$dir; $(MAKE) dist-recursive); done
+	find "$(dist_dir)" -type d -name 'CVS' -delete
+	find "$(dist_dir)" -name '*~' -delete
+	cp -HRp libffi-src "$(dist_dir)"
+	rm -rf "$(dist_dir)"/libffi-src/build
+	tar jcvf @abs_top_builddir@/hoc-@PACKAGE_VERSION@.tar.bz2 \
+	  ./hoc-@PACKAGE_VERSION@
+
+distcheck: dist
+	( cd "$(dist_dir)" && ./configure && make && make install )
+
 libffi-src/build/src/raw_api.o:
-	make -C libffi-src/build
+	$(MAKE) -C libffi-src/build
 
 hoc-all:
-	for dir in $(SUBDIRS); do (cd $$dir; make all) done
+	for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) all) done
 	
 clean:
-	for dir in $(SUBDIRS); do (cd $$dir; make clean) done
+	for dir in $(all_SUBDIRS); do (cd $$dir; $(MAKE) clean) done
 	
 install:
-	for dir in $(SUBDIRS); do (cd $$dir; make install) done
+	for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) install) done
+
+.PHONY: samples
+samples:
+	for dir in $(Samples_SUBDIRS); do (cd $$dir; $(MAKE)) done
+

@@ -3,6 +3,7 @@ include ../config.mk
 dist_srcdir = InterfaceGenerator
 dist_FILES = \
 	$(wildcard *.hs) \
+	Makefile.in \
 	$(NULL)
 
 all: ifgen

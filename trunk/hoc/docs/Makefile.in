@@ -4,6 +4,7 @@ dist_srcdir = docs
 dist_FILES = \
 	$(SOURCE_PODS) \
 	Makefile.in \
+	HOC.html \
 	$(NULL)
 
 TITLE = HOC: a Haskell to Objective-C bridge
@@ -26,7 +27,7 @@ SOURCE_DOTS = \
 SOURCE_PNGS = \
 	      $(NULL)
 
-all: view
+all: HOC.html
 
 %.png: %.dot
 	$(DOT) -Tpng
@@ -41,6 +42,8 @@ HOC.html: $(SOURCE_PODS) $(SOURCE_PMGS)
 
 view: HOC.html
 	open $+
+
+dist: HOC.html
 
 clean:
 	-rm HOC.html pod2htm*
