@@ -20,6 +20,7 @@ import Files
 import Utils
 import ExportModule
 import Headers
+import Enums(extractEnums)
 
 
 writeMasterModule masterModuleName realModuleNames selNamesList = do
@@ -83,9 +84,9 @@ main = do
    
     realModuleNames <- fmap catMaybes $ 
                        mapM ( exportModule bindingScript
-                              preparedDeclarations
-                              selsDefinedWhere
-                              noteSelDefinition ) $
+                                           preparedDeclarations
+                                           selsDefinedWhere
+                                           noteSelDefinition ) $
                        pdModuleNames preparedDeclarations
     
     selNamesList <- HashTable.toList allSelNames

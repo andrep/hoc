@@ -9,11 +9,14 @@ import PrepareDeclarations
 import BindingScript
 import Utils(groupByFirst)
 import Headers(ModuleName)
+import Enums(enumName, pprEnumType)
+import NameCaseChange
 
 import Data.Set
 import qualified Data.HashTable as HashTable
 import Data.List(nub, partition)
-import Data.Maybe(catMaybes, maybeToList, isNothing)
+import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)
+import Data.FiniteMap(lookupFM)
 import Text.PrettyPrint.HughesPJ
 
 orderClassInfos [] = []
@@ -27,7 +30,9 @@ exportModule bindingScript
                  pdCleanClassInfos = cleanClassInfos,
                  pdCleanClassInfoHash = cleanClassInfoHash,
                  pdAllInstanceSels = allInstanceSels,
-                 pdAllClassSels = allClassSels
+                 pdAllClassSels = allClassSels,
+                 pdEnumTypeDefinitions = allEnumDefinitions,
+                 pdTypeEnvironment = typeEnv
              })
              selsDefinedWhere
              noteSelDefinition
@@ -158,29 +163,53 @@ exportModule bindingScript
                                   | proto <- setToList $ ciNewProtocols ci]
                                 | ci <- definedClassInfos, not (ciProtocol ci) ]
             
-    let mentionedClassNames = nub $ concatMap (mentionedClasses . msType) selDefinitions                
+    let mentionedTypeNames = nub $ concatMap (mentionedTypes . msType) selDefinitions
+            
+            -- ### we discard the information about where to import it from
+            --     and then recover it later - not nice
+        mentionedClassNames = filter (isClassType typeEnv) mentionedTypeNames
+        
+        
+        mentionedEnumImports = importsToForward $
+                               groupImports moduleName $
+                               [ (loc, name)
+                               | (name, Just (PlainTypeName, loc))
+                                 <- map (\name -> (name, lookupTypeEnv typeEnv name))
+                                        mentionedTypeNames ]
+         
     mentionedClassImports <- makeForwardClassImports mentionedClassNames
 
     categoryImports <- makeForwardClassImports $ setToList $ mkSet $ map fst (instanceSels ++ classSels)
 
     additionalCode <- readFileOrEmpty (additionalCodePath (dotToSlash moduleName ++ ".hs"))
 
+    let enumDefinitions = fromMaybe [] $ lookupFM allEnumDefinitions moduleName
+
     let anythingGoingOn = not $ and [null methodInstances,
                                      null exportedClasses,
                                      null exportedSels,
                                      null exportedProtos,
-                                     isNothing additionalCode]
+                                     isNothing additionalCode,
+                                     null enumDefinitions]
         
         additionalCodeLines = lines $ concat $ maybeToList additionalCode
         
         forwardModule = render $ vcat $ [
                 text "module " <+> text (moduleName ++ ".Forward")
-                    <+> parens (sep $ punctuate comma $ map text exportedClasses)
+                    <+> parens (sep $ punctuate comma $
+                        map text (exportedClasses
+                                 ++ [ nameToUppercase enum ++ "(..)"
+                                    | enum <- mapMaybe enumName enumDefinitions ]
+                                 ))
                     <+> text "where",
+                if null enumDefinitions then empty
+                                        else text "import Foreign.C.Types(CInt)",
                 text "import HOC"
             ] 
             ++ map pprImport superClassForwardImports
             ++ map pprClassDecl (orderClassInfos $ filter (not . ciProtocol) $ definedClassInfos)
+            ++ [text "-- enum definitions"]
+            ++ map pprEnumType enumDefinitions
             
         declarationModule = render $ vcat $ [
                 text "module" <+> text moduleName
@@ -189,7 +218,8 @@ exportModule bindingScript
                                  : "module HOC"
                                  : exportedSels ++ exportedProtos
                                  ++ map ("module "++) superClassModules
-                                 ++ [additionalExport | '-':'-':'X':additionalExport <- additionalCodeLines ]))
+                                 ++ [additionalExport | '-':'-':'X':additionalExport <- additionalCodeLines ]
+                                 ))
                     <+> text "where",
                 text "import Prelude hiding" <+>
                     parens (sep $ punctuate comma $ map text $ setToList $
@@ -207,6 +237,8 @@ exportModule bindingScript
             ++ map pprImport adoptedProtoImports
             ++ [text "-- classes mentioned in type signatures"]                    
             ++ map pprImport mentionedClassImports
+            ++ [text "-- enums mentioned in type signatures"]
+            ++ map pprImport mentionedEnumImports
             ++ [text "-- selectors that are reexported"]
             ++ map pprImport selImports
             ++ [text "-- selectors from adopted protocols"]

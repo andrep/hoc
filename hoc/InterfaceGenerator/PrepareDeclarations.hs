@@ -11,6 +11,7 @@ import SyntaxTree
 import BindingScript
 import CTypeToHaskell
 import Headers(HeaderInfo(..), ModuleName)
+import Enums
 
 import HOC.SelectorNameMangling(mangleSelectorName)
 
@@ -27,7 +28,9 @@ data PreparedDeclarations = PreparedDeclarations {
         pdCleanClassInfos :: [(String, ClassInfo)],
         pdCleanClassInfoHash :: HashTable.HashTable String ClassInfo, {- used read only -}
         pdAllInstanceSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])],
-        pdAllClassSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])]
+        pdAllClassSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])],
+        pdEnumTypeDefinitions :: FiniteMap ModuleName [EnumType],
+        pdTypeEnvironment :: TypeEnvironment
     }
 
 data SelectorLocation = SelectorLocation {
@@ -224,10 +227,18 @@ prepareDeclarations :: BindingScript -> [HeaderInfo] -> IO PreparedDeclarations
 
 prepareDeclarations bindingScript modules = do
     let allDecls = concatMap (\(HeaderInfo mod _ decls) -> map ((,) mod) decls) modules
-        classNames = mkSet [ name | (mod, SelectorList (Interface name _ _) _) <- allDecls ]
         moduleNames = map (\(HeaderInfo name _ _) -> name) $ modules
 
         classes = mapMaybe classInfoForDeclaration $ allDecls
+        
+        classNames = [ (name, (ClassTypeName, mod))
+                     | (mod, SelectorList (Interface name _ _) _) <- allDecls ]
+        (enumNamesAndLocations, enumDefinitions) = extractEnums modules
+        
+        typeEnv = TypeEnvironment (listToFM $ classNames
+                                              ++ [ (name, (PlainTypeName, mod))
+                                                 | (name, mod) <- enumNamesAndLocations ])
+                                                            
         
     putStrLn "collecting categories..."
     classHash <- HashTable.fromList HashTable.hashString classes
@@ -248,7 +259,7 @@ prepareDeclarations bindingScript modules = do
                        | ci <- map snd cleanClassInfos ]
     
         mangleSelectors factory clsName sels =
-            mapMaybe (\(sel, location) -> do
+            mapMaybe (\(sel, location) -> do {- Maybe -}
                     let name = selName sel
                         mapped = lookupFM (soNameMappings selectorOptions) name
                         mangled = case mapped of
@@ -272,7 +283,7 @@ prepareDeclarations bindingScript modules = do
                                                  && (not $ isLower (b !! length a))
                             | otherwise = a == b
                     
-                    typ <- getSelectorType kind classNames sel'
+                    typ <- getSelectorType kind typeEnv sel'
                     return $ (MangledSelector {
                             msSel = sel',
                             msMangled = mangled,
@@ -287,5 +298,7 @@ prepareDeclarations bindingScript modules = do
                  pdCleanClassInfos = cleanClassInfos,
                  pdCleanClassInfoHash = cleanClassInfoHash,
                  pdAllInstanceSels = allInstanceSels,
-                 pdAllClassSels = allClassSels
+                 pdAllClassSels = allClassSels,
+                 pdEnumTypeDefinitions = enumDefinitions,
+                 pdTypeEnvironment = typeEnv
              }
