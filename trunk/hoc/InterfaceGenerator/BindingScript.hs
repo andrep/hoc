@@ -1,5 +1,5 @@
 module BindingScript(
-        BindingScript(bsHiddenFromPrelude),
+        BindingScript(bsHiddenFromPrelude, bsAdditionalTypes),
         getSelectorOptions,
         SelectorOptions(..),
         readBindingScript
@@ -14,6 +14,7 @@ import qualified Parser(selector)
 import Control.Monad(when)
 import Data.FiniteMap
 import Data.Set
+import Data.List(intersperse)
 
 import Text.ParserCombinators.Parsec.Language(haskell)
 import Text.ParserCombinators.Parsec.Token
@@ -22,6 +23,7 @@ import Text.ParserCombinators.Parsec
 data BindingScript = BindingScript {
         bsHiddenFromPrelude :: Set String,
         bsTopLevelOptions :: SelectorOptions,
+        bsAdditionalTypes :: [(String, String)],
         bsClassSpecificOptions :: FiniteMap String SelectorOptions
     }
     
@@ -56,7 +58,10 @@ selector tp = lexeme tp $ do
                 c <- letter
                 s <- many (alphaNum <|> oneOf "_:")
                 return (c:s)
-
+qualified tp = do x <- identifier tp
+                  xs <- many (symbol tp "." >> identifier tp)
+                  return (concat $ intersperse "." $ x : xs)
+                  
 idList keyword = do
     try $ symbol tokenParser keyword
     many1 (identifier tokenParser)
@@ -67,6 +72,7 @@ data Statement = HidePrelude String
                | Rename String String
                | ClassSpecific String SelectorOptions
                | ReplaceSelector Selector
+               | Type String String
 
 extractSelectorOptions statements =
     SelectorOptions {
@@ -99,8 +105,14 @@ replaceSelector = do
                 ClassMethod sel -> sel
     return [ReplaceSelector sel]
 
+typ = do
+    try $ symbol tokenParser "type"
+    typ <- identifier tokenParser
+    mod <- qualified tokenParser
+    return [Type typ mod]
+
 statement = classSpecificOptions <|> replaceSelector <|> do
-    result <- hidePrelude <|> rename <|> covariant <|> hide
+    result <- hidePrelude <|> rename <|> covariant <|> hide <|> typ
     semi tokenParser
     return result
 
@@ -125,6 +137,7 @@ bindingScript = do
     return $ BindingScript {
             bsHiddenFromPrelude = mkSet [ ident | HidePrelude ident <- statements ],
             bsTopLevelOptions = extractSelectorOptions statements,
+            bsAdditionalTypes = [ (typ, mod) | Type typ mod <- statements ],
             bsClassSpecificOptions = listToFM [ (cls, opt)
                                               | ClassSpecific cls opt <- statements ]
         }
