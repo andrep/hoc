@@ -21,6 +21,7 @@ data ID a = ID HSO | Nil
 nil = Nil
 
 castObject (ID a) = ID a
+castObject Nil = Nil
 
 instance Eq (ID a) where
     (ID (HSO a _)) == (ID (HSO b _))    = a == b
@@ -33,7 +34,10 @@ class ObjCArgument a (Ptr ObjCObject) => Object a where
 	
 instance Object (ID a) where
     toID (ID a) = ID a
+    toID Nil = Nil
+    
     fromID (ID a) = ID a
+    fromID Nil = Nil
 
 {-
     *
