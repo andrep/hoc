@@ -24,6 +24,7 @@ dist_srcdir = .
 dist_FILES = \
 	LICENSE \
 	Makefile.in \
+	README.txt \
 	aclocal.m4 \
 	autogen.sh \
 	autotools/ \
