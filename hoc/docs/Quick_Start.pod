@@ -22,7 +22,7 @@ things like emulate a C<while()> loop):
          -- We need this import to disambiguate the 'arguments'
          -- function: an arguments method is defined in many
          -- classes, including NSProcessInfo, NSScriptCommand,
-         -- and NSTask.  Any ambigious functions are not exported
+         -- and NSTask.  Any ambiguous functions are not exported
          -- by the framework by default: you will need to
          -- import those functions explicitly.
   import HOC
@@ -120,6 +120,17 @@ analagous to the I<monadic bind> operator, C<E<gt>E<gt>=>, so the
 above message chain could be written as C<<< _NSCountedSet
 # alloc >>= initWithArray args >>>.
 
+=item * Ambiguous Function Names
+
+Some functions have the same name and are defined in more than
+one class: e.g. the I<NSProcessInfo>, I<NSScriptCommand> and
+I<NSTask> classes all define a method named C<arguments>.  Any
+such multiply-occuring method names are not exported from the
+top-level framework module (I<Foundation> or I<AppKit>) by
+default: you will need to import the class specifically, e.g.
+C<import Foundation.NSProcessInfo> to import I<NSProcessInfo>'s
+C<arguments> method.
+
 =back
 
 =head2 Types for the Objective-C Class Hierarchy
@@ -150,13 +161,14 @@ framework's C<NSString> objects.
 
 Note that C<fromNSString> is a pure function, and that it will not
 accept a subclass of C<NSString> as an argument, because subclasses
-may be mutable. Make sure you never pass a casted C<NSMutableString>
-to fromNSString.
+may be mutable. Make sure you never pass a casted I<NSMutableString>
+to C<fromNSString>.
 
-If you want to work with (potentially) mutable string objects, you
-need to use the functions C<< haskellString :: NSString a -> IO String >> and
-C<< stringWithHaskellString :: String -> NSStringClass a -> IO (NSString a) >>.
-Use them as if they were Objective-C methods in the NSString class.
+If you want to work with (potentially) mutable string objects,
+you can use the functions C<< haskellString :: NSString a -> IO
+String >> and C<< stringWithHaskellString :: String ->
+NSStringClass a -> IO (NSString a) >>.  Use them as if they were
+Objective-C methods in the I<NSString> class.
 
 =head2 Generalised Marshaling
 
@@ -167,7 +179,7 @@ its output type is ambiguous (it's a type variable), Haskell's
 type inference engine greatly relies on context to figure out
 what the output type should really be.  You may have to I<fix>
 the output type explicitly by appending the C<:: t> syntax to
-expression.  For example, C<marshal "Foo"> own its own may
+expression.  For example, C<marshal "Foo"> on its own may
 generate an error, but C<marshal "Foo" :: NSString ()> may not.
 
 You can also define marshalling for your own data types, by
@@ -176,7 +188,9 @@ making them part of C<HOC.Marshal>'s C<ObjCMarshal> type class:
   import HOC.Marshal
 
   instance ObjCMarshal FiniteMap ( NSDictionary () ) where
-    marshal fm = -- conversion code here
+    marshal fm = -- conversion code from FiniteMap to NSDictionary
+  instance ObjCMarshal ( NSDictionary () ) FiniteMap where
+    marshal dict = -- conversion code from NSDictionary to FiniteMap
 
 =head2 Selectors
 
