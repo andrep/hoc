@@ -27,4 +27,5 @@
 
 CVSROOT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail -u %{sVv} athp@users.sourceforge.net
 DEFAULT /cvsroot/sitedocs/CVSROOT/cvstools/syncmail -u %{sVv} hoc-cvs@lists.sourceforge.net
+www chmod +x $CVSROOT/www/index.html $CVSROOT/www/support.html
 
