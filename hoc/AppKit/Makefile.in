@@ -2,7 +2,9 @@ include ../config.mk
 
 all: libHSAppKit.a HSAppKit.o
 
-ghcmake:
+ghcmake: ghcmake.build-stamp
+
+ghcmake.build-stamp:
 	ln -sf ../Bindings/ifgen-output/Cocoa.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit .
@@ -35,12 +37,14 @@ ghcmake:
 		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
 		-package-conf ../Foundation/Foundation.conf-inplace \
 		-fglasgow-exts
-
+	touch $@
 	
-HSAppKit.o: ghcmake
+HSAppKit.o: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs ld -r -x -o HSAppKit.o
+
 #libHSAppKit.a: ghcmake
 #	find build/objects/ -name \*.o | xargs libtool -static -o libHSAppKit.a
+
 libHSAppKit.a: HSAppKit.o
 	rm -f libHSAppKit.a
 	ar cq libHSAppKit.a HSAppKit.o

@@ -2,7 +2,9 @@ include ../config.mk
 
 all: libHSFoundation.a HSFoundation.o
 
-ghcmake:
+ghcmake: ghcmake.build-stamp
+
+ghcmake.build-stamp:
 	ln -sf ../Bindings/ifgen-output/Foundation.hs .
 	ln -sf ../Bindings/ifgen-output/Foundation .
 	test ! -d ../Bindings/ifgen-output/GNUstepBase || \
@@ -24,11 +26,14 @@ ghcmake:
 			-hidir build/imports	\
 			-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
 			-fglasgow-exts
+	touch $@
 
-HSFoundation.o: ghcmake
+HSFoundation.o: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs ld -r -x -o HSFoundation.o
+
 #libHSFoundation.a: ghcmake
 #	find build/objects/ -name \*.o | xargs libtool -static -o libHSFoundation.a	
+
 libHSFoundation.a: HSFoundation.o
 	rm -f libHSFoundation.a
 	ar cq libHSFoundation.a HSFoundation.o
@@ -44,3 +49,4 @@ install: all
 	ranlib `ghc --print-libdir`/Foundation/libHSFoundation.a
 	ghc-pkg --update-package	\
 			--input-file=Foundation.conf
+
