@@ -4,7 +4,13 @@
     <title>HOC: <!--#echo var="title" --></title>
   </head>
 
+  <!--#if expr="${override_css}" -->
+  <style type="text/css" media="screen">
+    @import "<!--#echo var="override_css" -->";
+  </style>
+  <!--#else -->
   <style type="text/css" media="screen">@import "hoc.css";</style>
+  <!--#endif -->
 
   <body>
 
