@@ -7,7 +7,8 @@ import Data.Char(isSpace)
 data BindingScript = BindingScript {
         bsNameMappings :: FiniteMap String String,
         bsHiddenFromPrelude :: Set String,
-        bsCovariantSelectors :: Set String
+        bsCovariantSelectors :: Set String,
+        bsHiddenSelectors :: Set String
     }
     
 -- TODO: replace this by a proper parser, or at least report errors
@@ -25,6 +26,7 @@ readBindingScript fn = do
                                   [ xs | ("hidePrelude" : xs) <- scriptLines ],
             bsCovariantSelectors = mkSet $
                                    concat [ xs 
-                                          | ("covariant" : xs) <- scriptLines ]
+                                          | ("covariant" : xs) <- scriptLines ],
+            bsHiddenSelectors = mkSet $ concat [ xs | ("hide" : xs) <- scriptLines ]
         }
 
