@@ -2,10 +2,12 @@ module Parser where
 
 import Data.Maybe(catMaybes, isJust)
 import Data.Char(ord)
+import Data.Bits(shiftL)
 
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Token
 import Text.ParserCombinators.Parsec.Language(emptyDef)
+import Text.ParserCombinators.Parsec.Expr
 
 import SyntaxTree
 
@@ -167,6 +169,22 @@ multiCharConstant =
                 (map (fromIntegral.ord) $ reverse chars)
                 (iterate (*256) 1)
         
+const_int_expr = buildExpressionParser optable basic
+    where
+        basic = fmap GivenValue (integer objc)
+            <|> fmap GivenValue multiCharConstant
+            <|> fmap TooComplicatedValue
+                     (many1 (satisfy (\x -> x /= ';' && x /= '}')))
+        optable = [ [Infix shiftLeft AssocLeft] ]
+        
+        shiftLeft = op "<<" (flip $ flip shiftL . fromIntegral)
+        
+        op str f = reservedOp objc str >> return (opFun f)
+        opFun f (GivenValue x) (GivenValue y) = GivenValue $ f x y
+        opFun f v@(TooComplicatedValue _) _ = v
+        opFun f _ v@(TooComplicatedValue _) = v
+        opFun f _ _ = TooComplicatedValue "..."
+        
 enum_type =
     do
         key <- reserved objc "enum"
@@ -179,10 +197,7 @@ enum_type =
             id <- identifier objc
             val <- (do
                     symbol objc "="
-                    val <- fmap GivenValue (integer objc)
-                        <|> fmap GivenValue multiCharConstant
-                        <|> fmap TooComplicatedValue (many1 (satisfy (\x -> x /= ';' && x /= '}')))
-                    return $ val
+                    const_int_expr
                 ) <|> return NextValue
             return (id,val)
     
