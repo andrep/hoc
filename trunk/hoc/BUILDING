@@ -1,0 +1,56 @@
+1. Check out the libffi module from HOC's CVS repository if you
+   haven't done that yet:
+
+   cvs -d :pserver:anonymous@cvs.sf.net:/cvsroot/hoc co libffi
+
+   Put that wherever you like.  (I put it in the same directory
+   that the main 'hoc' module resides in.)
+
+2. Copy (not symlink) the libffi/ directory that you just checked
+   out into the hoc directory as libffi-src:
+
+   cp -R ../libffi libffi-src
+
+   So now your HOC directory should look like this:
+
+   22:04 .../hoc.cvs/hoc % ls -l
+   total 20
+   drwxrwxr-x    5 andrep   andrep        170 Feb 24 21:53 AppKit/
+   drwxrwxr-x    6 andrep   andrep        204 Feb 24 21:54 Bindings/
+   drwxrwxr-x    6 andrep   andrep        204 Feb 24 21:53 CVS/
+   drwxrwxr-x    6 andrep   andrep        204 Feb 24 21:54 Foundation/
+   drwxrwxr-x   10 andrep   andrep        340 Feb 24 21:54 HOC/
+   drwxrwxr-x   25 andrep   andrep        850 Feb 24 21:54 HOC_cbits/
+   drwxrwxr-x   15 andrep   andrep        510 Feb 24 21:54 InterfaceGenerator/
+   -rw-rw-r--    1 andrep   andrep       1054 Oct 28 22:43 LICENSE
+   -rw-rw-r--    1 andrep   andrep        301 Nov  2 09:11 Makefile
+   drwxrwxr-x    5 andrep   andrep        170 Feb 24 21:54 Samples/
+   drwxrwxr-x    4 andrep   andrep        136 Feb 24 21:54 Tests/
+   drwxrwxr-x    5 andrep   andrep        170 Feb 24 21:54 Tools/
+   -rwxrwxr-x    1 andrep   andrep         84 Oct 28 03:47 build-ffi.sh*
+   -rwxrwxr-x    1 andrep   andrep        383 Oct 29 01:02 config-gnustep.mk*
+   -rw-rw-r--    1 andrep   andrep        178 Oct 29 01:02 config-macos.mk
+   drwxrwxr-x   32 andrep   andrep       1088 Feb 24 22:04 libffi-src/
+   
+   ... and your libffi-src directory should look like this:
+
+   22:04 .../hoc.cvs/hoc % ls libffi-src 
+   CVS/              Makefile.in    confdefs.h     configure*      ltconfig*
+   ChangeLog         README         config-ml.in   configure.in    ltmain.sh
+   ChangeLog.libgcj  ReadMe.PyObjC  config.cache   fficonfig.h.in  mkinstalldirs*
+   ChangeLog.v1      acconfig.h     config.guess*  include/        src/
+   LICENSE           acinclude.m4   config.log     install-sh*     stamp-h.in
+   Makefile.am       aclocal.m4     config.sub*    ltcf-c.sh       testsuite/
+   22:16 .../hoc.cvs/hoc % 
+   
+3. Build libffi by typing ./build-ffi.sh in the HOC directory
+
+4. Type 'make' to compile HOC
+
+5. Type 'make install' to register HOC with GHC's packages list
+   (you must currently do this)
+
+6. HOC's now compiled and should be working.  If you want to test
+   it, go to the Samples/ directory and try running 'make' in one
+   of the directories there.
+
