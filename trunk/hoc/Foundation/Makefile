@@ -12,7 +12,7 @@ ghcmake:
 		-odir build/objects \
 		-hidir build/imports	\
 		-package-conf ../HOC/HOC-$(PLATFORM).conf-inplace \
-		-fglasgow-exts -O
+		-fglasgow-exts
 
 HSFoundation.o: ghcmake
 	find build/objects/ -name \*.o | xargs ld -r -x -o HSFoundation.o
