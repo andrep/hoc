@@ -29,10 +29,16 @@ instance Eq (ID a) where
     Nil == Nil                          = True
     _ == _                              = False
 
-class ObjCArgument a (Ptr ObjCObject) => Object a where
-	toID :: a -> ID ()
-	fromID :: ID () -> a
-	
+class ObjCArgument a (Ptr ObjCObject) => MessageTarget a where
+    isNil :: a -> Bool
+    
+class MessageTarget a => Object a where
+    toID :: a -> ID ()
+    fromID :: ID () -> a
+
+instance MessageTarget (ID a) where
+    isNil x = x == nil
+        
 instance Object (ID a) where
     toID (ID a) = ID a
     toID Nil = Nil
@@ -40,9 +46,9 @@ instance Object (ID a) where
     fromID (ID a) = ID a
     fromID Nil = Nil
 
-failNilMessage :: ID a -> String -> IO ()
+failNilMessage :: MessageTarget t => t -> String -> IO ()
 failNilMessage target selectorName
-    | target == nil = fail $ "Message sent to nil: " ++ selectorName
+    | isNil target = fail $ "Message sent to nil: " ++ selectorName
     | otherwise = return ()
 
 
