@@ -43,7 +43,7 @@ fi
 #
 
 AC_ARG_WITH(ghc,
-  [  --with-ghc=...          command to run ghc (e.g. $HOME/bin/ghc-6.2.1)],
+  [  --with-ghc=...          command to run ghc (e.g. $HOME/bin/ghc-6.4)],
   [GHC=$withval])
 
 if test -z "$GHC"; then
@@ -60,13 +60,13 @@ if test "$GHC"; then
   ghc_minor=`echo "$ghc_version" | sed -n -e 's/[0-9][0-9]*\.\([0-9][0-9]*\).*/\1/p'`
   changequote([, ])
   AC_MSG_RESULT([$ghc_version])
-  if test '(' "$ghc_major" -ge 6 -a "$ghc_minor" -ge 3 ')' -o \
+  if test '(' "$ghc_major" -ge 6 -a "$ghc_minor" -ge 4 ')' -o \
           '(' "$ghc_major" -gt 6 ')'; then
     AC_MSG_CHECKING([for ghc library directory])
     GHC_LIB_PATH=`$GHC --print-libdir`
     AC_MSG_RESULT([$GHC_LIB_PATH])
   else
-    AC_MSG_ERROR([** Sorry, your GHC is too old. GHC >= 6.3 (Dec. 04 snapshot) required.])
+    AC_MSG_ERROR([** Sorry, your GHC is too old. GHC >= 6.4 required.])
     GHC=""
   fi
 else
@@ -78,7 +78,7 @@ AC_SUBST(GHC_LIB_PATH)
 
 # Check for ghc-pkg
 AC_ARG_WITH(ghc-pkg,
-  [  --with-ghc-pkg=...      command to run ghc-pkg (e.g. $HOME/bin/ghc-pkg-6.2.1)],
+  [  --with-ghc-pkg=...      command to run ghc-pkg (e.g. $HOME/bin/ghc-pkg-6.4)],
   [GHC_PKG="$withval"])
 
 if test -n "$GHC_PKG"; then
