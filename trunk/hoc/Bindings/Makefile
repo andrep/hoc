@@ -4,3 +4,4 @@ all:
 clean:
 	rm -rf ifgen-output
 
+install: all
