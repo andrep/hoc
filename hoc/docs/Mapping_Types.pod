@@ -2,6 +2,7 @@
 
 =head2 A Simple Example: I<NSMovie>
 
+
 =head2 Objective-C Objects
 
 =head3 Classes
@@ -20,10 +21,14 @@
 
 =head4 Do not Resist the Monad
 
-=head2 Non-Object Types
+=head2 Miscellanea
+
+=head3 Autorelease Pools
 
 =head3 C<enum> Types
 
 =head3 C<struct> Types
 
+=for comment Modeline for vi(m)
+vi:sw=2 tw=65
 

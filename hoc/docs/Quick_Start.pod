@@ -1,0 +1,165 @@
+=head1 Quick Start
+
+=head2 A Simple Commandline Tool
+
+Apple provides the source code for a "Simple Cocoa Command-Line
+Tool", which performs uniquing and sorting on a list of
+arguments.  You can find the original code at:
+L<http://developer.apple.com/documentation/Cocoa/Conceptual/CocoaObjects/Articles/SimpleCocoaTool.html>
+
+To give you an idea of what HOC code looks like, here's
+a line-by-line translation of the Objective-C code that's as
+close to the original as we can get (even trying to do silly
+things like emulate a C<while()> loop):
+
+  module Main where
+
+  import List (genericLength)
+
+  -- #import <Foundation/Foundation.h>
+  import Foundation
+  import Foundation.NSProcessInfo (arguments)
+         -- We need this import to disambiguate the 'arguments'
+         -- function: an arguments method is defined in many
+         -- classes, including NSProcessInfo, NSScriptCommand,
+         -- and NSTask.  Any ambigious functions are not exported
+         -- by the framework by default: you will need to
+         -- import those functions explicitly.
+  import HOC
+  import HOC.Base (newAutoreleasePool, releaseObject)
+  import HOC.ID (isNil)
+
+  -- int main (int argc, const char * argv[]) {
+  main = do
+  --   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+       pool <- newAutoreleasePool
+  --   NSArray *args = [[[NSProcessInfo processInfo] arguments];
+       args <- _NSProcessInfo # processInfo >>= arguments
+  --   NSCountedSet *cset = [[NSCountedSet alloc] initWithArray:args];
+       cset <- _NSCountedSet # alloc >>= initWithArray args
+  --   NSArray *sorted_args = [[cset allObjects]
+  --     sortedArrayUsingSelector:@selector(compare:)];
+       sorted_args <- cset # allObjects
+	 >>= sortedArrayUsingSelector (getSelectorForName "compare:")
+  --   NSEnumerator *enm = [sorted_args objectEnumerator];
+       enm <- sorted_args # objectEnumerator
+  --   id word;
+  --   while (word = [enm nextObject]) {
+  --     printf("%s\n", [word UTF8String]);
+  --   }
+       let loop = do
+	   word <- enm # nextObject
+	   if (not (isNil word))
+	     then do { putStrLn ( (fromNSString.castObject) word ); loop }
+	     else do return ()
+	   in
+	       loop
+  --   [cset release];
+       -- Don't need to release anything: HOC manages memory for you via
+       -- Haskell's garbage collector!
+  --   [pool release];
+       releaseObject pool
+  --   return 0;
+       return ()
+  -- }
+
+The code is available in the F<Samples/UniqSort/> directory of
+the HOC source distribution if you'd like to compile it and try
+it for yourself:
+
+  ~hoc/Samples/UniqSort % ./uniqsort a z c a l q m z
+  /Users/... # This appears because it's part of the program's
+             # argument list!
+  a
+  c
+  l
+  m
+  q
+  z
+
+Hopefully, the code listing above will give you a good idea about
+how to write Haskell code that sends messages to Objective-C
+objects.
+
+=head2 Sending Messages
+
+=over
+
+=item * Basic Message Sending
+
+The Objective-C syntax C<[receiver method:arg1 with:arg2]> used
+to send a message to a receiving object is translated to Haskell
+as C<methodWith arg1 arg2 receiver>.
+
+The receiving object goes I<last> in the parameter last, because
+then you can use ye olde trick of defining an infix function "C<x
+# f = f x>" to produce the more object-oriented-looking code
+C<receiver # methodWith arg1 arg2>.  (The C<#> infix function is
+defined for you by HOC already, so you don't need to define it
+yourself).
+
+Note that sending messages is an IO operation, so you'll need to
+be in the IO monad to use it.  Purely functional (non-mutable)
+objects such as an C<NSArray> or a C<NSString> provide their own
+specialised non-IO functions, which can be used outside of
+monadic code.  See their documentation (or source code
+implementation) for details.
+
+=item * Message Chaining
+
+I<Message chaining> is a very common phenomenon in Objective-C:
+syntactically, it looks like C<< [[NSCountedSet alloc]
+initWithArray:args] >>.  You first send an C<alloc> message to
+the C<NSCountedSet> (class) object, and then send
+C<initWithArray:args> to the result of that.
+
+Experienced Haskell programmers will realise that this is
+analagous to the I<monadic bind> operator, C<E<gt>E<gt>=>, so the
+above message chain could be written as C<<< _NSCountedSet
+# alloc >>= initWithArray args >>>.
+
+=back
+
+=head2 Selectors
+
+Use the C<< getSelectorForName :: String -> SEL >> function to
+generate a Haskell C<SEL> datatype from a raw Haskell string.  As
+you can guess, Haskell's C<SEL> data type is the same as
+Objective-C's C<SEL> type: it represents a selector (method
+name).
+
+Note that the C<String> passed to C<getSelectorForName> is the
+I<Objective-C> selector name (with all the colons in the
+appropriate places), not the translated Haskell function name.
+You should pass in C<"initWithURL:byReference:">, and not
+C<"initWithURLByReference">.
+
+=head2 Autorelease Pools
+
+The code shown for the uniquing sorting command-line tool above
+imported the C<newAutoreleasePool> and C<releaseObject> functions
+from the module C<HOC.Base>.  You normally won't use these two
+functions at all: to create a new autorelease pool, use the
+higher-level function C<withAutoreleasePool :: IO a>, which takes
+an IO action as a parameter and runs that.  A better way of
+writing the above code would be:
+
+  main = do
+    withAutoreleasePool main'
+  
+  main' = do
+    args <- _NSProcessInfo # processInfo >>= arguments
+    ...
+
+Using C<withAutoreleasePool> saves you from remembering to
+release the pool: after your action has been run, the pool is
+automatically released.
+
+=for comment XXX: link to autorelease pool section
+
+
+
+
+=for comment Modeline for vi(m)
+vi:sw=2 tw=65
+

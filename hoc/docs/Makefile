@@ -2,6 +2,7 @@ TITLE = HOC: a Haskell to Objective-C bridge
 
 NULL = 
 SOURCE_PODS = Introduction.pod \
+	      Quick_Start.pod \
 	      Mapping_Types.pod \
 	      Accessing_Core_Frameworks.pod \
 	      Accessing_Other_Frameworks.pod \
