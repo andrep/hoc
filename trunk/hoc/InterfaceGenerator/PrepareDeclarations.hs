@@ -69,9 +69,9 @@ classInfoForDeclaration (moduleName, SelectorList (Interface name super protocol
                                      | InstanceMethod sel <- methods ],
         ciClassMethods = listToFM [ (sel, SelectorLocation moduleName moduleName)
                                   | ClassMethod sel <- methods ],
-        ciNewProtocols = undefined,
-        ciNewInstanceMethods = undefined,
-        ciNewClassMethods = undefined
+        ciNewProtocols = error "ciNewProtocols 1",
+        ciNewInstanceMethods = error "ciNewInstanceMethods 1",
+        ciNewClassMethods = error "ciNewClassMethods 1"
     })
 classInfoForDeclaration (moduleName, SelectorList (Protocol name protocols) methods) =
     Just $ (name ++ "Protocol", ClassInfo {
@@ -84,9 +84,9 @@ classInfoForDeclaration (moduleName, SelectorList (Protocol name protocols) meth
                                      | InstanceMethod sel <- methods ],
         ciClassMethods = listToFM [ (sel, SelectorLocation moduleName cantHappen)
                                   | ClassMethod sel <- methods ],
-        ciNewProtocols = undefined,
-        ciNewInstanceMethods = undefined,
-        ciNewClassMethods = undefined
+        ciNewProtocols = error "ciNewProtocols 2",
+        ciNewInstanceMethods = error "ciNewInstanceMethods 2",
+        ciNewClassMethods = error "ciNewClassMethods 2"
     })
     where
         cantHappen = error "internal error: protocol asked for location of instance decl"
@@ -134,8 +134,9 @@ cleanClassInfo outInfos inInfos name =
                     then cleanClassInfo outInfos inInfos name
                     else do
                         -- putStrLn name
-                        HashTable.insert outInfos name
-                                         (cleanClassInfo' ci mbSuper protocols)
+                        let ci' = cleanClassInfo' ci mbSuper protocols
+                        HashTable.insert outInfos name ci'
+                                         
     where
         cleanSuper ci = do
             (mbSuper,superRecheck) <- case (ciSuper ci) of
@@ -204,7 +205,13 @@ cleanClassInfo' info mbSuperInfo protocolInfos
                                      map extract protocolInfos
             plusFM_proto cls proto = plusFM_C (\(SelectorLocation _ inst)
                                                 (SelectorLocation def _)
-                                              -> SelectorLocation def inst)
+                                              -> SelectorLocation def {-inst-} (ciDefinedIn info))
+                                      -- * All selectors that are part of a protocol
+                                      -- should be declared where the protocol is declared.
+                                      -- * The method instances should be where the class itself
+                                      -- with the protocol adoption is, not in a category.
+                                      -- Otherwise, the context for the protocol instance declaration
+                                      -- won't be available when the protocol is adopted.
                                               cls
                                               (mapFM (\sel (SelectorLocation def _)
                                                      -> SelectorLocation def (ciDefinedIn info))

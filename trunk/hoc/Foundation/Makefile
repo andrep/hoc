@@ -5,6 +5,8 @@ all: libHSFoundation.a HSFoundation.o
 ghcmake:
 	ln -sf ../Bindings/ifgen-output/Foundation.hs .
 	ln -sf ../Bindings/ifgen-output/Foundation .
+	-test -d ../Bindings/ifgen-output/GNUstepBase && \
+		ln -sf ../Bindings/ifgen-output/GNUstepBase .
 	mkdir -p build/objects
 	mkdir -p build/imports
 	ghc --make Foundation.hs	\
