@@ -27,7 +27,8 @@ library-dirs:       "../HOC",
                     "../HOC_cbits"
 
 hs-libraries:       "HOC", "HOC_cbits"
-extra-libs:         "objc"
-extra-frameworks:   "Foundation"
+extra-libraries:    "objc"
+frameworks:         "Foundation"
+
 depends:            base, template-haskell
 

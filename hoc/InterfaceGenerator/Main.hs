@@ -6,7 +6,7 @@ import Data.FiniteMap
 import qualified Data.HashTable as HashTable
 import Data.List(isPrefixOf,isSuffixOf,partition)
 import Data.Maybe(fromMaybe,mapMaybe,isJust,isNothing,catMaybes,maybeToList)
-import Data.Set
+import Data.Set hiding (map, filter, null, partition, empty)
 import Control.Monad(unless)
 
 import System.Info(os)
