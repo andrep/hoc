@@ -54,7 +54,7 @@ class NSScrollView {
 }
 
 -- GNUstep specifics:
-rename rawMimeData: rawMimeData_
-rename setContent:type: setContentAndType
-rename setContent:type:name: setContentAndTypeAndName
-rename removePort:forName: removePort_forName
+rename rawMimeData: rawMimeData_;
+rename setContent:type: setContentAndType;
+rename setContent:type:name: setContentAndTypeAndName;
+rename removePort:forName: removePort_forName;
