@@ -170,10 +170,13 @@ AC_SUBST(PACKAGE_VERSION)
 AC_CONFIG_FILES([config.mk
                  Makefile
                  AppKit/Makefile
+                 AppKit/AppKit-macos.conf
                  Bindings/Makefile
                  docs/Makefile
                  Foundation/Makefile
+                 Foundation/Foundation-macos.conf
                  HOC/Makefile
+                 HOC/HOC-macos.conf
                  HOC_cbits/Makefile
                  InterfaceGenerator/Makefile
                  Tools/Makefile

@@ -71,4 +71,4 @@ install: all
 	cp -R libHOC.a HOC.o build/imports \
 		$(GHC_LIB_PATH)/HOC/
 	ranlib $(GHC_LIB_PATH)/HOC/libHOC.a
-	$(GHC_PKG) register HOC-$(PLATFORM).conf
+	$(GHC_PKG) update HOC-$(PLATFORM).conf

@@ -1,2 +1,7 @@
 build
 Makefile
+exposed-modules.txt
+ghcmake.build-stamp
+
+AppKit.conf
+AppKit.conf-inplace

@@ -38,7 +38,8 @@ module HOC (
         objectMapStatistics,
         
         -- things that shouldn't really be exported
-        InstanceVariables,
+        InstanceVariables(..),
+	initializeInstanceVariables,
         Typeable(..)
     ) where
 
@@ -48,6 +49,7 @@ import HOC.Invocation
 import HOC.ID
 import HOC.Class
 import HOC.DeclareClass
+import HOC.ExportClass
 import HOC.SelectorMarshaller
 import HOC.DeclareSelector
 import HOC.StdArgumentTypes

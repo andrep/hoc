@@ -5,9 +5,7 @@ import HOC
 import Cocoa
 import Foundation.NSAttributedString (string)
 
-import Control.Monad(when)
-
--- import Selectors
+import Control.Monad (when)
 
 $(declareClass "HaskellDocument" "NSDocument")
 
@@ -40,3 +38,4 @@ hd_windowControllerDidLoadNib controller self = do
     case mbStr of 
         Just str -> tv # textStorage >>= mutableString >>= setString str
         Nothing -> return ()
+
