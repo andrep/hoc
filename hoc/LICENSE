@@ -1,4 +1,7 @@
-HOC - Copyright (c) 2003 Wolfgang Thaller
+HOC: A Haskell to Objective-C Binding
+
+Copyright (C) 2003-2004 Wolfgang Thaller
+Copyright (C) 2004 Andre Pang
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
