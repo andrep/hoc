@@ -10,7 +10,7 @@ all: ifgen
 
 ifgen:
 	mkdir -p build
-	$(GHC) --make Main.hs	\
+	$(GHC) -dynamic --make Main.hs	\
 		-odir build -hidir build \
 		-package-conf ../inplace.conf \
 		-o $@

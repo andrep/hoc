@@ -51,6 +51,9 @@ dist:
 distcheck: dist
 	( cd "$(dist_dir)" && ./configure && make )
 
+check:
+	( cd Tests && $(MAKE) check )
+
 libffi-src/build/src/raw_api.o:
 	( cd libffi-src/build && $(MAKE) )
 
