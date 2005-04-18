@@ -22,11 +22,23 @@ exposed-modules:
     HOC.ExportClass,
     HOC.NewClass
 
-import-dirs:        "@GHC_LIB_PATH@/HOC/imports"
-library-dirs:       "@GHC_LIB_PATH@/HOC"
-
 hs-libraries:       "HOC", "HOC_cbits"
-extra-libraries:    "objc"
-ld-options:         "-read_only_relocs", "suppress"
-frameworks:         "Foundation"
 depends:            base, template-haskell
+
+#if GNUSTEP
+extra-libraries:    "gnustep-base", "objc"
+#else
+extra-libraries:    "objc"
+frameworks:         Foundation
+#endif
+
+#if INPLACE
+import-dirs:        "../HOC/build/imports"
+library-dirs:       "../HOC"
+                    "../HOC_cbits"
+                    FOUNDATION_LIB_DIRS
+#else
+import-dirs:        GHC_LIB_PATH/HOC/imports
+library-dirs:       GHC_LIB_PATH/HOC
+                    FOUNDATION_LIB_DIRS
+#endif

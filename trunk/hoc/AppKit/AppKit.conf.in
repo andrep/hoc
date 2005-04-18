@@ -1,0 +1,28 @@
+name:               AppKit
+maintainer:         wolfgang.thaller@gmx.net
+exposed:            True
+
+hs-libraries:	    "HSAppKit"
+
+#if GNUSTEP
+extra-libraries:    "gnustep-gui"
+#else
+frameworks:         "AppKit"
+#endif
+
+#if INPLACE
+import-dirs:        "../AppKit/build/imports"
+library-dirs:       "../AppKit"
+                    FOUNDATION_LIB_DIRS
+#else
+import-dirs:        GHC_LIB_PATH/AppKit/imports
+library-dirs:       GHC_LIB_PATH/AppKit
+                    FOUNDATION_LIB_DIRS
+#endif
+
+depends:            HOC, Foundation
+
+exposed-modules:
+    AppKit
+
+
