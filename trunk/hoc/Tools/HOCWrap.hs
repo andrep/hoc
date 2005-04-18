@@ -142,25 +142,14 @@ wrapApp' justLink overwrite executable appName contents =
 wrapApp executable appName contents =
     wrapApp' False True executable appName contents
 
--- for GHC >= 6.2
-forkProcess' action = forkProcess action
--- for GHC < 6.2
-{-
-forkProcess' action = do
-    mbPid <- forkProcess
-    case mbPid of
-        Just pid -> return pid
-        Nothing -> action >> exitWith ExitSuccess
--}
-
 runApp ghciArgs appName contents runNow = withAutoreleasePool $ do
     fm <- _NSFileManager # defaultManager
 
     let executableInApp = take (length appName - length ".app") appName
          
     
-    let ghcLib = "/usr/local/lib/ghc-6.2"
-        ghcExecutable = ghcLib ++ "/ghc-6.2"
+    let ghcLib = "/usr/local/lib/ghc-6.4"
+        ghcExecutable = ghcLib ++ "/ghc-6.4"
     
     wrapApp' True False ghcExecutable appName contents
 
@@ -171,7 +160,7 @@ runApp ghciArgs appName contents runNow = withAutoreleasePool $ do
                 then fmap Just createPipe
                 else return Nothing
 
-    pid <- forkProcess' $ do
+    pid <- forkProcess $ do
         case pipes of
             Just (readEnd, _) ->
                 dupTo readEnd stdInput >> return ()
