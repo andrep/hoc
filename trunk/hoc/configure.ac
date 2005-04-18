@@ -135,14 +135,17 @@ esac
 if test "x$platform" = "xgnustep"; then
   HOC_LD_ALL_LOAD='--whole-archive'
   HOC_MAKE_STATIC_LIB='ar cqs'
-  HOC_FOUNDATION_INCLUDES='-I/usr/GNUstep/System/Library/Headers/'
-  HOC_FOUNDATION_LIBS='-L/usr/GNUstep/System/Library/Libraries \
-                       -L/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.3 \
+  HOC_FOUNDATION_INCLUDES='-I/usr/lib/GNUstep/System/Library/Headers/'
+  HOC_FOUNDATION_LIBS='-L/usr/lib/GNUstep/System/Library/Libraries \\\
+                       -L/usr/lib/gcc-lib/i486-linux/3.3.5 \\\
                        -lobjc -lgnustep-base'
   HOC_DEFINES='-DGNUSTEP'
-  HOC_CFLAGS='$(FOUNDATION_INCLUDES) $(DEFINES) \
-              -fconstant-string-class=NSConstantString \
+  HOC_CFLAGS='$(FOUNDATION_INCLUDES) $(DEFINES) \\\
+              -fconstant-string-class=NSConstantString \\\
               -Wno-import'
+
+  HOC_FOUNDATION_LIB_DIRS="/usr/lib/GNUstep/System/Library/Libraries\ /usr/lib/gcc-lib/i486-linux/3.3.5"
+
 else
   HOC_LD_ALL_LOAD='-all_load'
   HOC_MAKE_STATIC_LIB='libtool -static -o'
@@ -150,6 +153,7 @@ else
   HOC_FOUNDATION_LIBS='-framework Foundation'
   HOC_DEFINES=''
   HOC_CFLAGS='$(FOUNDATION_INCLUDES) $(DEFINES)'
+  HOC_FOUNDATION_LIB_DIRS=''
 fi
 HOC_PLATFORM="$platform"
 AC_SUBST(HOC_PLATFORM)
@@ -159,7 +163,7 @@ AC_SUBST(HOC_FOUNDATION_INCLUDES)
 AC_SUBST(HOC_FOUNDATION_LIBS)
 AC_SUBST(HOC_DEFINES)
 AC_SUBST(HOC_CFLAGS)
-
+AC_SUBST(HOC_FOUNDATION_LIB_DIRS)
 
 #
 # Output configuration files and Makefiles
@@ -170,13 +174,10 @@ AC_SUBST(PACKAGE_VERSION)
 AC_CONFIG_FILES([config.mk
                  Makefile
                  AppKit/Makefile
-                 AppKit/AppKit-macos.conf
                  Bindings/Makefile
                  docs/Makefile
                  Foundation/Makefile
-                 Foundation/Foundation-macos.conf
                  HOC/Makefile
-                 HOC/HOC-macos.conf
                  HOC_cbits/Makefile
                  InterfaceGenerator/Makefile
                  Tools/Makefile
