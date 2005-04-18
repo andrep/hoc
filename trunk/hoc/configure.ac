@@ -144,7 +144,7 @@ if test "x$platform" = "xgnustep"; then
               -fconstant-string-class=NSConstantString \\\
               -Wno-import'
 
-  HOC_FOUNDATION_LIB_DIRS="/usr/lib/GNUstep/System/Library/Libraries\ /usr/lib/gcc-lib/i486-linux/3.3.5"
+  HOC_FOUNDATION_LIB_DIRS='\"/usr/lib/GNUstep/System/Library/Libraries\"\ \"/usr/lib/gcc-lib/i486-linux/3.3.5\"'
 
 else
   HOC_LD_ALL_LOAD='-all_load'
