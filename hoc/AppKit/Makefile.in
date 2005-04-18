@@ -19,11 +19,18 @@ exposed-modules.txt:
             | sed 's@build/imports/@ ,@g' | sed 's/\.hi//g' | sed 's@/@.@g' \
             > exposed-modules.txt
 
-AppKit.conf-inplace: AppKit-$(PLATFORM).conf-inplace.in exposed-modules.txt
-	cat AppKit-$(PLATFORM).conf-inplace.in exposed-modules.txt > AppKit.conf-inplace
+AppKit.conf-inplace: AppKit.conf.in exposed-modules.txt
+	gcc -E -x c -DINPLACE=1 \
+		-DGHC_LIB_PATH=@GHC_LIB_PATH@ \
+        	-DFOUNDATION_LIB_DIRS=@HOC_FOUNDATION_LIB_DIRS@ \
+		@HOC_DEFINES@ AppKit.conf.in | grep -v '^#' > AppKit.conf-inplace 
+	cat exposed-modules.txt >> AppKit.conf-inplace
 
-AppKit.conf: AppKit-$(PLATFORM).conf exposed-modules.txt
-	cat AppKit-$(PLATFORM).conf exposed-modules.txt > AppKit.conf
+AppKit.conf: AppKit.conf.in exposed-modules.txt
+	gcc -E -x c -DGHC_LIB_PATH=@GHC_LIB_PATH@ \
+        	-DFOUNDATION_LIB_DIRS=@HOC_FOUNDATION_LIB_DIRS@ \
+		@HOC_DEFINES@ AppKit.conf.in | grep -v '^#' > $@ 
+	cat exposed-modules.txt >> AppKit.conf
 
 ghcmake: ghcmake.build-stamp
 
@@ -68,7 +75,7 @@ libHSAppKit.a: ghcmake
 
 libHSAppKit_dyn.dylib: ghcmake
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
-	 | xargs libtool -read_only_relocs suppress -dynamic -o $@ -undefined dynamic_lookup
+	 | xargs libtool -dynamic -o $@ -undefined dynamic_lookup
 	install_name_tool -id "`pwd`/$@" $@
 
 #libHSAppKit.a: HSAppKit.o
@@ -77,7 +84,7 @@ libHSAppKit_dyn.dylib: ghcmake
 #	ranlib libHSAppKit.a
 
 clean:
-	rm -rf build libHSAppKit.a HSAppKit.o AppKit.hs AppKit \
+	rm -rf build libHSAppKit.a libHSAppKit_dyn.dylib HSAppKit.o AppKit.hs AppKit \
 	    Cocoa.hs ghcmake.build-stamp
 
 install: all AppKit.conf

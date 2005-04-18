@@ -13,10 +13,20 @@ dist_FILES = \
 
 all: libHOC.a libHOC_dyn.dylib HOC.o ../inplace.conf
 
-../inplace.conf: HOC-$(PLATFORM).conf-inplace
+../inplace.conf: HOC.conf-inplace
 	[ -f "$@" ] || echo '[]' > $@
-	$(GHC_PKG) register HOC-$(PLATFORM).conf-inplace \
+	$(GHC_PKG) update HOC.conf-inplace \
 		--package-conf=../inplace.conf
+
+%.conf: %.conf.in
+	gcc -E -x c -DGHC_LIB_PATH=@GHC_LIB_PATH@ \
+        	-DFOUNDATION_LIB_DIRS=@HOC_FOUNDATION_LIB_DIRS@ \
+		@HOC_DEFINES@ $< | grep -v '^#' > $@ 
+%.conf-inplace: %.conf.in
+	gcc -E -x c -DINPLACE=1 \
+		-DGHC_LIB_PATH=@GHC_LIB_PATH@ \
+        	-DFOUNDATION_LIB_DIRS=@HOC_FOUNDATION_LIB_DIRS@ \
+		@HOC_DEFINES@ $< | grep -v '^#' > $@ 
 
 libHOC.a: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHOC.a
@@ -25,7 +35,6 @@ libHOC_dyn.dylib: ghcmake
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
 	 | xargs libtool \
 	   -dynamic \
-	   -read_only_relocs suppress \
 	   -undefined dynamic_lookup \
 	   -o $@
 	install_name_tool -id "`pwd`/$@" $@
@@ -75,7 +84,7 @@ clean:
 
 install: all
 	mkdir -p $(GHC_LIB_PATH)/HOC
-	cp -R libHOC.a HOC.o build/imports \
+	cp -R libHOC.a libHOC_dyn.dylib HOC.o build/imports \
 		$(GHC_LIB_PATH)/HOC/
 	ranlib $(GHC_LIB_PATH)/HOC/libHOC.a
-	$(GHC_PKG) update HOC-$(PLATFORM).conf
+	$(GHC_PKG) update HOC.conf

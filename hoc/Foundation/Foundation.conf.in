@@ -1,0 +1,19 @@
+name:               Foundation
+maintainer:         wolfgang.thaller@gmx.net
+exposed:            True
+
+hs-libraries:	    "HSFoundation"
+
+#if INPLACE
+import-dirs:        "../Foundation/build/imports"
+library-dirs:       "../Foundation"
+#else
+import-dirs:        GHC_LIB_PATH/Foundation/imports
+library-dirs:       GHC_LIB_PATH/Foundation
+#endif
+
+depends:            HOC
+
+exposed-modules:
+    Foundation
+

@@ -19,11 +19,18 @@ exposed-modules.txt:
             | sed 's@build/imports/@ ,@g' | sed 's/\.hi//g' | sed 's@/@.@g' \
             > exposed-modules.txt
 
-Foundation.conf-inplace: Foundation-$(PLATFORM).conf-inplace.in exposed-modules.txt
-	cat Foundation-$(PLATFORM).conf-inplace.in exposed-modules.txt > Foundation.conf-inplace
+Foundation.conf-inplace: Foundation.conf.in exposed-modules.txt
+	gcc -E -x c -DINPLACE=1 \
+		-DGHC_LIB_PATH=@GHC_LIB_PATH@ \
+        	-DFOUNDATION_LIB_DIRS=@HOC_FOUNDATION_LIB_DIRS@ \
+		@HOC_DEFINES@ Foundation.conf.in | grep -v '^#' > Foundation.conf-inplace 
+	cat exposed-modules.txt >> Foundation.conf-inplace
 
-Foundation.conf: Foundation-$(PLATFORM).conf exposed-modules.txt
-	cat Foundation-$(PLATFORM).conf exposed-modules.txt > Foundation.conf
+Foundation.conf: Foundation.conf.in exposed-modules.txt
+	gcc -E -x c -DGHC_LIB_PATH=@GHC_LIB_PATH@ \
+        	-DFOUNDATION_LIB_DIRS=@HOC_FOUNDATION_LIB_DIRS@ \
+		@HOC_DEFINES@ Foundation.conf.in | grep -v '^#' > $@ 
+	cat exposed-modules.txt >> Foundation.conf
 
 ghcmake: ghcmake.build-stamp
 
@@ -60,7 +67,7 @@ libHSFoundation.a: ghcmake
 
 libHSFoundation_dyn.dylib: ghcmake
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
-	 | xargs libtool -read_only_relocs suppress -dynamic -o $@ -undefined dynamic_lookup
+	 | xargs libtool -dynamic -o $@ -undefined dynamic_lookup
 	install_name_tool -id "`pwd`/$@" $@
 
 #libHSFoundation.a: HSFoundation.o
@@ -69,7 +76,7 @@ libHSFoundation_dyn.dylib: ghcmake
 #	ranlib libHSFoundation.a
 
 clean:
-	rm -rf build libHSFoundation.a HSFoundation.o Foundation.hs \
+	rm -rf build libHSFoundation.a libHSFoundation_dyn.dylib HSFoundation.o Foundation.hs \
 	    Foundation ghcmake.build-stamp
 	
 install: all Foundation.conf
