@@ -4,6 +4,7 @@ import Parser(header)
 import SyntaxTree(Declaration)
 
 import Control.Exception(evaluate)
+import Data.Char(isAlphaNum, toUpper)
 import Data.List(isPrefixOf,isSuffixOf,partition)
 import Data.Maybe(mapMaybe)
 import System.Directory(getDirectoryContents)
@@ -32,15 +33,17 @@ findImports = mapMaybe checkImport . lines
 
 headersIn dirName prefix = do
     files <- getDirectoryContents dirName
-    return [ (fn, dirName ++ fn, prefix ++ "." ++ takeWhile (/= '.') fn)
+    return [ (fn, dirName ++ fn, haskellizeModuleName $
+                                 prefix ++ "." ++ takeWhile (/= '.') fn)
            | fn <- files, ".h" `isSuffixOf` fn {- , fn /= (prefix ++ ".h") -} ]
 
 headersForFramework framework =
     if System.Info.os == "darwin"
         then headersIn ("/System/Library/Frameworks/" ++ framework ++ ".framework/Headers/") framework
-        else headersIn ("/usr/GNUstep/System/Library/Headers/" ++ framework ++ "/") framework
+        else headersIn ("/usr/lib/GNUstep/System/Library/Headers/" ++ framework ++ "/") framework
 
-translateObjCImport imp = map slashToDot $ takeWhile (/= '.') $ imp
+translateObjCImport imp = haskellizeModuleName $
+                          map slashToDot $ takeWhile (/= '.') $ imp
     where
         slashToDot '/' = '.'
         slashToDot c = c
@@ -71,3 +74,9 @@ orderModules mods = if null ok
         -- names | any ("Foundation." `isPrefixOf`) names' = "Foundation.Foundation" : names'
         --     | otherwise = names'
 
+
+haskellizeModuleName = firstUpper . concatMap translateChar
+    where firstUpper [] = []
+          firstUpper (x:xs) = toUpper x : xs
+          translateChar c | isAlphaNum c || c `elem` "/." = [c]
+                          | otherwise = []
