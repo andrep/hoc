@@ -82,7 +82,7 @@ clean:
 	    HOC/NewClass_stub.c HOC/NewClass_stub.h \
 	    ghcmake.build-stamp
 
-install: all
+install: all HOC.conf
 	mkdir -p $(GHC_LIB_PATH)/HOC
 	cp -R libHOC.a libHOC_dyn.dylib HOC.o build/imports \
 		$(GHC_LIB_PATH)/HOC/
