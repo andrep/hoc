@@ -34,7 +34,7 @@ declareClass name super = sequence $ [
             (normalB [| unsafeGetClassObject $(stringE name) |]) [],         
 
         -- $(superName) = "super"
-        valD (return $ VarP (mkName superName)) (normalB [| super |]) []
+        valD (return $ VarP (mkName superName)) (normalB $ stringE super) []
     ]
     where
         phantomName = name ++ "_"
