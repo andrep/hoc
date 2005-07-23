@@ -139,12 +139,14 @@ declareRenamedSelector name haskellName typeSigQ =
                 let e = [| undefined |] `sigE` (return $ simplifyType doctoredTypeSig)
                     in valD (varP $ mkName $ infoName) (normalB
                         [|
-                            SelectorInfo name
-                                         haskellName
-                                         (getCifForSelector $(e))
-                                         (getSelectorForName name)
-                                         nArgs
-                                         isUnit
+                        	let n = name
+                                    hn = $(if haskellName == name then [|n|] else [|haskellName|])
+                        	in SelectorInfo n
+                                                hn
+                                                (getCifForSelector $(e))
+                                                (getSelectorForName n)
+                                                nArgs
+                                                isUnit
                         |]) [],
                     
                 -- type $(imptypeName) target inst = arg1 -> arg2 -> target -> IO result
