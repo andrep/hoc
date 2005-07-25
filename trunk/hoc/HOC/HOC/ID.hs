@@ -3,6 +3,7 @@ module HOC.ID where
 import HOC.Base
 import HOC.Arguments
 import HOC.FFICallInterface(FFICif)
+import HOC.MsgSend
 
 import Control.Concurrent.MVar
 import Control.Exception(evaluate,assert)
@@ -32,13 +33,34 @@ instance Eq (ID a) where
 class ObjCArgument a (Ptr ObjCObject) => MessageTarget a where
     isNil :: a -> Bool
     
+    sendMessageWithRetval :: ObjCArgument ret b
+                          => a
+                          -> FFICif
+                          -> Ptr (Ptr ())
+                          -> IO ret
+
+    sendMessageWithStructRetval :: ObjCArgument ret b
+                                => a
+                                -> FFICif
+                                -> Ptr (Ptr ())
+                                -> IO ret
+
+    sendMessageWithoutRetval :: a
+                             -> FFICif
+                             -> Ptr (Ptr ())
+                             -> IO ()
+
 class MessageTarget a => Object a where
     toID :: a -> ID ()
     fromID :: ID () -> a
 
 instance MessageTarget (ID a) where
     isNil x = x == nil
-        
+    
+    sendMessageWithRetval _ = objSendMessageWithRetval
+    sendMessageWithStructRetval _ = objSendMessageWithStructRetval
+    sendMessageWithoutRetval _ = objSendMessageWithoutRetval
+
 instance Object (ID a) where
     toID (ID a) = ID a
     toID Nil = Nil
@@ -267,11 +289,9 @@ getHaskellData_IMP super mbDat cif ret args = do
 
 getHaskellDataForID (ID (HSO _ dat)) = dat
 
-releaseExtraReference obj = do
-    case toID obj of
-        ID (HSO ptr _) -> releaseObject ptr
-        Nil -> return ()
-    return obj
+releaseExtraReference obj
+    = withExportedArgument obj (\ptr -> when (ptr /= nullPtr) (releaseObject ptr))
+      >> return obj
 
 objectMapStatistics =
     alloca $ \pAllocated ->

@@ -20,7 +20,7 @@ module HOC (
         
         withAutoreleasePool,
 
-	isNil,
+        isNil,
         
         IVar,
         getIVar,
@@ -32,6 +32,10 @@ module HOC (
         exportClass,
         
         NewlyAllocated,
+        
+        SuperClass,
+        SuperTarget,
+        super,
         
         -- debugging & statistics:
         
@@ -51,3 +55,4 @@ import HOC.StdArgumentTypes
 import HOC.ExportClass
 import HOC.Utilities
 import HOC.NewlyAllocated
+import HOC.Super
