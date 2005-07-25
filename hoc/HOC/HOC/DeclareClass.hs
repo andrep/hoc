@@ -3,6 +3,7 @@ module HOC.DeclareClass(declareClass) where
 import HOC.Base
 import HOC.Arguments
 import HOC.Class
+import HOC.Super
 
 import HOC.TH
 
@@ -34,7 +35,10 @@ declareClass name super = sequence $ [
             (normalB [| unsafeGetClassObject $(stringE name) |]) [],         
 
         -- $(superName) = "super"
-        valD (return $ VarP (mkName superName)) (normalB $ stringE super) []
+        valD (return $ VarP (mkName superName)) (normalB $ stringE super) [],
+        
+        -- instance SuperClass (name ()) (super ())
+        instanceD (cxt []) (conT ''SuperClass `appT` clsType `appT` superType) []
     ]
     where
         phantomName = name ++ "_"
@@ -44,3 +48,6 @@ declareClass name super = sequence $ [
                            | otherwise = super ++ "Class"
         classObjectName = "_" ++ name
         superName = "super_" ++ name
+
+        clsType   = conT (mkName name)  `appT` [t| () |]
+        superType = conT (mkName super) `appT` [t| () |]

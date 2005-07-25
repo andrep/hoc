@@ -20,7 +20,8 @@ exposed-modules:
     HOC.MsgSend,
     HOC.Utilities,
     HOC.ExportClass,
-    HOC.NewClass
+    HOC.NewClass,
+    HOC.Super
 
 hs-libraries:       "HOC", "HOC_cbits"
 depends:            base, template-haskell

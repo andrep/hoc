@@ -11,6 +11,7 @@ import HOC.SelectorMarshaller
 import HOC.StdArgumentTypes
 import HOC.ID
 import HOC.NewlyAllocated(NewlyAllocated)
+import HOC.Super
 
 import Data.Char(isUpper, toLower, toUpper)
 import Data.Maybe(fromMaybe)
@@ -155,8 +156,13 @@ declareRenamedSelector name haskellName typeSigQ =
                     (return $ makeImpType typeSig),
                 
                 -- class Object a => $(className) a
-                classD (cxt [conT (mkName "Object") `appT` varT (mkName "a")])
+                classD (cxt [conT ''MessageTarget `appT` varT (mkName "a")])
                     (mkName className) [mkName "a"] [] [],
+                
+                -- instance $(className) a => $(className) (SuperTarget a)
+                instanceD (cxt [conT (mkName className) `appT` varT (mkName "a")])
+                    (conT (mkName className) `appT` (conT ''SuperTarget `appT` varT (mkName "a")))
+                    [],
                 
                 sigD (mkName haskellName) $ return doctoredTypeSig,
                 

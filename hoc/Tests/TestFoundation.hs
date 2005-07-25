@@ -43,6 +43,18 @@ $(exportClass "HaskellObjectWithOutlet" "ho1_" [
         Outlet "otherObject" [t| ID () |]
     ])
 
+
+$(declareClass "HaskellObjectWithDescription" "NSObject")
+
+$(exportClass "HaskellObjectWithDescription" "ho2_" [
+		InstanceMethod info_description
+    ])
+
+ho2_description self
+	= do
+		superDesc <- fmap fromNSString $ super self # description
+		return $ toNSString $ head (words superDesc) ++ " TEST>"
+
 tests = test [
         "NSNumber" ~: test [
             "alloc-initWithInt-intValue" ~: (assertNoLeaks $ do
@@ -142,11 +154,17 @@ tests = test [
                 expected <- try (fail "Message sent to nil: intValue")
                 result @?= expected
             )            
-        ]
+        ],
+        "Description" ~: (assertNoLeaks $ do
+        	hobj <- _HaskellObjectWithDescription # alloc >>= init
+        	str <- hobj # description
+        	fromNSString str @?= "<HaskellObjectWithDescription: TEST>"
+        )
     ]
 
 go = withAutoreleasePool $ runTestTT tests
 
 main = do
     initializeClass_HaskellObjectWithOutlet
+    initializeClass_HaskellObjectWithDescription
     go

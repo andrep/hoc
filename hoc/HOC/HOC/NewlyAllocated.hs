@@ -14,6 +14,7 @@ module HOC.NewlyAllocated where
 import HOC.Base         ( ObjCObject )
 import HOC.Arguments    ( ObjCArgument(..) )
 import HOC.ID           ( Object(..), MessageTarget(..) )
+import HOC.MsgSend
 
 import Foreign.Ptr      ( Ptr, nullPtr )
 import System.IO.Unsafe ( unsafePerformIO )
@@ -34,3 +35,7 @@ instance ObjCArgument (NewlyAllocated a) (Ptr ObjCObject) where
     
 instance MessageTarget (NewlyAllocated a) where
     isNil (NewlyAllocated p) = p == nullPtr
+
+    sendMessageWithRetval _ = objSendMessageWithRetval
+    sendMessageWithStructRetval _ = objSendMessageWithStructRetval
+    sendMessageWithoutRetval _ = objSendMessageWithoutRetval

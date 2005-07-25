@@ -64,11 +64,14 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
         collectArgs e = [| withArray $(listE (map varE marshalledArguments))
                                      $(lamE [varP $ mkName "args"] e) |]
 
-        invoke | isUnit = [| sendMessageWithoutRetval (selectorInfoCif $(infoVar))
+        invoke | isUnit = [| sendMessageWithoutRetval $(targetVar)
+        										      (selectorInfoCif $(infoVar))
                                                       $(argsVar)|]
-               | otherwise = [| sendMessageWithRetval (selectorInfoCif $(infoVar))
+               | otherwise = [| sendMessageWithRetval $(targetVar)
+               										  (selectorInfoCif $(infoVar))
                                                       $(argsVar)|]
             where argsVar = varE $ mkName "args"
+            	  targetVar = varE $ mkName "target"
 
         purify e | isPure = [| unsafePerformIO $(e) |]
                  | otherwise = e
