@@ -12,6 +12,7 @@ import HOC.StdArgumentTypes
 import HOC.ID
 import HOC.NewlyAllocated(NewlyAllocated)
 import HOC.Super
+import HOC.CannedCIFs
 
 import Data.Char(isUpper, toLower, toUpper)
 import Data.Maybe(fromMaybe)
@@ -27,6 +28,28 @@ data Retained a
 
 $(makeMarshallers 4)
 marshallersUpTo = 4
+
+$(makeCannedCIFs [
+        [t| ID () -> IO () |],
+        [t| ID () -> IO (ID ()) |],
+        [t| ID () -> IO Bool |],
+        [t| ID () -> IO Float |],
+        [t| ID () -> IO Double |],
+        [t| ID () -> ID () -> IO () |],
+        [t| ID () -> ID () -> IO (ID ()) |],
+        [t| Bool -> ID () -> IO () |],
+        [t| Float -> ID () -> IO () |],
+        [t| Double -> ID () -> IO () |],
+        [t| ID () -> ID () -> IO Bool |],
+        [t| ID () -> ID () -> IO Float |],
+        [t| ID () -> ID () -> IO Double |],
+        [t| ID () -> ID () -> ID () -> IO () |],
+        [t| ID () -> ID () -> ID () -> IO (ID ()) |],
+        [t| ID () -> ID () -> ID () -> IO Bool |],
+        [t| ID () -> ID () -> ID () -> ID () -> IO () |],
+        [t| ID () -> ID () -> ID () -> ID () -> IO (ID ()) |],
+        [t| ID () -> ID () -> ID () -> ID () -> IO Bool |]
+    ])
 
 declareRenamedSelector name haskellName typeSigQ =
     do
@@ -145,7 +168,11 @@ declareRenamedSelector name haskellName typeSigQ =
                                                 $(if haskellName == name
                                                         then [|n|]
                                                         else stringE haskellName)
-                                                (getCifForSelector $(e))
+                                                $(staticCifForSelectorType
+                                                        "HOC.DeclareSelector"
+                                                        cannedCIFTypeNames
+                                                        (return $ simplifyType doctoredTypeSig))
+                                                --(getCifForSelector $(e))
                                                 (getSelectorForName n)
                                                 nArgs
                                                 isUnit
