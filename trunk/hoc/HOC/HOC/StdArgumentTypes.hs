@@ -19,7 +19,7 @@ instance FFITypeable SEL where
 
 $(declareStorableObjCArgument [t| SEL |] ":")
 
-instance ObjCArgument Bool CInt where
+instance ObjCArgument Bool CSChar where
     exportArgument False = return 0
     exportArgument True = return 1
     importArgument 0 = return False
