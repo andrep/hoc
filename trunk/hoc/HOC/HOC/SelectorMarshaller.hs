@@ -1,5 +1,6 @@
 module HOC.SelectorMarshaller(
         SelectorInfo(..),
+        mkSelectorInfo,
         makeMarshaller,
         makeMarshallers,
         marshallerName
@@ -22,11 +23,12 @@ import HOC.TH
 data SelectorInfo = SelectorInfo {
         selectorInfoObjCName :: String,
         selectorInfoHaskellName :: String,
-        selectorInfoCif :: FFICif,
-        selectorInfoSel :: SEL,
-        selectorInfoNArgs :: Int,
-        selectorInfoIsUnit :: Bool
+        selectorInfoCif :: !FFICif,
+        selectorInfoSel :: !SEL
     }
+
+mkSelectorInfo objCName hsName cif
+	= SelectorInfo objCName hsName cif (getSelectorForName objCName)
 
 makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
             funD haskellName [
