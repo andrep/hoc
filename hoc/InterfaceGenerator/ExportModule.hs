@@ -13,7 +13,7 @@ import Headers(ModuleName)
 import Enums(enumName, pprEnumType)
 import NameCaseChange
 
-import Data.Set hiding (map, null, filter, partition, empty)
+import Data.Set(setToList, unionManySets, mkSet, intersect)
 import qualified Data.HashTable as HashTable
 import Data.List(nub, partition, isPrefixOf)
 import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)
@@ -314,7 +314,12 @@ groupImports :: ModuleName -> [(ModuleName, String)] -> [(ModuleName, [String])]
 groupImports thisModule = filter (\(mod, _) -> mod /= thisModule) . groupByFirst
                           
 idsForClass :: String -> [String]
-idsForClass name = [name, "_" ++ name, name ++ "Class", "super_" ++ name]
+idsForClass name = [name, "_" ++ name, name ++ "Class", "super_" ++ name
+						-- we also need to export the phantom type 
+						-- and a data constructor(!) for it, in order to
+						-- work around GHC bug #1244882.
+						, name ++ "_(..)"
+					]
 
 idsForSel :: String -> [String]
 idsForSel name = [name, "Has_" ++ name, "info_" ++ name, "ImpType_" ++ name]

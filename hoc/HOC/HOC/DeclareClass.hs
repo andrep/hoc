@@ -13,7 +13,11 @@ declareClass :: String -> String -> Q [Dec]
 
 declareClass name super = sequence $ [
         -- data $(phantomName) a
-        dataD (cxt []) (mkName phantomName) [mkName "a"] [] [],
+        dataD (cxt []) (mkName phantomName) [mkName "a"]
+            -- the constructor is only here to work around
+            -- GHC sourceforge bug #1244882.
+            [return $ NormalC (mkName (phantomName ++ "dummy")) []] 
+            [],
         
         -- type $(name) a = $(super) ($(phantomName) a)
         tySynD (mkName name) [mkName "a"]
