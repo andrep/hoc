@@ -17,6 +17,7 @@ import HOC.FFICallInterface
 
 import Foreign                      ( withArray, Ptr, nullPtr )
 import System.IO.Unsafe             ( unsafePerformIO )
+import GHC.Base						( unpackCString# )
 
 import HOC.TH
 
@@ -27,8 +28,23 @@ data SelectorInfo = SelectorInfo {
         selectorInfoSel :: !SEL
     }
 
+{-# NOINLINE mkSelectorInfo #-}
 mkSelectorInfo objCName hsName cif
 	= SelectorInfo objCName hsName cif (getSelectorForName objCName)
+
+{-# NOINLINE mkSelectorInfo# #-}
+mkSelectorInfo# objCName# hsName# cif
+	-- NOTE: Don't call mkSelectorInfo here, the rule would apply!
+	= SelectorInfo objCName hsName cif (getSelectorForName objCName)
+	where
+		objCName = unpackCString# objCName#
+		hsName   = unpackCString# hsName#
+
+{-# RULES
+"litstr" forall s1 s2 cif.
+	mkSelectorInfo (unpackCString# s1) (unpackCString# s2) cif
+	= mkSelectorInfo# s1 s2 cif
+  #-}
 
 makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
             funD haskellName [
