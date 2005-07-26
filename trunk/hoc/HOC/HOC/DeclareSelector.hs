@@ -29,6 +29,17 @@ data Retained a
 $(makeMarshallers 4)
 marshallersUpTo = 4
 
+{-# NOINLINE method0 #-} 
+{-# NOINLINE method0_ #-}
+{-# NOINLINE method1 #-}
+{-# NOINLINE method1_ #-}
+{-# NOINLINE method2 #-}
+{-# NOINLINE method2_ #-}
+{-# NOINLINE method3 #-}
+{-# NOINLINE method3_ #-}
+{-# NOINLINE method4 #-}
+{-# NOINLINE method4_ #-}
+
 $(makeCannedCIFs [
         [t| ID () -> IO () |],
         [t| ID () -> IO (ID ()) |],

@@ -21,6 +21,7 @@ foreign import ccall unsafe "Class.h getClassByName"
 	
 getClassByName name = withCString name c_getClassByName
 	
+{-# NOINLINE unsafeGetClassObject #-} -- called from generated code, save space
 unsafeGetClassObject name = unsafePerformIO $
 	getClassByName name >>= importImmortal
 

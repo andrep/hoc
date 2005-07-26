@@ -97,6 +97,7 @@ makeCifForSelector sel = do
     let orderedArgs = (last args : sel : init args)
     ffiPrepCif ret orderedArgs
 
+{-# NOINLINE getCifForSelector #-} -- might be called from generated code
 getCifForSelector sel = unsafePerformIO $ makeCifForSelector sel
     
 objCMethodType thing = ret ++ concat (last args : ":" : init args)
