@@ -164,7 +164,7 @@ declareRenamedSelector name haskellName typeSigQ =
                     in valD (varP $ mkName $ infoName) (normalB
                         [|
                         	let n = $(stringE name)
-                        	in SelectorInfo n
+                        	in mkSelectorInfo n
                                                 $(if haskellName == name
                                                         then [|n|]
                                                         else stringE haskellName)
@@ -172,10 +172,6 @@ declareRenamedSelector name haskellName typeSigQ =
                                                         "HOC.DeclareSelector"
                                                         cannedCIFTypeNames
                                                         (return $ simplifyType doctoredTypeSig))
-                                                --(getCifForSelector $(e))
-                                                (getSelectorForName n)
-                                                nArgs
-                                                isUnit
                         |]) [],
                     
                 -- type $(imptypeName) target inst = arg1 -> arg2 -> target -> IO result

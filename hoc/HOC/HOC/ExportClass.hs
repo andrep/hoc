@@ -157,14 +157,29 @@ mkClassExportAction name prefix members =
             map (noBindS . exportMethod isClassMethod objCMethodList)
                 (zip methods [firstIdx..])
                 
-        exportMethod isClassMethod objCMethodList (ImplementedMethod selectorInfo methodDefinition,num) =
+        exportMethod isClassMethod objCMethodList
+                     (ImplementedMethod selectorInfo methodDefinition,num)
+            = do
+                VarI _ t _ _ <- reify $ mkName selName
+                let arrowsToList (AppT (AppT ArrowT a) b)
+                        = a : arrowsToList b
+                    arrowsToList (AppT (ConT c) b)
+                        | c == ''IO
+                        = [b]
+                    arrowsToList (ForallT _ _ a)
+                        = arrowsToList a
+                    ts = arrowsToList t
+                
+                    nArgs = length ts - 2  -- subtract target and result
+                    isUnit = last ts == ConT ''()
+                
                 exportMethod' isClassMethod objCMethodList num methodBody
                               nArgs isUnit impTypeName selExpr cifExpr
             where
                 methodBody = varE $ mkName methodDefinition
                 selName = selectorInfoHaskellName selectorInfo
-                nArgs = selectorInfoNArgs selectorInfo
-                isUnit = selectorInfoIsUnit selectorInfo
+                -- nArgs = selectorInfoNArgs selectorInfo
+                -- isUnit = selectorInfoIsUnit selectorInfo
                 
                 impTypeName = mkName $ "ImpType_" ++ selName
                 selExpr = [| selectorInfoSel $(varE $ mkName $ "info_" ++ selName) |]
