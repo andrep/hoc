@@ -8,12 +8,9 @@ import HOC.TH           ( mkNameG_v )
 import Data.List        ( intersperse )
 import Data.Maybe       ( catMaybes )
 import Data.Word        ( Word )
-import Debug.Trace
 import Foreign          ( Ptr )
 import Foreign.C
 import Language.Haskell.TH
-
-import System.IO
 
 expandSynonyms typ
     = typ >>= flip expandSynonyms1 []
@@ -30,7 +27,6 @@ expandSynonyms typ
                 
         expandSynonyms1 (ConT n) pending
             = do
-                runIO $ (print n >> hFlush stdout)
                 info <- reify n
                 case info of
                     TyConI (TySynD _ args body) ->
@@ -121,6 +117,5 @@ staticCifForSelectorType mod ns t
         xt <- t
         case mbName of
             Just n | n `elem` ns
-                -> trace ("USING: " ++ n) $ varE $ mkNameG_v mod $ "cannedCIF_" ++ n
-            _ ->   trace ("NOT USING: " ++ show mbName ++ " " ++ show xt) $
-                    [| getCifForSelector $( [| undefined |] `sigE` t) |]
+                -> varE $ mkNameG_v mod $ "cannedCIF_" ++ n
+            _ ->   [| getCifForSelector $( [| undefined |] `sigE` t) |]
