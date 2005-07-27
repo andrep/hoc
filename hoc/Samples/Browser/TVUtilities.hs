@@ -10,6 +10,7 @@ module TVUtilities(
 import HOC
 import Cocoa
 import AppKit.NSTableColumn(identifier)
+import Prelude hiding(init)
 
 import Data.Array
 
