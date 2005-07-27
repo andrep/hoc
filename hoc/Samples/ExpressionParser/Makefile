@@ -14,7 +14,7 @@ ExpressionParser.app: ExpressionParser
 
 ExpressionParser: *.hs
 	mkdir -p build
-	ghc --make Main.hs -odir build -hidir build -O -o $@
+	$(GHC) --make Main.hs -odir build -hidir build -O -o $@
 
 interpret:
 	mkdir -p build
@@ -24,7 +24,7 @@ zerolink: nolink interpret
 
 nolink:
 	mkdir -p build
-	ghc --make Main.hs -odir build -hidir build -O -pgml true
+	$(GHC) --make Main.hs -odir build -hidir build -O -pgml true
 
 clean:
 	rm -rf build/ ExpressionParser ExpressionParser.app/ 'Interactive Haskell Application.app/'

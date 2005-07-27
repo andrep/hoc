@@ -9,10 +9,10 @@ dist_FILES = \
 all: uniqsort
 
 uniqsort: UniqSort.hs
-	ghc -o $@ --make $<
+	$(GHC) -o $@ --make $<
 	
 uniqsort.stripped: UniqSort.hs
-	ghc -o $@ --make -optl-Wl,-dead_strip $<
+	$(GHC) -o $@ --make -optl-Wl,-dead_strip $<
 	
 clean:
 	-rm uniqsort *.o *.hi
