@@ -37,5 +37,4 @@ instance MessageTarget (NewlyAllocated a) where
     isNil (NewlyAllocated p) = p == nullPtr
 
     sendMessageWithRetval _ = objSendMessageWithRetval
-    sendMessageWithStructRetval _ = objSendMessageWithStructRetval
     sendMessageWithoutRetval _ = objSendMessageWithoutRetval

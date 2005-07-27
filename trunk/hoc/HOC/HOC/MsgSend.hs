@@ -1,10 +1,8 @@
 {-# OPTIONS -cpp #-}
 module HOC.MsgSend(
         objSendMessageWithRetval,
-        objSendMessageWithStructRetval,
         objSendMessageWithoutRetval,
         superSendMessageWithRetval,
-        superSendMessageWithStructRetval,
         superSendMessageWithoutRetval
     ) where
 
@@ -14,14 +12,9 @@ import HOC.Arguments
 import HOC.Invocation
 
 import Foreign
+import Control.Monad.Fix(mfix)
 
 objSendMessageWithRetval
-	:: ObjCArgument a b
-    => FFICif
-    -> Ptr (Ptr ())
-    -> IO a
-
-objSendMessageWithStructRetval
 	:: ObjCArgument a b
     => FFICif
     -> Ptr (Ptr ())
@@ -33,12 +26,6 @@ objSendMessageWithoutRetval
     -> IO ()
 
 superSendMessageWithRetval
-	:: ObjCArgument a b
-    => FFICif
-    -> Ptr (Ptr ())
-    -> IO a
-
-superSendMessageWithStructRetval
 	:: ObjCArgument a b
     => FFICif
     -> Ptr (Ptr ())
@@ -61,9 +48,6 @@ objSendMessageWithRetval cif args = do
     imp <- objc_msg_lookup target selector
     callWithRetval cif imp args
 
-objSendMessageWithStructRetval cif args =
-    objSendMessageWithRetval cif args
-
 objSendMessageWithoutRetval cif args = do
     target <- peekElemOff args 0 >>= peek . castPtr
     selector <- peekElemOff args 1 >>= peek . castPtr
@@ -74,31 +58,37 @@ objSendMessageWithoutRetval cif args = do
 
 #else
 
+	-- the type signatures are essentially bogus
+	-- the return value is not necessarily (), and might even be a struct.
+	-- we only call them via libffi, so we couldn't care less.
 foreign import ccall "MsgSend.h &objc_msgSend"
     objc_msgSendPtr :: FunPtr (Ptr ObjCObject -> SEL -> IO ())
 foreign import ccall "MsgSend.h &objc_msgSend_stret"
-    objc_msgSend_stretPtr :: FunPtr (Ptr a -> Ptr ObjCObject -> SEL -> IO ())
+    objc_msgSend_stretPtr :: FunPtr (Ptr ObjCObject -> SEL -> IO ())
 
 foreign import ccall "MsgSend.h &objc_msgSendSuper"
     objc_msgSendSuperPtr :: FunPtr (Ptr ObjCObject -> SEL -> IO ())
 foreign import ccall "MsgSend.h &objc_msgSendSuper_stret"
-    objc_msgSendSuper_stretPtr :: FunPtr (Ptr a -> Ptr ObjCObject -> SEL -> IO ())
+    objc_msgSendSuper_stretPtr :: FunPtr (Ptr ObjCObject -> SEL -> IO ())
+
+withMarshalledDummy :: ObjCArgument a b => (b -> IO a) -> IO a
+withMarshalledDummy action = action undefined
 
 objSendMessageWithRetval cif args =
-    callWithRetval cif objc_msgSendPtr args
-
-objSendMessageWithStructRetval cif args =
-    callWithRetval cif objc_msgSend_stretPtr args
+	withMarshalledDummy $ \dummy ->
+	callWithRetval cif (if isStructType dummy
+							then objc_msgSend_stretPtr
+							else objc_msgSendPtr) args    	 
 
 objSendMessageWithoutRetval cif args =
     callWithoutRetval cif objc_msgSendPtr args
 
 
 superSendMessageWithRetval cif args =
-    callWithRetval cif objc_msgSendSuperPtr args
-
-superSendMessageWithStructRetval cif args =
-    callWithRetval cif objc_msgSendSuper_stretPtr args
+	withMarshalledDummy $ \dummy ->
+	callWithRetval cif (if isStructType dummy
+							then objc_msgSendSuper_stretPtr
+							else objc_msgSendSuperPtr) args    	 
 
 superSendMessageWithoutRetval cif args =
     callWithoutRetval cif objc_msgSendSuperPtr args
