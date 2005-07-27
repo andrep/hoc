@@ -51,5 +51,4 @@ instance MessageTarget a => MessageTarget (SuperTarget a) where
     isNil (SuperTarget x) = isNil x
     
     sendMessageWithRetval _ = superSendMessageWithRetval
-    sendMessageWithStructRetval _ = superSendMessageWithStructRetval
     sendMessageWithoutRetval _ = superSendMessageWithoutRetval

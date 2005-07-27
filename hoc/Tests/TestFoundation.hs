@@ -155,11 +155,28 @@ tests = test [
                 result @?= expected
             )            
         ],
-        "Description" ~: (assertNoLeaks $ do
+        "Super" ~: (assertNoLeaks $ do
         	hobj <- _HaskellObjectWithDescription # alloc >>= init
         	str <- hobj # description
         	fromNSString str @?= "<HaskellObjectWithDescription: TEST>"
-        )
+        ),
+        "structs" ~: test [
+        	"point" ~: (do
+        		let point = NSPoint 6.42 7.42
+        		result <- _NSValue # valueWithPoint point >>= pointValue
+        		result @?= point
+        	),
+        	"size" ~: (do
+        		let size = NSSize 6.42 7.42
+        		result <- _NSValue # valueWithSize size >>= sizeValue
+        		result @?= size
+        	),
+			"rect" ~: (do
+        		let rect = NSRect (NSPoint 1 2) (NSSize 3 4)
+        		result <- _NSValue # valueWithRect rect >>= rectValue
+        		result @?= rect
+        	)
+        ]
     ]
 
 go = withAutoreleasePool $ runTestTT tests

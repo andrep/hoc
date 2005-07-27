@@ -39,12 +39,6 @@ class ObjCArgument a (Ptr ObjCObject) => MessageTarget a where
                           -> Ptr (Ptr ())
                           -> IO ret
 
-    sendMessageWithStructRetval :: ObjCArgument ret b
-                                => a
-                                -> FFICif
-                                -> Ptr (Ptr ())
-                                -> IO ret
-
     sendMessageWithoutRetval :: a
                              -> FFICif
                              -> Ptr (Ptr ())
@@ -58,7 +52,6 @@ instance MessageTarget (ID a) where
     isNil x = x == nil
     
     sendMessageWithRetval _ = objSendMessageWithRetval
-    sendMessageWithStructRetval _ = objSendMessageWithStructRetval
     sendMessageWithoutRetval _ = objSendMessageWithoutRetval
 
 instance Object (ID a) where
