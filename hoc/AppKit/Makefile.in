@@ -38,6 +38,7 @@ ghcmake.build-stamp:
 	ln -sf ../Bindings/ifgen-output/Cocoa.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit .
+	ln -sf ../Bindings/ifgen-output/Foundation .
 	test ! -d ../Bindings/ifgen-output/GNUstepGUI || \
 		ln -sf ../Bindings/ifgen-output/GNUstepGUI .
 	test ! -r ../Bindings/ifgen-output/GNUstepGUI.hs || \
