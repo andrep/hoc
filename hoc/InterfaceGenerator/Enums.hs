@@ -7,8 +7,9 @@ module Enums(
 
 import Headers(HeaderInfo(..), ModuleName)
 import SyntaxTree
-import NameCaseChange
 import BindingScript    ( BindingScript(bsHiddenEnums) )
+
+import HOC.NameCaseChange
 
 import Data.Char        ( toUpper )
 import Data.Maybe       ( mapMaybe )
@@ -60,38 +61,16 @@ handleCType (CTEnum tag constants)
               | otherwise = Just tag
 handleCType _ = Nothing
 
-pprEnumType (EnumType (Just cname) constants) =
-        dataDeclaration $+$ instanceDeclaration
-    where
-        name = nameToUppercase cname
-        
-        dataDeclaration = text "data" <+> text name
-                        <+> conDecls
-        conDecls = vcat $ zipWith (<+>) (equals : repeat (char '|'))
-                                        (map text constructors)
-
-
-        constructors = map (nameToUppercase . fst) constants
-        values = map snd constants
-        
-        
-        instanceDeclaration =
-            hang (text "instance ObjCArgument"
-                  <+> text name <+> text "CInt where")
-                 4
-                 (exports $$ imports $$ typestr)
-        
-        exports = vcat [ text "exportArgument" <+> text con <+> text "= return" <+> hInteger val
-                       | (con,val) <- zip constructors values ]
-        imports = vcat [ text "importArgument" <+> hInteger val <+> text "= return" <+> text con
-                       | (con,val) <- zip constructors values ]
-        
-        hInteger i | i < 0     = parens (integer i)
-                   | otherwise = integer i
-                
-        typestr = text "objCTypeString _ = \"i\""
-        
-pprEnumType (EnumType Nothing constants) =
-           text "{- ### anonymous enum!"
-        $$ nest 4 (pprEnumType $ EnumType (Just "Anon") constants)
-        $$ text "### -}"
+pprEnumType (EnumType name constants) =
+	char '$' <> parens (
+			declare
+			<+> brackets (
+				hcat $ punctuate comma $ map pprAssoc constants
+			)
+		)
+	where
+		declare = case name of
+			Just cname -> text "declareCEnum" <+> doubleQuotes (text cname)
+			Nothing    -> text "declareAnonymousCEnum"
+		pprAssoc (n, v)
+			= parens (doubleQuotes (text n) <> comma <+> integer v)

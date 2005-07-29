@@ -21,7 +21,9 @@ exposed-modules:
     HOC.Utilities,
     HOC.ExportClass,
     HOC.NewClass,
-    HOC.Super
+    HOC.Super,
+    HOC.CEnum,
+    HOC.NameCaseChange
 
 hs-libraries:       "HOC", "HOC_cbits"
 depends:            base, template-haskell

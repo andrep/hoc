@@ -49,11 +49,6 @@ declareStorableObjCArgument ty str = do
             |]
     return [argInst]
 
-whereQ :: ([Q Dec] -> Q a) -> Q [Dec] -> Q a
-header `whereQ` declsQ = do
-    decls <- declsQ
-    header (map return decls)
-
     -- to avoid overlapping instance ObjCIMPType (IO ()) below...
 data EvilDummyForUnit
 instance Storable EvilDummyForUnit where

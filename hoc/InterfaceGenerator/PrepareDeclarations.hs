@@ -12,8 +12,8 @@ import BindingScript
 import CTypeToHaskell
 import Headers(HeaderInfo(..), ModuleName)
 import Enums
-import NameCaseChange
 
+import HOC.NameCaseChange
 import HOC.SelectorNameMangling(mangleSelectorName)
 
 import Control.Monad(when)

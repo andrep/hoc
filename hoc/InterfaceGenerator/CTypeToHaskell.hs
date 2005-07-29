@@ -11,8 +11,9 @@ module CTypeToHaskell(TypeEnvironment(..),
                       mentionedTypes) where
 
 import SyntaxTree
-import NameCaseChange
 import Headers(ModuleName)
+
+import HOC.NameCaseChange
 
 import Control.Monad(when)
 import Data.FiniteMap
