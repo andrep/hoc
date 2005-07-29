@@ -11,7 +11,8 @@ import BindingScript
 import Utils(groupByFirst)
 import Headers(ModuleName)
 import Enums(enumName, pprEnumType)
-import NameCaseChange
+
+import HOC.NameCaseChange
 
 import Data.Set(setToList, unionManySets, mkSet, intersect)
 import qualified Data.HashTable as HashTable
