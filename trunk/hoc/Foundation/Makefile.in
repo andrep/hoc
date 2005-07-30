@@ -76,13 +76,16 @@ libHSFoundation_dyn.dylib: ghcmake
 #	ranlib libHSFoundation.a
 
 clean:
-	rm -rf build libHSFoundation.a libHSFoundation_dyn.dylib HSFoundation.o Foundation.hs \
-	    Foundation ghcmake.build-stamp
+	rm -rf build libHSFoundation.a libHSFoundation_dyn.dylib \
+	    HSFoundation.o Foundation.hs Foundation ghcmake.build-stamp \
+	    exposed-modules.txt Foundation.conf Foundation.conf-inplace
 	
-install: all Foundation.conf
-	mkdir -p $(GHC_LIB_PATH)/Foundation
-	cp -R libHSFoundation.a HSFoundation.o \
-	 build/imports $(GHC_LIB_PATH)/Foundation/
-	ranlib $(GHC_LIB_PATH)/Foundation/libHSFoundation.a
+install: install-files
+	ranlib "$(destdir)"/$(GHC_LIB_PATH)/Foundation/libHSFoundation.a
 	$(GHC_PKG) update Foundation.conf
+	
+install-files: all Foundation.conf
+	mkdir -p "$(destdir)"/$(GHC_LIB_PATH)/Foundation
+	cp -R libHSFoundation.a HSFoundation.o \
+	 build/imports "$(destdir)"/$(GHC_LIB_PATH)/Foundation/
 

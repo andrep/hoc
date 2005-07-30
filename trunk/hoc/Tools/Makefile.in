@@ -19,5 +19,9 @@ hocwrap: *.hs
 clean:
 	rm -rf hocwrap build
 
-install: all
-	install -s hocwrap $(bindir)
+install: install-files
+	
+install-files: all
+	mkdir -p "$(destdir)"/$(bindir)
+	install -s hocwrap "$(destdir)"/$(bindir)
+

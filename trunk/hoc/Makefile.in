@@ -35,6 +35,8 @@ dist_FILES = \
 	objc.m4 \
 	$(NULL)
 
+installer_package_root = $(shell pwd)/installer-package/root
+
 all: libffi-src/build/src/raw_api.o hoc-all
 
 dist:
@@ -65,6 +67,16 @@ clean:
 	
 install:
 	for dir in $(SUBDIRS); do (cd $$dir; echo "In directory $$dir"; $(MAKE) install) done
+
+install-files:
+	for dir in $(SUBDIRS); do (cd $$dir; echo "In directory $$dir"; $(MAKE) install-files) done
+
+package:
+	mkdir -p "$(installer_package_root)"
+	$(MAKE) install-files destdir="$(installer_package_root)"
+	cp HOC/HOC.conf "$(installer_package_root)"/$(GHC_LIB_PATH)/HOC
+	cp Foundation/Foundation.conf "$(installer_package_root)"/$(GHC_LIB_PATH)/Foundation
+	cp AppKit/AppKit.conf "$(installer_package_root)"/$(GHC_LIB_PATH)/AppKit
 
 .PHONY: samples
 samples:

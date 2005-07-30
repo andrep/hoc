@@ -20,3 +20,7 @@ clean:
 
 install: all
 	echo "Interface Generator will be used in-place."
+
+install-files:
+	@true
+

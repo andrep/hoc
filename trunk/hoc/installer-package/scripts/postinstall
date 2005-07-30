@@ -1,0 +1,11 @@
+#!/bin/sh
+
+GHC_PKG=/usr/local/bin/ghc-pkg
+GHC_LIB_PATH=`/usr/local/bin/ghc --print-libdir`
+
+ranlib "$GHC_LIB_PATH"/{AppKit,Foundation,HOC}/*.a
+
+$GHC_PKG update "$GHC_LIB_PATH"/HOC/HOC.conf
+$GHC_PKG update "$GHC_LIB_PATH"/Foundation/Foundation.conf
+$GHC_PKG update "$GHC_LIB_PATH"/AppKit/AppKit.conf
+

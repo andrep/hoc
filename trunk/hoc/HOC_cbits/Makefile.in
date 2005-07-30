@@ -57,10 +57,12 @@ libHOC_cbits_dyn.dylib: libHOC_cbits.a
 depend: $(SRCS)
 	cc -MM $(CFLAGS) $(SRCS) > depend
 		
-install: all
-	mkdir -p $(GHC_LIB_PATH)/HOC
-	cp -R libHOC_cbits.a HOC_cbits.o $(GHC_LIB_PATH)/HOC/
-	ranlib $(GHC_LIB_PATH)/HOC/libHOC_cbits.a
+install: install-files
+	ranlib "$(destdir)"/$(GHC_LIB_PATH)/HOC/libHOC_cbits.a
+
+install-files: all
+	mkdir -p "$(destdir)"/$(GHC_LIB_PATH)/HOC
+	cp -R libHOC_cbits.a HOC_cbits.o "$(destdir)"/$(GHC_LIB_PATH)/HOC/
 	
 -include depend
 

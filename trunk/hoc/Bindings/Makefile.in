@@ -17,3 +17,6 @@ clean:
 
 install: all
 
+install-files:
+	@true
+
