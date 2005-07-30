@@ -37,6 +37,10 @@ module HOC (
         SuperTarget,
         super,
         
+        CEnum(..),
+        declareCEnum,
+        declareAnonymousCEnum,
+        
         -- debugging & statistics:
         
         objectMapStatistics
@@ -56,3 +60,4 @@ import HOC.ExportClass
 import HOC.Utilities
 import HOC.NewlyAllocated
 import HOC.Super
+import HOC.CEnum
