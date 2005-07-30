@@ -1,7 +1,7 @@
 #!/bin/sh
 
-GHC_PKG=ghc-pkg
-GHC_LIB_PATH=`ghc --print-libdir`
+GHC_PKG=/usr/local/bin/ghc-pkg
+GHC_LIB_PATH=`/usr/local/bin/ghc --print-libdir`
 
 ranlib "$GHC_LIB_PATH"/{AppKit,Foundation,HOC}/*.a
 
