@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if grep -q \
+ wolfgang \
+ /Library/Receipts/GHC-6.4.pkg/Contents/Resources/ReadMe.rtfd/TXT.rtf
+then
+  # user has the receipt for the installation; to be sure, verify that we
+  # have ghc 6.4
+  ghc_version=`/usr/local/bin/ghc --version`
+  case "$ghc_version" in
+    "The Glorious Glasgow Haskell Compilation System, version 6.4")
+      # success
+      exit_code=0
+      ;;
+    *) 
+      # some other version?
+      exit_code=$(( (1 << 5) | (1 << 6) | 17 ))
+      ;;
+  esac
+else
+  # user doesn't have wolfgang's GHC 6.4 package installed
+  exit_code=$(( (1 << 5) | (1 << 6) | 16 ))
+fi
+
+exit $exit_code
+
