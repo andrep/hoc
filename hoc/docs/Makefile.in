@@ -65,7 +65,10 @@ dist: HOC.html
 # HOC.pdf: HOC.html
 
 install:
-	true
+	@true
+
+install-files:
+	@true
 
 clean:
 	-rm HOC.html pod2htm* documentation.html

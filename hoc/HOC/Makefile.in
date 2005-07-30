@@ -82,9 +82,12 @@ clean:
 	    HOC/NewClass_stub.c HOC/NewClass_stub.h \
 	    ghcmake.build-stamp
 
-install: all HOC.conf
-	mkdir -p $(GHC_LIB_PATH)/HOC
-	cp -R libHOC.a libHOC_dyn.dylib HOC.o build/imports \
-		$(GHC_LIB_PATH)/HOC/
-	ranlib $(GHC_LIB_PATH)/HOC/libHOC.a
+install: install-files
+	ranlib "$(destdir)"/$(GHC_LIB_PATH)/HOC/libHOC.a
 	$(GHC_PKG) update HOC.conf
+       
+install-files: all HOC.conf
+	mkdir -p "$(destdir)"/$(GHC_LIB_PATH)/HOC
+	cp -R libHOC.a libHOC_dyn.dylib HOC.o build/imports \
+		"$(destdir)"/$(GHC_LIB_PATH)/HOC/
+

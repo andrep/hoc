@@ -38,7 +38,6 @@ ghcmake.build-stamp:
 	ln -sf ../Bindings/ifgen-output/Cocoa.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit .
-	ln -sf ../Bindings/ifgen-output/Foundation .
 	test ! -d ../Bindings/ifgen-output/GNUstepGUI || \
 		ln -sf ../Bindings/ifgen-output/GNUstepGUI .
 	test ! -r ../Bindings/ifgen-output/GNUstepGUI.hs || \
@@ -85,14 +84,16 @@ libHSAppKit_dyn.dylib: ghcmake
 #	ranlib libHSAppKit.a
 
 clean:
-	rm -rf build libHSAppKit.a libHSAppKit_dyn.dylib HSAppKit.o AppKit.hs AppKit \
-	    Cocoa.hs ghcmake.build-stamp
+	rm -rf build libHSAppKit.a libHSAppKit_dyn.dylib HSAppKit.o \
+	    AppKit.hs AppKit Cocoa.hs ghcmake.build-stamp \
+	    exposed-modules.txt AppKit.conf AppKit.conf-inplace
 
-install: all AppKit.conf
-	mkdir -p $(GHC_LIB_PATH)/AppKit
+install:
+	ranlib "$(destdir)"/$(GHC_LIB_PATH)/AppKit/libHSAppKit.a
+	ghc-pkg --update-package --input-file=AppKit.conf
+
+install-files: all AppKit.conf
+	mkdir -p "$(destdir)"/$(GHC_LIB_PATH)/AppKit
 	cp -R libHSAppKit.a HSAppKit.o build/imports \
-	 $(GHC_LIB_PATH)/AppKit/
-	ranlib $(GHC_LIB_PATH)/AppKit/libHSAppKit.a
-	ghc-pkg --update-package	\
-			--input-file=AppKit.conf
+	 "$(destdir)"/$(GHC_LIB_PATH)/AppKit/
 
