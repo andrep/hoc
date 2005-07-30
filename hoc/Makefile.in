@@ -77,6 +77,7 @@ package:
 	cp HOC/HOC.conf "$(installer_package_root)"/$(GHC_LIB_PATH)/HOC
 	cp Foundation/Foundation.conf "$(installer_package_root)"/$(GHC_LIB_PATH)/Foundation
 	cp AppKit/AppKit.conf "$(installer_package_root)"/$(GHC_LIB_PATH)/AppKit
+	chown -R root:admin "$(installer_package_root)"
 
 .PHONY: samples
 samples:
