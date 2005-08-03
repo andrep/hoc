@@ -40,21 +40,28 @@ superSendMessageWithoutRetval
 
 foreign import ccall "objc/objc.h objc_msg_lookup"
     objc_msg_lookup :: Ptr ObjCObject -> SEL -> IO (FunPtr ())
-    
-    
-objSendMessageWithRetval cif args = do
+
+foreign import ccall "objc/objc.h objc_msg_lookup_super"
+    objc_msg_lookup_super :: Ptr ObjCObject -> SEL -> IO (FunPtr ())
+     
+sndMsgCommon call cif args = do
     target <- peekElemOff args 0 >>= peek . castPtr
     selector <- peekElemOff args 1 >>= peek . castPtr
     imp <- objc_msg_lookup target selector
-    callWithRetval cif imp args
-
-objSendMessageWithoutRetval cif args = do
-    target <- peekElemOff args 0 >>= peek . castPtr
+    call cif imp args
+    
+sndMsgSuperCommon call cif args = do
+    super <- peekElemOff args 0 >>= peek . castPtr
+    peek (castPtr super) >>= pokeElemOff args 0
     selector <- peekElemOff args 1 >>= peek . castPtr
-    imp <- objc_msg_lookup target selector
-    callWithoutRetval cif imp args
+    imp <- objc_msg_lookup_super super selector
+    call cif imp args
 
-#error GNUSTEP unimplemented: send message to super
+    
+objSendMessageWithRetval      = sndMsgCommon      callWithRetval
+objSendMessageWithoutRetval   = sndMsgCommon      callWithoutRetval
+superSendMessageWithRetval    = sndMsgSuperCommon callWithRetval
+superSendMessageWithoutRetval = sndMsgSuperCommon callWithoutRetval
 
 #else
 
@@ -77,8 +84,8 @@ withMarshalledDummy action = action undefined
 objSendMessageWithRetval cif args =
 	withMarshalledDummy $ \dummy ->
 	callWithRetval cif (if isStructType dummy
-							then objc_msgSend_stretPtr
-							else objc_msgSendPtr) args    	 
+                                then objc_msgSend_stretPtr
+                                else objc_msgSendPtr) args    	 
 
 objSendMessageWithoutRetval cif args =
     callWithoutRetval cif objc_msgSendPtr args
@@ -87,8 +94,8 @@ objSendMessageWithoutRetval cif args =
 superSendMessageWithRetval cif args =
 	withMarshalledDummy $ \dummy ->
 	callWithRetval cif (if isStructType dummy
-							then objc_msgSendSuper_stretPtr
-							else objc_msgSendSuperPtr) args    	 
+                                then objc_msgSendSuper_stretPtr
+                                else objc_msgSendSuperPtr) args    	 
 
 superSendMessageWithoutRetval cif args =
     callWithoutRetval cif objc_msgSendSuperPtr args
