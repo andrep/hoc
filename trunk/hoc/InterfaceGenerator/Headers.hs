@@ -17,12 +17,12 @@ data HeaderInfo = HeaderInfo ModuleName [ModuleName] [Declaration]
 
 stripPreprocessor = unlines . stripPP . lines
     where
-		stripPP (x@('#':_) : xs) = dropPreprocessorLine x xs
-		stripPP (x : xs) = x : stripPP xs
-		stripPP [] = []
-		dropPreprocessorLine x xs
-			| last x == '\\' = "" : dropPreprocessorLine (head xs) (tail xs)
-			| otherwise = "" : stripPP xs
+        stripPP (x@('#':_) : xs) = dropPreprocessorLine x xs
+        stripPP (x : xs) = x : stripPP xs
+        stripPP [] = []
+        dropPreprocessorLine x xs
+            | last x == '\\' = "" : dropPreprocessorLine (head xs) (tail xs)
+            | otherwise = "" : stripPP xs
 
 findImports = mapMaybe checkImport . lines
     where
