@@ -11,7 +11,7 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHOC.a libHOC_dyn.dylib HOC.o ../inplace.conf
+all: libHOC.a HOC.o ../inplace.conf
 
 ../inplace.conf: HOC.conf-inplace
 	[ -f "$@" ] || echo '[]' > $@
@@ -54,7 +54,6 @@ ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
 	$(GHC) --make HOC/Arguments.hs	\
-		-fPIC -dynamic \
 		-odir build/objects -hidir build/imports	\
 		-fglasgow-exts -fth \
 		../HOC_cbits/HOC_cbits.o	\
@@ -65,7 +64,7 @@ ghcmake.build-stamp:
 		$(FOUNDATION_LIBS)      \
                 $(DEFINES)
 	$(GHC) --make HOC.hs	\
-		-fPIC -dynamic \
+		-O -fasm \
 		-odir build/objects -hidir build/imports	\
 		-fglasgow-exts -fth \
 		../HOC_cbits/HOC_cbits.o	\
@@ -88,6 +87,5 @@ install: install-files
        
 install-files: all HOC.conf
 	mkdir -p "$(destdir)"/$(GHC_LIB_PATH)/HOC
-	cp -R libHOC.a libHOC_dyn.dylib HOC.o build/imports \
+	cp -R libHOC.a HOC.o build/imports \
 		"$(destdir)"/$(GHC_LIB_PATH)/HOC/
-

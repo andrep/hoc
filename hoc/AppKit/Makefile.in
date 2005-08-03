@@ -45,6 +45,7 @@ ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
 	$(GHC) --make AppKit.hs	\
+		-O -fasm \
 		-ignore-package AppKit	\
 		-odir build/objects \
 		-hidir build/imports	\
@@ -58,7 +59,6 @@ ghcmake.build-stamp:
 			-package-conf ../inplace.conf \
 			-fglasgow-exts
 	$(GHC) -c Cocoa.hs \
-		-fPIC -dynamic \
 		-ignore-package AppKit	\
 		-ibuild/imports	   \
 		-o build/objects/Cocoa.o	\
@@ -71,17 +71,12 @@ HSAppKit.o: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs ld -r -x -o HSAppKit.o
 
 libHSAppKit.a: ghcmake
-	find build/objects/ -name \*.o | xargs libtool -static -o libHSAppKit.a
+	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHSAppKit.a
 
 libHSAppKit_dyn.dylib: ghcmake
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
 	 | xargs libtool -dynamic -o $@ -undefined dynamic_lookup
 	install_name_tool -id "`pwd`/$@" $@
-
-#libHSAppKit.a: HSAppKit.o
-#	rm -f libHSAppKit.a
-#	ar cq libHSAppKit.a HSAppKit.o
-#	ranlib libHSAppKit.a
 
 clean:
 	rm -rf build libHSAppKit.a libHSAppKit_dyn.dylib HSAppKit.o \
