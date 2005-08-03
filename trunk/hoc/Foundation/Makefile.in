@@ -44,6 +44,7 @@ ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
 	$(GHC) --make Foundation.hs	\
+		-O -fasm \
 		-odir build/objects \
 		-ignore-package Foundation \
 		-hidir build/imports	\
@@ -63,17 +64,12 @@ HSFoundation.o: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs ld -r -x -o HSFoundation.o
 
 libHSFoundation.a: ghcmake
-	find build/objects/ -name \*.o | xargs libtool -static -o libHSFoundation.a	
+	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHSFoundation.a	
 
 libHSFoundation_dyn.dylib: ghcmake
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
 	 | xargs libtool -dynamic -o $@ -undefined dynamic_lookup
 	install_name_tool -id "`pwd`/$@" $@
-
-#libHSFoundation.a: HSFoundation.o
-#	rm -f libHSFoundation.a
-#	ar cq libHSFoundation.a HSFoundation.o
-#	ranlib libHSFoundation.a
 
 clean:
 	rm -rf build libHSFoundation.a libHSFoundation_dyn.dylib \
