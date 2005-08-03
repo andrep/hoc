@@ -37,7 +37,7 @@ HOC_cbits.o: libHOC_cbits.a
 
 libHOC_cbits.a: $(OBJS)
 	cp ../libffi-src/build/.libs/libffi.a libHOC_cbits.a
-	$(MAKE_STATIC_LIB) libHOC_cbits.a $(OBJS)
+	ar qs libHOC_cbits.a $(OBJS)
 
 libHOC_cbits_dyn.dylib: libHOC_cbits.a
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && \
