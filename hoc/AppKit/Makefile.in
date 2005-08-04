@@ -16,7 +16,7 @@ register-inplace: AppKit.conf-inplace
 
 exposed-modules.txt:
 	find build/imports | grep '\.hi' \
-            | sed 's@build/imports/@ ,@g' | sed 's/\.hi//g' | sed 's@/@.@g' \
+            | sed 's@build/imports/@ @g' | sed 's/\.hi//g' | sed 's@/@.@g' \
             > exposed-modules.txt
 
 AppKit.conf-inplace: AppKit.conf.in exposed-modules.txt
