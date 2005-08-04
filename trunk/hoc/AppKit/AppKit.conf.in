@@ -23,6 +23,3 @@ library-dirs:       GHC_LIB_PATH/AppKit
 depends:            HOC, Foundation
 
 exposed-modules:
-    AppKit
-
-

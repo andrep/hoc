@@ -15,5 +15,3 @@ library-dirs:       GHC_LIB_PATH/Foundation
 depends:            HOC
 
 exposed-modules:
-    Foundation
-
