@@ -71,5 +71,5 @@ install-files:
 	@true
 
 clean:
-	-rm HOC.html pod2htm*.tmp documentation.html
+	rm -f HOC.html pod2htm*.tmp documentation.html
 
