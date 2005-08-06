@@ -213,9 +213,56 @@ automatically released.
 
 =head3 C<enum> Types
 
-This section is not written yet: please write to the I<hoc-users>
-mailing list (see L<http://hoc.sourceforge.net/support.html>) for
-assistance or, have a look at the HOC source code yourself.
+C enum types are marshalled, but with a couple of twists.  If the
+enum is I<named>, a data declaration is created that is the same
+name as the enum, with each of its constructors corresponding to
+one of the enum definitions.  A value ("constant function") will
+also be created for each enum definition, with the first letter
+and the initial "NS" lowercased, if that's present.  The Haskell
+data type will belong to the C<Eq>, C<Ord>, C<Read>, C<Show>, and
+and C<HOC.CEnum> type classes.  If you need to use the literal
+integer value of the enum, use the C<HOC.fromCEnum> and
+C<HOC.toCEnum> functions.
+
+Since that's all a bit abstract, an example will hopefully make
+things much clearer!  The following C enum declaration:
+
+  typedef enum _MyEnum {
+    Foo = 0,
+    Bar = 42,
+    NSBaz,
+    NSQuux = 69
+  } MyEnum;
+
+will be marshalled to the following Haskell declarations:
+
+  data MyEnum = Foo | Bar | NSBaz | NSQuux
+    deriving (Eq, Ord, Read, Show)
+
+  instance CEnum MyEnum where
+    fromCEnum Foo = 0
+    fromCEnum Bar = 42
+    fromCEnum NSBaz = 43
+    fromCEnum NSQuux = 69
+    toCEnum 0 = Foo
+    toCEnum 42 = Bar
+    toCEnum 43 = NSBaz
+    toCEnum 69 = NSQuux
+
+  foo = Foo
+  bar = Bar
+  nsbaz = NSBaz
+  nsquux = NSQuux
+
+On the other hand, I<anonymous enums> are marshalled to simple
+values only.  The following example anonymous C enum:
+
+  enum { NSFoo = 1, Bar = 3 }
+
+will be marshalled to:
+
+  nsfoo = 1
+  bar = 3
 
 =head3 C<struct> Types
 
