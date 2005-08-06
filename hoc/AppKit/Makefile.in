@@ -32,8 +32,6 @@ AppKit.conf: AppKit.conf.in exposed-modules.txt
 		@HOC_DEFINES@ AppKit.conf.in | grep -v '^#' > $@ 
 	cat exposed-modules.txt >> AppKit.conf
 
-ghcmake: ghcmake.build-stamp
-
 ghcmake.build-stamp:
 	ln -sf ../Bindings/ifgen-output/Cocoa.hs .
 	ln -sf ../Bindings/ifgen-output/AppKit.hs .
@@ -70,10 +68,10 @@ ghcmake.build-stamp:
 HSAppKit.o: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs ld -r -x -o HSAppKit.o
 
-libHSAppKit.a: ghcmake
+libHSAppKit.a: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHSAppKit.a
 
-libHSAppKit_dyn.dylib: ghcmake
+libHSAppKit_dyn.dylib: ghcmake.build-stamp
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
 	 | xargs libtool -dynamic -o $@ -undefined dynamic_lookup
 	install_name_tool -id "`pwd`/$@" $@
