@@ -5,3 +5,5 @@ ghcmake.build-stamp
 Makefile
 Foundation-macos.conf
 Foundation.conf
+register-inplace.build-stamp
+

@@ -7,12 +7,13 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHSAppKit.a HSAppKit.o register-inplace
+all: libHSAppKit.a HSAppKit.o register-inplace.build-stamp
 
-register-inplace: AppKit.conf-inplace
+register-inplace.build-stamp: AppKit.conf-inplace
 	[ -f "../inplace.conf" ] || echo '[]' > ../inplace.conf
 	$(GHC_PKG) update AppKit.conf-inplace \
 		--package-conf=../inplace.conf
+	touch $@
 
 exposed-modules.txt:
 	find build/imports | grep '\.hi' \
@@ -79,7 +80,8 @@ libHSAppKit_dyn.dylib: ghcmake.build-stamp
 clean:
 	rm -rf build libHSAppKit.a libHSAppKit_dyn.dylib HSAppKit.o \
 	    AppKit.hs AppKit Cocoa.hs ghcmake.build-stamp \
-	    exposed-modules.txt AppKit.conf AppKit.conf-inplace
+	    exposed-modules.txt AppKit.conf AppKit.conf-inplace \
+	    register-inplace.build-stamp
 
 install: install-files
 	ranlib "$(destdir)"/$(GHC_LIB_PATH)/AppKit/libHSAppKit.a
