@@ -218,7 +218,7 @@ enum is I<named>, a data declaration is created that is the same
 name as the enum, with each of its constructors corresponding to
 one of the enum definitions.  A value ("constant function") will
 also be created for each enum definition, with the first letter
-and the initial "NS" lowercased, if that's present.  The Haskell
+or the initial "NS" lowercased, if that's present.  The Haskell
 data type will belong to the C<Eq>, C<Ord>, C<Read>, C<Show>, and
 and C<HOC.CEnum> type classes.  If you need to use the literal
 integer value of the enum, use the C<HOC.fromCEnum> and
@@ -251,8 +251,8 @@ will be marshalled to the following Haskell declarations:
 
   foo = Foo
   bar = Bar
-  nsbaz = NSBaz
-  nsquux = NSQuux
+  nsBaz = NSBaz
+  nsQuux = NSQuux
 
 On the other hand, I<anonymous enums> are marshalled to simple
 values only.  The following example anonymous C enum:
@@ -261,8 +261,8 @@ values only.  The following example anonymous C enum:
 
 will be marshalled to:
 
-  nsfoo = 1
-  bar = 3
+  nsFoo = 1 :: CInt
+  bar   = 3 :: CInt
 
 =head3 C<struct> Types
 
