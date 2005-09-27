@@ -6,9 +6,6 @@
 --X NSPoint(..)
 --X NSSize(..)
 --X NSRect(..)
---X nsZeroPoint
---X nsZeroSize
---X nsZeroRect
 --X nsMaxX
 --X nsMaxY
 --X nsMidX
@@ -29,9 +26,12 @@ data NSPoint = NSPoint Float Float  deriving(Read, Show, Eq)
 data NSSize = NSSize Float Float    deriving(Read, Show, Eq)
 data NSRect = NSRect NSPoint NSSize deriving(Read, Show, Eq)
 
+{-
+-- They're imported automatically now.
 nsZeroPoint = NSPoint 0 0
 nsZeroSize = NSSize 0 0
 nsZeroRect = NSRect nsZeroPoint nsZeroSize
+-}
 
 nsMaxX (NSRect (NSPoint x y) (NSSize w h)) = x + w
 nsMaxY (NSRect (NSPoint x y) (NSSize w h)) = y + h

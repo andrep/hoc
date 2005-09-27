@@ -18,7 +18,7 @@ import Data.Set(setToList, unionManySets, mkSet, intersect)
 import qualified Data.HashTable as HashTable
 import Data.List(nub, partition, isPrefixOf)
 import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)
-import Data.FiniteMap(lookupFM)
+import Data.FiniteMap(lookupFM, lookupWithDefaultFM)
 import Text.PrettyPrint.HughesPJ
 
 getModuleDependencies :: PreparedDeclarations -> ModuleName -> IO [ModuleName]
@@ -54,6 +54,8 @@ exportModule bindingScript
                  pdAllInstanceSels = allInstanceSels,
                  pdAllClassSels = allClassSels,
                  pdEnumTypeDefinitions = allEnumDefinitions,
+                 pdExternVarDeclarations = allVarDeclarations,
+                 pdExternFunDeclarations = allFunDeclarations,
                  pdTypeEnvironment = typeEnv
              })
              selsDefinedWhere
@@ -184,8 +186,14 @@ exportModule bindingScript
         protoAdoptions = concat [ [ (proto ++ "Protocol", ciName ci)
                                   | proto <- setToList $ ciNewProtocols ci]
                                 | ci <- definedClassInfos, not (ciProtocol ci) ]
+                                
+        varDeclarations = lookupWithDefaultFM allVarDeclarations [] moduleName
+        funDeclarations = lookupWithDefaultFM allFunDeclarations [] moduleName
             
-    let mentionedTypeNames = nub $ concatMap (mentionedTypes . msType) selDefinitions
+    let mentionedTypeNames = nub $
+            concatMap (mentionedTypes.msType) (selDefinitions ++ funDeclarations)
+            ++ concatMap (\(t,_,_) -> varMentionedTypes t) varDeclarations
+                                
             
             -- ### we discard the information about where to import it from
             --     and then recover it later - not nice
@@ -259,6 +267,8 @@ exportModule bindingScript
                                  : "module HOC"
                                  : exportedSels ++ exportedProtos
                                  ++ map ("module "++) superClassModules
+                                 ++ map (\(_,_,hn) -> hn) varDeclarations
+                                 ++ map msMangled funDeclarations
                                  ++ additionalExports
                                  ))
                     <+> text "where",
@@ -294,10 +304,14 @@ exportModule bindingScript
             ++ map pprProtocolDecl protocolsToDeclare
             ++ [text "-- protocol adoptions"]
             ++ map pprProtoAdoption protoAdoptions
+            ++ [text "-- extern constants"]
+            ++ map pprVarDecl varDeclarations
+            ++ [text "-- extern functions"]
+            ++ map pprFunDecl funDeclarations
             ++ (map text $ additionalCodeBelow)
     
 
-        
+         
     if anythingGoingOn
         then do
             createDirectoryIfNecessary forwardDirName
@@ -316,11 +330,11 @@ groupImports thisModule = filter (\(mod, _) -> mod /= thisModule) . groupByFirst
                           
 idsForClass :: String -> [String]
 idsForClass name = [name, "_" ++ name, name ++ "Class", "super_" ++ name
-						-- we also need to export the phantom type 
-						-- and a data constructor(!) for it, in order to
-						-- work around GHC bug #1244882.
-						, name ++ "_(..)"
-					]
+                        -- we also need to export the phantom type 
+                        -- and a data constructor(!) for it, in order to
+                        -- work around GHC bug #1244882.
+                        , name ++ "_(..)"
+                    ]
 
 idsForSel :: String -> [String]
 idsForSel name = [name, "Has_" ++ name, "info_" ++ name, "ImpType_" ++ name]
@@ -367,3 +381,15 @@ pprMethodDecl (selName, className) =
 pprProtoAdoption :: (String, String) -> Doc
 pprProtoAdoption (protoName, className) =
     text "instance" <+> text protoName <+> parens (text className <+> text "a")
+
+pprVarDecl :: (HType, String, String) -> Doc
+pprVarDecl (t, name, _) = text "$" <> parens (text "declareExternConst"
+        <+> doubleQuotes (text name)
+        <+> text "[t|" <+> pprVariableType t <+> text "|]"
+    )
+
+pprFunDecl :: MangledSelector -> Doc
+pprFunDecl ms = text "$" <> parens (text "declareExternFun"
+        <+> doubleQuotes (text $ msName ms)
+        <+> text "[t|" <+> pprSelectorType (msType ms) <+> text "|]"
+    )

@@ -31,6 +31,8 @@ data PreparedDeclarations = PreparedDeclarations {
         pdAllInstanceSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])],
         pdAllClassSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])],
         pdEnumTypeDefinitions :: FiniteMap ModuleName [EnumType],
+        pdExternVarDeclarations :: FiniteMap ModuleName [(HType, String, String)],
+        pdExternFunDeclarations :: FiniteMap ModuleName [MangledSelector],
         pdTypeEnvironment :: TypeEnvironment
     }
 
@@ -259,10 +261,33 @@ prepareDeclarations bindingScript modules = do
     
     let allInstanceSels :: [ (ClassInfo, [(MangledSelector, SelectorLocation)]) ]
         allInstanceSels = [ (ci, mangleSelectors False (ciName ci) (ciNewInstanceMethods ci))
-                       | ci <- map snd cleanClassInfos ]
+                          | ci <- map snd cleanClassInfos ]
         allClassSels :: [ (ClassInfo, [(MangledSelector, SelectorLocation)]) ]
-        allClassSels =    [ (ci, mangleSelectors True (ciName ci) (ciNewClassMethods ci))
-                       | ci <- map snd cleanClassInfos ]
+        allClassSels =  [ (ci, mangleSelectors True (ciName ci) (ciNewClassMethods ci))
+                        | ci <- map snd cleanClassInfos ]
+    
+        externVarDeclarations = extractDecls varDecl
+            where varDecl (ExternVar t n)
+                    = do
+                        ht <- getVariableType typeEnv t
+                        return (ht, n, nameToLowercase n)
+                    
+                  varDecl _ = Nothing
+                  
+        externFunDeclarations = extractDecls funDecl
+            where funDecl (ExternFun sel)
+                    = do
+                        typ <- getSelectorType PlainSelector typeEnv sel
+                        return $ MangledSelector {
+                                msSel = sel,
+                                msMangled = nameToLowercase (selName sel),
+                                msType = typ
+                            }
+                  funDecl _ = Nothing
+                  
+        extractDecls f = listToFM $
+                         map (\(HeaderInfo mod _ decls) -> (mod, mapMaybe f decls)) $ 
+                         modules
     
         mangleSelectors factory clsName sels =
             mapMaybe (\(sel, location) -> do {- Maybe -}
@@ -305,5 +330,7 @@ prepareDeclarations bindingScript modules = do
                  pdAllInstanceSels = allInstanceSels,
                  pdAllClassSels = allClassSels,
                  pdEnumTypeDefinitions = enumDefinitions,
+                 pdExternVarDeclarations = externVarDeclarations,
+                 pdExternFunDeclarations = externFunDeclarations,
                  pdTypeEnvironment = typeEnv
              }

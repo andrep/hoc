@@ -1,12 +1,13 @@
 module HOC.Invocation where
 
 import Foreign
-import Control.Monad ( when )
-import Control.Exception ( bracket )
+import Control.Monad        ( when )
 
 import HOC.Base
 import HOC.Arguments
 import HOC.FFICallInterface
+
+import {-# SOURCE #-} HOC.Exception
 
 foreign import ccall "Invocation.h callWithExceptions"
     c_callWithExceptions :: FFICif -> FunPtr a
@@ -16,12 +17,12 @@ foreign import ccall "Invocation.h callWithExceptions"
 callWithException cif fun ret args = do
     exception <- c_callWithExceptions cif fun ret args
     when (exception /= nullPtr) $
-        error "## exception marshalling not yet implemented ###"
+        exceptionObjCToHaskell exception
 
 withMarshalledArgument :: ObjCArgument a b => a -> (Ptr () -> IO c) -> IO c
 
 withMarshalledArgument arg act =
-    withExportedArgument arg (\exported -> withObject exported (act . castPtr))
+    withExportedArgument arg (\exported -> with exported (act . castPtr))
 
 callWithoutRetval :: FFICif -> FunPtr a
                   -> Ptr (Ptr ())
@@ -50,7 +51,3 @@ getMarshalledArgument args idx = do
     p <- peekElemOff args idx
     arg <- peek (castPtr p)
     importArgument arg
-
-exceptionHaskellToObjC action = 
-    action >> return nullPtr {- ### `catch` return some nsexception -}
- 

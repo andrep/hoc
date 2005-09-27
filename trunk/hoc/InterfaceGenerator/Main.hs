@@ -6,7 +6,6 @@ import Data.FiniteMap
 import qualified Data.HashTable as HashTable
 import Data.List(isPrefixOf,isSuffixOf,partition)
 import Data.Maybe(fromMaybe,mapMaybe,isJust,isNothing,catMaybes,maybeToList)
-import Data.Set hiding (map, filter, null, partition, empty)
 import Control.Monad(unless)
 
 import System.Info(os)
@@ -84,7 +83,14 @@ main = do
             return $ map fst $ order $ zip mods deps
             
     modules <- fmap concat $ mapM (orderModules2 . headerNames) [foundationModules, appKitModules]
-            
+    
+    {- Debug Output:
+    print $ concat [ [ d | d@(ExternVar _ _) <- ds ]
+                   | HeaderInfo _ _ ds <- foundationModules ++ appKitModules ]
+    print $ concat [ [ d | d@(ExternFun _)   <- ds ]
+                   | HeaderInfo _ _ ds <- foundationModules ++ appKitModules ]
+    -}
+    
     selsDefinedWhere <- HashTable.new (==) (\sel -> HashTable.hashString (selName sel))
     
     allSelNames <- HashTable.new (==) HashTable.hashString

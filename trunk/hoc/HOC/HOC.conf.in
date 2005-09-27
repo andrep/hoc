@@ -23,7 +23,11 @@ exposed-modules:
     HOC.NewClass,
     HOC.Super,
     HOC.CEnum,
-    HOC.NameCaseChange
+    HOC.NameCaseChange,
+    HOC.Dyld,
+    HOC.ExternConstants,
+    HOC.Exception,
+    HOC.ExternFunctions
 
 hs-libraries:       "HOC", "HOC_cbits"
 depends:            base, template-haskell

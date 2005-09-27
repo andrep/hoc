@@ -16,6 +16,7 @@ import HOC.SelectorMarshaller
 import HOC.Class
 import HOC.NewClass
 import HOC.TH
+import HOC.Exception
 
 data ClassMember =
         InstanceMethod SelectorInfo
