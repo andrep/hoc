@@ -11,7 +11,6 @@ NSException *callWithExceptions(ffi_cif *cif, void (*fn)(),
 	NS_DURING
 		ffi_call(cif, fn, rvalue, avalue);
 	NS_HANDLER
-	    NSLog(@"exception: %@", localException);
 		return localException;
 	NS_ENDHANDLER
 	return nil;
