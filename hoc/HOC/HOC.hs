@@ -41,6 +41,9 @@ module HOC (
         declareCEnum,
         declareAnonymousCEnum,
         
+        declareExternConst,
+        declareExternFun,
+        
         -- debugging & statistics:
         
         objectMapStatistics
@@ -61,3 +64,5 @@ import HOC.Utilities
 import HOC.NewlyAllocated
 import HOC.Super
 import HOC.CEnum
+import HOC.ExternConstants
+import HOC.ExternFunctions

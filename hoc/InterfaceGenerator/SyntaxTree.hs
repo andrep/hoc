@@ -6,6 +6,8 @@ data Declaration =
     |   SelectorList SelectorListHeader [SelectorListItem]
     |   Typedef CType String
     |   CTypeDecl CType
+    |   ExternVar CType String
+    |   ExternFun Selector
     deriving (Show,Eq,Ord)
 
 data SelectorListHeader = 

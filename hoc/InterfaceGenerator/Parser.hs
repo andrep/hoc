@@ -41,6 +41,7 @@ interestingThing =
     <|> interface_decl
     <|> empty_decl
     <|> (fmap Just type_declaration)
+    <|> extern_decl
 
 empty_decl = semi objc >> return Nothing
 
@@ -243,6 +244,26 @@ ctypeDecl = do
     return $ CTypeDecl typ
 
 type_declaration = typedef <|> ctypeDecl
+
+extern_decl =
+    extern_keyword >> ctype >>= \t -> identifier objc >>= \n ->
+        do 
+            args <- parens objc (commaSep objc argument)
+            semi objc
+            return $ Just $ ExternFun (Selector n t args False)
+    <|> do
+            semi objc
+            return $ Just $ ExternVar t n
+    where
+        argument = do t <- ctype
+                      optional (identifier objc)
+                      return t
+                   
+        
+extern_keyword =
+        reserved objc "extern"
+    <|> reserved objc "FOUNDATION_EXPORT" -- N.B. "Export" vs. "Extern".
+    <|> reserved objc "APPKIT_EXTERN"
 
 skipParens = parens objc (skipMany (
     (satisfy (\x -> x /= '(' && x /= ')') >> return ())

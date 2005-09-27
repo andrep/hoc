@@ -8,7 +8,11 @@ module CTypeToHaskell(TypeEnvironment(..),
                       HSelectorType,
                       SelectorKind(..),
                       getSelectorType,
-                      mentionedTypes) where
+                      getVariableType,
+                      pprVariableType,
+                      HType(..),
+                      mentionedTypes,
+                      varMentionedTypes) where
 
 import SyntaxTree
 import Headers(ModuleName)
@@ -208,3 +212,12 @@ pprSelectorType (HSelectorType tyvars context mentioned types) =
 
 mentionedTypes (HSelectorType tyvars context mentioned types) = mentioned
 
+
+getVariableType :: TypeEnvironment -> CType -> Maybe HType
+pprVariableType :: HType -> Doc
+
+getVariableType env t = cTypeToHaskell env True (error "### getVariableType") t
+
+pprVariableType (HType _ _ tt) = pprHTypeTerm False tt
+
+varMentionedTypes (HType _ mentioned _) = mentioned

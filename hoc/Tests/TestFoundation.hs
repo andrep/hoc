@@ -10,6 +10,7 @@ import Control.Concurrent   ( threadDelay )
 import Control.Monad        ( when )
 import Control.Exception    ( try, finally )
 
+import Selectors
 
       -- garbage collect and make really sure that finalizers have time to run
 performGCAndWait targetCount time maxRepeat = do
@@ -47,13 +48,30 @@ $(exportClass "HaskellObjectWithOutlet" "ho1_" [
 $(declareClass "HaskellObjectWithDescription" "NSObject")
 
 $(exportClass "HaskellObjectWithDescription" "ho2_" [
-		InstanceMethod info_description
+        InstanceMethod info_description
+    ])
+    
+ho2_description self
+    = do
+        superDesc <- fmap fromNSString $ super self # description
+        return $ toNSString $ head (words superDesc) ++ " TEST>"
+
+$(declareClass "ExceptionThrower" "NSObject")
+
+instance Has_throwHaskellException (ExceptionThrower a)
+instance Has_throwNSException (ExceptionThrower a)
+
+$(exportClass "ExceptionThrower" "et_" [
+        InstanceMethod info_throwHaskellException,
+        InstanceMethod info_throwNSException
     ])
 
-ho2_description self
-	= do
-		superDesc <- fmap fromNSString $ super self # description
-		return $ toNSString $ head (words superDesc) ++ " TEST>"
+et_throwHaskellException self = fail "Test Exception"
+et_throwNSException self = _NSException # exceptionWithNameReasonUserInfo
+                                        (toNSString "FooBar")
+                                        (toNSString "baz")
+                                        nil
+                            >>= raise
 
 tests = test [
         "NSNumber" ~: test [
@@ -156,26 +174,55 @@ tests = test [
             )            
         ],
         "Super" ~: (assertNoLeaks $ do
-        	hobj <- _HaskellObjectWithDescription # alloc >>= init
-        	str <- hobj # description
-        	fromNSString str @?= "<HaskellObjectWithDescription: TEST>"
+            hobj <- _HaskellObjectWithDescription # alloc >>= init
+            str <- hobj # description
+            fromNSString str @?= "<HaskellObjectWithDescription: TEST>"
         ),
         "structs" ~: test [
-        	"point" ~: (do
-        		let point = NSPoint 6.42 7.42
-        		result <- _NSValue # valueWithPoint point >>= pointValue
-        		result @?= point
-        	),
-        	"size" ~: (do
-        		let size = NSSize 6.42 7.42
-        		result <- _NSValue # valueWithSize size >>= sizeValue
-        		result @?= size
-        	),
-			"rect" ~: (do
-        		let rect = NSRect (NSPoint 1 2) (NSSize 3 4)
-        		result <- _NSValue # valueWithRect rect >>= rectValue
-        		result @?= rect
-        	)
+            "point" ~: (do
+                let point = NSPoint 6.42 7.42
+                result <- _NSValue # valueWithPoint point >>= pointValue
+                result @?= point
+            ),
+            "size" ~: (do
+                let size = NSSize 6.42 7.42
+                result <- _NSValue # valueWithSize size >>= sizeValue
+                result @?= size
+            ),
+            "rect" ~: (do
+                let rect = NSRect (NSPoint 1 2) (NSSize 3 4)
+                result <- _NSValue # valueWithRect rect >>= rectValue
+                result @?= rect
+            )
+        ],
+        "externConstant" ~: (
+            fromNSString nsParseErrorException @?= "NSParseErrorException"
+        ),
+        "externFunction" ~: (do
+            result <- nsStringFromPoint (NSPoint 42 23)
+            fromNSString result @?= "{42, 23}"
+        ),
+        "exceptions" ~: test [
+            "CtoH" ~: (do
+                exc1 <- _NSException # exceptionWithNameReasonUserInfo
+                                        (toNSString "FooBar")
+                                        (toNSString "baz")
+                                        nil
+                result <- (exc1 # raise >> return "No Exception")
+                        `catchNS` \e -> e # name >>= return . fromNSString 
+                result @?= "FooBar"
+            ),
+            "HtoCtoH" ~: (do
+                obj <- _ExceptionThrower # alloc >>= init
+                result <- try (obj # throwHaskellException)
+                show result @?= "Left user error (Test Exception)"
+            ),
+            "CtoHtoCtoH" ~: (do
+                obj <- _ExceptionThrower # alloc >>= init
+                result <- (obj # throwNSException >> return "No Exception")
+                        `catchNS` \e -> e # name >>= return . fromNSString 
+                result @?= "FooBar"
+            )
         ]
     ]
 
@@ -184,4 +231,5 @@ go = withAutoreleasePool $ runTestTT tests
 main = do
     initializeClass_HaskellObjectWithOutlet
     initializeClass_HaskellObjectWithDescription
+    initializeClass_ExceptionThrower
     go

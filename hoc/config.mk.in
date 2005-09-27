@@ -31,3 +31,4 @@ dist-recursive:
 	mkdir -p "$(dist_dir)/$(dist_srcdir)"
 	cp -R $(dist_FILES) "$(dist_dir)/$(dist_srcdir)"
 
+CFLAGS+= -I$(GHC_LIB_PATH)/include
