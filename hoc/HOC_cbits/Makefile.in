@@ -11,6 +11,7 @@ SRCS =  \
 	NewClass.m \
 	RetainedHaskellPart.m \
 	Marshalling.m \
+	Exceptions.m \
 	$(NULL)
 
 dist_srcdir = HOC_cbits
