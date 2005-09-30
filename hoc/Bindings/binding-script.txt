@@ -60,6 +60,7 @@ class NSScrollView {
 type NSPoint Foundation.NSGeometry;
 type NSSize Foundation.NSGeometry;
 type NSRect Foundation.NSGeometry;
+type NSRange Foundation.NSRange;
 
 -- GNUstep specifics:
 rename rawMimeData: rawMimeData_;
