@@ -12,6 +12,7 @@ import BindingScript
 import CTypeToHaskell
 import Headers(HeaderInfo(..), ModuleName)
 import Enums
+import Data.List (foldl')
 
 import HOC.NameCaseChange
 import HOC.SelectorNameMangling(mangleSelectorName)
@@ -19,7 +20,7 @@ import HOC.SelectorNameMangling(mangleSelectorName)
 import Control.Monad(when)
 import Data.Set(Set, mkSet, setToList, union, minusSet, unionManySets,
                 emptySet, elementOf)
-import Data.FiniteMap
+import qualified Data.Map as Map
 import qualified Data.HashTable as HashTable
 import Data.Maybe(maybeToList, fromMaybe, mapMaybe)
 import Data.List(partition,isPrefixOf)
@@ -30,9 +31,9 @@ data PreparedDeclarations = PreparedDeclarations {
         pdCleanClassInfoHash :: HashTable.HashTable String ClassInfo, {- used read only -}
         pdAllInstanceSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])],
         pdAllClassSels :: [(ClassInfo, [(MangledSelector, SelectorLocation)])],
-        pdEnumTypeDefinitions :: FiniteMap ModuleName [EnumType],
-        pdExternVarDeclarations :: FiniteMap ModuleName [(HType, String, String)],
-        pdExternFunDeclarations :: FiniteMap ModuleName [MangledSelector],
+        pdEnumTypeDefinitions :: Map.Map ModuleName [EnumType],
+        pdExternVarDeclarations :: Map.Map ModuleName [(HType, String, String)],
+        pdExternFunDeclarations :: Map.Map ModuleName [MangledSelector],
         pdTypeEnvironment :: TypeEnvironment
     }
 
@@ -49,10 +50,10 @@ data ClassInfo = ClassInfo {
         ciProtocols :: Set String,
         ciNewProtocols :: Set String,
         ciDefinedIn :: ModuleName,
-        ciInstanceMethods :: FiniteMap Selector SelectorLocation,
-        ciClassMethods :: FiniteMap Selector SelectorLocation,
-        ciNewInstanceMethods :: FiniteMap Selector SelectorLocation,
-        ciNewClassMethods :: FiniteMap Selector SelectorLocation
+        ciInstanceMethods :: Map.Map Selector SelectorLocation,
+        ciClassMethods :: Map.Map Selector SelectorLocation,
+        ciNewInstanceMethods :: Map.Map Selector SelectorLocation,
+        ciNewClassMethods :: Map.Map Selector SelectorLocation
     }
     deriving(Show)
     
@@ -63,9 +64,9 @@ classInfoForDeclaration (moduleName, SelectorList (Interface name super protocol
         ciSuper = fmap nameToUppercase super,
         ciProtocols = mkSet (map nameToUppercase protocols),
         ciDefinedIn = moduleName,
-        ciInstanceMethods = listToFM [ (sel, SelectorLocation moduleName moduleName)
+        ciInstanceMethods = Map.fromList [ (sel, SelectorLocation moduleName moduleName)
                                      | InstanceMethod sel <- methods ],
-        ciClassMethods = listToFM [ (sel, SelectorLocation moduleName moduleName)
+        ciClassMethods = Map.fromList [ (sel, SelectorLocation moduleName moduleName)
                                   | ClassMethod sel <- methods ],
         ciNewProtocols = error "ciNewProtocols 1",
         ciNewInstanceMethods = error "ciNewInstanceMethods 1",
@@ -78,9 +79,9 @@ classInfoForDeclaration (moduleName, SelectorList (Protocol name protocols) meth
         ciSuper = Nothing,
         ciProtocols = mkSet (map nameToUppercase protocols),
         ciDefinedIn = moduleName,
-        ciInstanceMethods = listToFM [ (sel, SelectorLocation moduleName cantHappen)
+        ciInstanceMethods = Map.fromList [ (sel, SelectorLocation moduleName cantHappen)
                                      | InstanceMethod sel <- methods ],
-        ciClassMethods = listToFM [ (sel, SelectorLocation moduleName cantHappen)
+        ciClassMethods = Map.fromList [ (sel, SelectorLocation moduleName cantHappen)
                                   | ClassMethod sel <- methods ],
         ciNewProtocols = error "ciNewProtocols 2",
         ciNewInstanceMethods = error "ciNewInstanceMethods 2",
@@ -162,35 +163,35 @@ cleanClassInfo outInfos inInfos name =
 cleanClassInfo' info mbSuperInfo protocolInfos
     | ciProtocol info =
         info {
-            ciInstanceMethods = foldl1 plusFM $
+            ciInstanceMethods = foldl1 (flip Map.union) $
                                 map ciInstanceMethods $
                                 info : protocolInfos,
-            ciClassMethods = foldl1 plusFM $
+            ciClassMethods = foldl1 (flip Map.union) $
                              map ciClassMethods $
                              info : protocolInfos,
             ciNewInstanceMethods =
-                ciInstanceMethods info `minusFM`
+                ciInstanceMethods info `Map.difference`
                 (unionProtocols ciInstanceMethods),
             ciNewClassMethods =
-                ciClassMethods info `minusFM`
+                ciClassMethods info `Map.difference`
                 (unionProtocols ciClassMethods),
             ciProtocols = ciProtocols info `union` protocolsAdoptedByAdoptedProtocols,
             ciNewProtocols = ciProtocols info `minusSet` protocolsAdoptedByAdoptedProtocols
         }
     | otherwise =
         info {
-            ciInstanceMethods = foldl1 plusFM $
+            ciInstanceMethods = foldl1 (flip Map.union) $
                                 map ciInstanceMethods $
                                 info : (maybeToList mbSuperInfo) ++ protocolInfos,
-            ciClassMethods = foldl1 plusFM $
+            ciClassMethods = foldl1 (flip Map.union) $
                              map ciClassMethods $
                              info : (maybeToList mbSuperInfo) ++ protocolInfos,
-            ciNewInstanceMethods = (ciInstanceMethods info `plusFM_proto`
+            ciNewInstanceMethods = (ciInstanceMethods info `add_protocol`
                                        (unionProtocols ciInstanceMethods))
-                                   `minusFM` super ciInstanceMethods,
-            ciNewClassMethods = (ciClassMethods info `plusFM_proto`
+                                   `Map.difference` super ciInstanceMethods,
+            ciNewClassMethods = (ciClassMethods info `add_protocol`
                                     (unionProtocols ciClassMethods))
-                                `minusFM` super ciClassMethods,
+                                `Map.difference` super ciClassMethods,
             ciProtocols = ciProtocols info
                           `union` protocolsAdoptedByAdoptedProtocols
                           `union` protocolsAdoptedBySuper,
@@ -201,10 +202,10 @@ cleanClassInfo' info mbSuperInfo protocolInfos
         where
             super extract = case mbSuperInfo of
                 Just superInfo -> extract superInfo
-                Nothing -> emptyFM
-            unionProtocols extract = foldl plusFM emptyFM $
+                Nothing -> Map.empty
+            unionProtocols extract = foldl (flip Map.union) Map.empty $
                                      map extract protocolInfos
-            plusFM_proto cls proto = plusFM_C (\(SelectorLocation _ inst)
+            add_protocol cls proto = Map.unionWith (\(SelectorLocation _ inst)
                                                 (SelectorLocation def _)
                                               -> SelectorLocation def {-inst-} (ciDefinedIn info))
                                       -- * All selectors that are part of a protocol
@@ -214,8 +215,8 @@ cleanClassInfo' info mbSuperInfo protocolInfos
                                       -- Otherwise, the context for the protocol instance declaration
                                       -- won't be available when the protocol is adopted.
                                               cls
-                                              (mapFM (\sel (SelectorLocation def _)
-                                                     -> SelectorLocation def (ciDefinedIn info))
+                                              (Map.map (\(SelectorLocation def _)
+                                                     -> (SelectorLocation def (ciDefinedIn info)))
                                                      proto)
             protocolsAdoptedByAdoptedProtocols = unionManySets $
                                       map ciProtocols $
@@ -242,7 +243,7 @@ prepareDeclarations bindingScript modules = do
                      | (mod, SelectorList (Interface name _ _) _) <- allDecls ]
         (enumNamesAndLocations, enumDefinitions) = extractEnums bindingScript modules
         
-        typeEnv = TypeEnvironment $ listToFM $
+        typeEnv = TypeEnvironment $ Map.fromList $
                   classNames ++ [ (name, (PlainTypeName, mod))
                                 | (name, mod) <- enumNamesAndLocations
                                                  ++ bsAdditionalTypes bindingScript ]
@@ -285,18 +286,18 @@ prepareDeclarations bindingScript modules = do
                             }
                   funDecl _ = Nothing
                   
-        extractDecls f = listToFM $
+        extractDecls f = Map.fromList $
                          map (\(HeaderInfo mod _ decls) -> (mod, mapMaybe f decls)) $ 
                          modules
     
         mangleSelectors factory clsName sels =
             mapMaybe (\(sel, location) -> do {- Maybe -}
                     let name = selName sel
-                        mapped = lookupFM (soNameMappings selectorOptions) name
+                        mapped = Map.lookup name (soNameMappings selectorOptions)
                         mangled = case mapped of
                                     Just x -> x
                                     Nothing -> mangleSelectorName name
-                        replacement = lookupFM (soChangedSelectors selectorOptions) name
+                        replacement = Map.lookup name (soChangedSelectors selectorOptions)
                         sel' = case replacement of
                             Just x -> x
                             Nothing -> sel
@@ -320,7 +321,7 @@ prepareDeclarations bindingScript modules = do
                             msMangled = mangled,
                             msType = typ
                         }, location)
-                ) $ fmToList sels
+                ) $ Map.toList sels
             where
                 selectorOptions = getSelectorOptions bindingScript clsName
     
@@ -334,3 +335,6 @@ prepareDeclarations bindingScript modules = do
                  pdExternFunDeclarations = externFunDeclarations,
                  pdTypeEnvironment = typeEnv
              }
+
+addListToFM_C c m kvs = foldl' add m kvs
+  where add m' (k,v) = Map.insertWith (flip c) k v m'

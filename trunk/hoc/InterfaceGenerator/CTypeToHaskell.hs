@@ -20,7 +20,7 @@ import Headers(ModuleName)
 import HOC.NameCaseChange
 
 import Control.Monad(when)
-import Data.FiniteMap
+import qualified Data.Map as Map
 import Data.Maybe(mapMaybe)
 import Text.PrettyPrint
 
@@ -29,24 +29,24 @@ import Debug.Trace
 data TypeNameKind = ClassTypeName | PlainTypeName
     deriving (Show)
 
-newtype TypeEnvironment = TypeEnvironment (FiniteMap String (TypeNameKind, ModuleName))
+newtype TypeEnvironment = TypeEnvironment (Map.Map String (TypeNameKind, ModuleName))
     -- (Set String) -- known classes
     -- (Set String) -- other known types
 
 isClassType (TypeEnvironment env) name =
-    case lookupFM env (nameToUppercase name) of
+    case Map.lookup (nameToUppercase name) env of
         Just (ClassTypeName, _) -> True
         _                       -> False
 isPlainType (TypeEnvironment env) name =
-    case lookupFM env (nameToUppercase name) of
+    case Map.lookup (nameToUppercase name) env of
         Just (PlainTypeName, _) -> True
         _                       -> False
         
 typeDefinedIn (TypeEnvironment env) name =
-    case lookupFM env (nameToUppercase name) of
+    case Map.lookup (nameToUppercase name) env of
         Just (_, loc) -> loc
 
-lookupTypeEnv (TypeEnvironment env) name = lookupFM env name
+lookupTypeEnv (TypeEnvironment env) name = Map.lookup name env
 
 data HTypeTerm = Con String | HTypeTerm :$ HTypeTerm | Var String
     deriving(Eq,Ord)

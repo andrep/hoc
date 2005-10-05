@@ -13,12 +13,12 @@ import HOC.NameCaseChange
 
 import Data.Char        ( toUpper )
 import Data.Maybe       ( mapMaybe )
-import Data.FiniteMap   ( FiniteMap, listToFM )
+import qualified Data.Map as Map   ( Map, fromList )
 import Data.Set         ( Set, mkSet, elementOf )
 import Text.PrettyPrint.HughesPJ
 import Debug.Trace
 
-extractEnums :: BindingScript -> [HeaderInfo] -> ([(String, ModuleName)], FiniteMap ModuleName [EnumType])
+extractEnums :: BindingScript -> [HeaderInfo] -> ([(String, ModuleName)], Map.Map ModuleName [EnumType])
 
 data EnumType = EnumType (Maybe String) [(String, Integer)] deriving(Show)
 
@@ -26,7 +26,7 @@ enumName (EnumType mbName _) = mbName
 
 extractEnums bs headers =
         ( [ (name, mod) | (mod, types) <- enums, Just name <- map enumName types ]
-        , listToFM enums
+        , Map.fromList enums
         )
     where enums = [ (moduleName, mapMaybe (filterEnumType bs . extractEnumType) decls)
                   | HeaderInfo moduleName _ decls <- headers ]

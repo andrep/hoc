@@ -18,7 +18,7 @@ import Data.Set(setToList, unionManySets, mkSet, intersect)
 import qualified Data.HashTable as HashTable
 import Data.List(nub, partition, isPrefixOf)
 import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)
-import Data.FiniteMap(lookupFM, lookupWithDefaultFM)
+import qualified Data.Map as Map (lookup, findWithDefault) 
 import Text.PrettyPrint.HughesPJ
 
 getModuleDependencies :: PreparedDeclarations -> ModuleName -> IO [ModuleName]
@@ -187,8 +187,8 @@ exportModule bindingScript
                                   | proto <- setToList $ ciNewProtocols ci]
                                 | ci <- definedClassInfos, not (ciProtocol ci) ]
                                 
-        varDeclarations = lookupWithDefaultFM allVarDeclarations [] moduleName
-        funDeclarations = lookupWithDefaultFM allFunDeclarations [] moduleName
+        varDeclarations = Map.findWithDefault [] moduleName allVarDeclarations
+        funDeclarations = Map.findWithDefault [] moduleName allFunDeclarations
             
     let mentionedTypeNames = nub $
             concatMap (mentionedTypes.msType) (selDefinitions ++ funDeclarations)
@@ -231,7 +231,7 @@ exportModule bindingScript
                                      <- additionalCodeAboveForward
                                         ++ additionalCodeBelowForward ]
 
-    let enumDefinitions = fromMaybe [] $ lookupFM allEnumDefinitions moduleName
+    let enumDefinitions = fromMaybe [] $ Map.lookup moduleName allEnumDefinitions
 
     let anythingGoingOn = not $ and [null methodInstances,
                                      null exportedClasses,
