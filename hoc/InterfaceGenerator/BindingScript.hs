@@ -12,8 +12,8 @@ import SyntaxTree(
 import qualified Parser(selector)
 
 import Control.Monad(when)
-import Data.FiniteMap
-import Data.Set hiding (map, null)
+import qualified Data.Map as Map
+import Data.Set(Set, union, mkSet, setToList)
 import Data.List(intersperse)
 
 import Text.ParserCombinators.Parsec.Language(haskellStyle)
@@ -25,29 +25,29 @@ data BindingScript = BindingScript {
         bsHiddenEnums :: Set String,
         bsTopLevelOptions :: SelectorOptions,
         bsAdditionalTypes :: [(String, String)],
-        bsClassSpecificOptions :: FiniteMap String SelectorOptions
+        bsClassSpecificOptions :: Map.Map String SelectorOptions
     }
     
 data SelectorOptions = SelectorOptions {
-        soNameMappings :: FiniteMap String String,
+        soNameMappings :: Map.Map String String,
         soCovariantSelectors :: Set String,
         soHiddenSelectors :: Set String,
-        soChangedSelectors :: FiniteMap String Selector
+        soChangedSelectors :: Map.Map String Selector
     }
     
 getSelectorOptions :: BindingScript -> String -> SelectorOptions
 
 getSelectorOptions bindingScript clsName =
-        case lookupFM (bsClassSpecificOptions bindingScript) clsName of
+        case Map.lookup clsName (bsClassSpecificOptions bindingScript) of
             Just opt -> SelectorOptions {
-                            soNameMappings = soNameMappings top
-                                    `plusFM` soNameMappings opt,
-                            soCovariantSelectors = soCovariantSelectors top
-                                           `union` soCovariantSelectors opt,
-                            soHiddenSelectors = soHiddenSelectors top
-                                        `union` soHiddenSelectors opt,
-                            soChangedSelectors = soChangedSelectors top
-                                        `plusFM` soChangedSelectors opt
+                            soNameMappings = soNameMappings opt
+                                    `Map.union` soNameMappings top,
+                            soCovariantSelectors = soCovariantSelectors opt
+                                           `union` soCovariantSelectors top,
+                            soHiddenSelectors = soHiddenSelectors opt
+                                        `union` soHiddenSelectors top,
+                            soChangedSelectors = soChangedSelectors opt
+                                        `Map.union` soChangedSelectors top
                         }
             Nothing -> top
     where
@@ -78,12 +78,12 @@ data Statement = HidePrelude String
 
 extractSelectorOptions statements =
     SelectorOptions {
-            soNameMappings = listToFM [ (objc, haskell)
+            soNameMappings = Map.fromList [ (objc, haskell)
                                       | Rename objc haskell <- statements ],
             soCovariantSelectors = mkSet $ [ ident 
                                            | Covariant ident <- statements ],
             soHiddenSelectors = mkSet $ [ ident | Hide ident <- statements ],
-            soChangedSelectors = listToFM [ (selName sel, sel)
+            soChangedSelectors = Map.fromList [ (selName sel, sel)
                                           | ReplaceSelector sel <- statements ]
     }
 
@@ -144,7 +144,7 @@ bindingScript = do
             bsHiddenEnums = mkSet [ ident | HideEnum ident <- statements ],
             bsTopLevelOptions = extractSelectorOptions statements,
             bsAdditionalTypes = [ (typ, mod) | Type typ mod <- statements ],
-            bsClassSpecificOptions = listToFM [ (cls, opt)
+            bsClassSpecificOptions = Map.fromList [ (cls, opt)
                                               | ClassSpecific cls opt <- statements ]
         }
 

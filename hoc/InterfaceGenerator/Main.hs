@@ -2,7 +2,7 @@ module Main where
 
 import Control.Exception(evaluate)
 
-import Data.FiniteMap
+import qualified Data.Map as Map
 import qualified Data.HashTable as HashTable
 import Data.List(isPrefixOf,isSuffixOf,partition)
 import Data.Maybe(fromMaybe,mapMaybe,isJust,isNothing,catMaybes,maybeToList)
@@ -24,7 +24,7 @@ import Enums(extractEnums)
 
 
 writeMasterModule masterModuleName realModuleNames selNamesList = do
-    let conflictingDecls = listToFM $
+    let conflictingDecls = Map.fromList $
                            map (\(mod,sels) -> (mod, concatMap idsForSel sels)) $
                            groupByFirst $
                            concatMap (\(selName,(cnt,exporters)) ->
@@ -33,7 +33,7 @@ writeMasterModule masterModuleName realModuleNames selNamesList = do
                                                else []
                                      ) $
                            selNamesList
-        hidingClause mod = case lookupFM conflictingDecls mod of
+        hidingClause mod = case Map.lookup mod conflictingDecls of
             Just decls -> text "hiding" <+> parens (sep $ punctuate comma $ map text $ decls)
             Nothing -> empty
         
