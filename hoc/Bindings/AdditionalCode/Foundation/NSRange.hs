@@ -4,6 +4,7 @@
 -- CUT HERE
 -- above NSRange.Forward
 --X NSRange(..)
+--X NSRangePointer
 --X nsMaxRange
 --X nsLocationInRange
 --X nsNotFound
@@ -16,6 +17,8 @@ import Foreign.C.Types
 -- below NSRange.Forward
 
 data NSRange = NSRange CUInt CUInt  deriving(Read, Show, Eq)
+
+type NSRangePointer = Ptr NSRange
 
 nsMaxRange (NSRange loc len) = loc + len
 nsLocationInRange x (NSRange loc len) = x >= loc && x < loc+len

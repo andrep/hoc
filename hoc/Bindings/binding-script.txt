@@ -62,6 +62,11 @@ type NSSize Foundation.NSGeometry;
 type NSRect Foundation.NSGeometry;
 type NSRange Foundation.NSRange;
 
+type NSPointPointer Foundation.NSGeometry;
+type NSSizePointer Foundation.NSGeometry;
+type NSRectPointer Foundation.NSGeometry;
+type NSRangePointer Foundation.NSRange;
+
 -- GNUstep specifics:
 rename rawMimeData: rawMimeData_;
 rename setContent:type: setContentAndType;
