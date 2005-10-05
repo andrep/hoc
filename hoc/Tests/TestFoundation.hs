@@ -44,7 +44,6 @@ $(exportClass "HaskellObjectWithOutlet" "ho1_" [
         Outlet "otherObject" [t| ID () |]
     ])
 
-
 $(declareClass "HaskellObjectWithDescription" "NSObject")
 
 $(exportClass "HaskellObjectWithDescription" "ho2_" [
@@ -55,6 +54,13 @@ ho2_description self
     = do
         superDesc <- fmap fromNSString $ super self # description
         return $ toNSString $ head (words superDesc) ++ " TEST>"
+
+$(declareClass "HaskellObjectWithIVar" "HaskellObjectWithOutlet")
+
+$(exportClass "HaskellObjectWithIVar" "ho3_" [
+        InstanceVariable "magicNumber" [t| Integer |] [| 0 |]
+    ])
+
 
 $(declareClass "ExceptionThrower" "NSObject")
 
@@ -140,6 +146,24 @@ tests = test [
                 hobj # setOtherObject num
                 num' <- hobj # otherObject >>= return . castObject
                 when (num /= num') $ assert "Different Object returned."
+            )
+        ],
+        "HaskellObjectWithIVar" ~: test [
+            "alloc-init" ~: (assertNoLeaks $ do
+                _HaskellObjectWithIVar # alloc >>= init >> return ()
+            ),
+            "set-get-superclass" ~: (assertNoLeaks $ do
+                num <- _NSNumber # alloc >>= initWithInt 42
+                hobj <- _HaskellObjectWithIVar # alloc >>= init
+                hobj # setOtherObject num
+                num' <- hobj # otherObject >>= return . castObject
+                when (num /= num') $ assert "Different Object returned."
+            ),
+            "set-get" ~: (assertNoLeaks $ do
+                hobj <- _HaskellObjectWithIVar # alloc >>= init
+                hobj # setIVar _magicNumber 42
+                answer <- hobj # getIVar _magicNumber
+                when (answer /= 42) $ assert "Different Value returned."
             )
         ],
         "Memory" ~: test [
@@ -231,5 +255,6 @@ go = withAutoreleasePool $ runTestTT tests
 main = do
     initializeClass_HaskellObjectWithOutlet
     initializeClass_HaskellObjectWithDescription
+    initializeClass_HaskellObjectWithIVar
     initializeClass_ExceptionThrower
     go
