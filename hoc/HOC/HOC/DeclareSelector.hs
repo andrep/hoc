@@ -96,9 +96,17 @@ declareRenamedSelector name haskellName typeSigQ =
                 (ArrowT `AppT` arg) `AppT` replaceResult new rest
             replaceResult new result = new
 
+            liftForalls (ForallT names cxt ty)
+                = case liftForalls ty of
+                    ForallT names' cxt' ty'
+                        -> ForallT (names ++ names') (cxt ++ cxt') ty'
+                    ty' -> ForallT names cxt ty'
+            liftForalls other = other
+			
             doctorType ty className = 
                     (
                         retained,
+                        liftForalls $
                         (if needInstance
                             then ForallT (map mkName ["target", "inst"])
                                 [ConT (mkName className) `AppT` VarT (mkName "target"),
