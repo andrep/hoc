@@ -3,7 +3,7 @@
    
    PowerPC Assembly glue.
 
-   $Id: sysv.S,v 1.1.1.1 2003-10-27 16:54:07 wthaller Exp $
+   $Id: sysv.S,v 1.1.1.2 2006-03-17 03:47:54 wthaller Exp $
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -26,6 +26,7 @@
    ----------------------------------------------------------------------- */
 
 #define LIBFFI_ASM	
+#include <fficonfig.h>
 #include <ffi.h>
 #include <powerpc/asm.h>
 
