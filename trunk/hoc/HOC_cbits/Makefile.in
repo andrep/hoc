@@ -11,6 +11,13 @@ SRCS =  \
 	NewClass.m \
 	RetainedHaskellPart.m \
 	Marshalling.m \
+	../libffi-src/src/types.c \
+	../libffi-src/src/prep_cif.c \
+	../libffi-src/src/x86/ffi_darwin.c \
+	../libffi-src/src/x86/darwin.S \
+	../libffi-src/src/powerpc/ffi_darwin.c \
+	../libffi-src/src/powerpc/darwin.S \
+	../libffi-src/src/powerpc/darwin_closure.S \
 	Exceptions.m \
 	$(NULL)
 
@@ -20,10 +27,13 @@ dist_FILES = \
 	Makefile.in \
 	$(wildcard *.h) \
 	$(NULL)
-	
-OBJS = $(SRCS:%.m=%.o)
 
-CFLAGS += -g -I../libffi-src/build/include
+OBJS_tmp1 = $(SRCS:%.c=%.o)	
+OBJS_tmp2 = $(OBJS_tmp1:%.S=%.o)	
+OBJS = $(OBJS_tmp2:%.m=%.o)
+
+CFLAGS += -g -I../libffi-src/include -fno-common -DMACOSX
+ASFLAGS += -I../libffi-src/include -DMACOSX
 
 all: libHOC_cbits.a HOC_cbits.o
 
@@ -37,14 +47,12 @@ HOC_cbits.o: libHOC_cbits.a
 	fi
 
 libHOC_cbits.a: $(OBJS)
-	cp ../libffi-src/build/.libs/libffi.a libHOC_cbits.a
-	ar qs libHOC_cbits.a $(OBJS)
+	$(MAKE_STATIC_LIB) libHOC_cbits.a $(OBJS)
 
 libHOC_cbits_dyn.dylib: libHOC_cbits.a
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && \
 	 libtool \
 	 -dynamic \
-	 -read_only_relocs suppress \
 	 -undefined dynamic_lookup \
 	 -o $@ \
 	 $<
