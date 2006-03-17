@@ -3,7 +3,7 @@
    
    Alpha/OSF Foreign Function Interface 
 
-   $Id: osf.S,v 1.1.1.1 2003-10-27 16:53:44 wthaller Exp $
+   $Id: osf.S,v 1.1.1.2 2006-03-17 03:47:51 wthaller Exp $
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -26,6 +26,7 @@
    ----------------------------------------------------------------------- */
 
 #define LIBFFI_ASM	
+#include <fficonfig.h>
 #include <ffi.h>
 
 	.arch ev6
