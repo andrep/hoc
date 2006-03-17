@@ -185,19 +185,5 @@ AC_CONFIG_FILES([config.mk
 
 AC_OUTPUT
 
-
-#
-# Configure libffi-src/
-#
-
-(cd libffi-src;
- mkdir -p build && cd build;
- if ! test -f config.status; then
-   echo "configuring in libffi-src...";
-   ../configure --disable-shared --enable-static;
- fi
-)
-
-
 # Modeline for vi(m) - vi:expandtab
 

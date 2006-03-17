@@ -37,7 +37,7 @@ dist_FILES = \
 
 installer_package_root = $(shell pwd)/installer-package/root
 
-all: libffi-src/build/src/raw_api.o hoc-all
+all: hoc-all
 
 dist:
 	-test -d "$(dist_dir)" && rm -rf "$(dist_dir)"
