@@ -1,3 +1,4 @@
+{-# OPTIONS -fallow-undecidable-instances #-}
 module HOC.StdArgumentTypes where
 
 import HOC.Base
@@ -9,6 +10,8 @@ import Control.Exception        ( bracket )
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
+
+import HOC.Unicode
 
 -- Objective C
 
@@ -63,19 +66,23 @@ $(declareStorableObjCArgument [t| CULLong |] "Q")
 
 -- String
 
+
 foreign import ccall safe "Marshalling.h nsStringToUTF8"
-    nsStringToUTF8 :: Ptr ObjCObject -> IO CString
+    nsStringToUTF8 :: Ptr ObjCObject -> IO (Ptr Word8)
 
 foreign import ccall unsafe "Marshalling.h utf8ToNSString"
-    utf8ToNSString :: CString -> IO (Ptr ObjCObject)
+    utf8ToNSString :: Ptr Word8 -> IO (Ptr ObjCObject)
+
+withUTF8String str = withArray0 0 (unicodeToUtf8 str)
 
 instance ObjCArgument String (Ptr ObjCObject) where
     withExportedArgument arg action =
-        bracket (withCString arg utf8ToNSString) releaseObject action
+        bracket (withUTF8String arg utf8ToNSString) releaseObject action
     exportArgument arg = do
-        nsstr <- withCString arg utf8ToNSString
+        nsstr <- withUTF8String arg utf8ToNSString
         autoreleaseObject nsstr
         return nsstr
-    importArgument arg = nsStringToUTF8 arg >>= peekCString
-    
+    importArgument arg = nsStringToUTF8 arg >>= peekArray0 0
+    					 >>= return . utf8ToUnicode
+   
     objCTypeString _ = "*"
