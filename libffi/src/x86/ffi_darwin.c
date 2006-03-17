@@ -168,7 +168,7 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
     }
 
   /* Darwin: The stack needs to be aligned to a multiple of 16 bytes */
-  cif->bytes = (cif->bytes + 15) & ~0xF;
+  cif->bytes = ((cif->bytes + 8 + 15) & ~0xF) - 8;
 
   return FFI_OK;
 }
