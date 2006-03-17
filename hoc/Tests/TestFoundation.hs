@@ -134,7 +134,28 @@ tests = test [
                 actual_ns <- _NSString # alloc >>= initWithContentsOfFile
                                                     (toNSString "TestFoundation.hs")
                 fromNSString actual_ns @?= expected
-            )
+            ),
+            "Unicode" ~:
+                let zhongwen = "\x4E2D\x6587" -- "Chinese" in Chinese
+                    fermata = "\x1D110"       -- Fermata (Musical Symbol)
+                in test [
+                    "nsString-haskellString" ~: (assertNoLeaks $ do
+                        actual <- nsString zhongwen >>= haskellString
+                        actual @?= zhongwen
+                    ),
+                    "length" ~: (assertNoLeaks $ do
+                        actual <- nsString zhongwen >>= Foundation.length
+                        actual @?= 2
+                    ),
+                    "nsString-haskellString-fermata" ~: (assertNoLeaks $ do
+                        actual <- nsString fermata >>= haskellString
+                        actual @?= fermata
+                    ),
+                    "length-fermata" ~: (assertNoLeaks $ do
+                        actual <- nsString fermata >>= Foundation.length
+                        actual @?= 2 -- yes, 2. NSString uses UTF-16.
+                    )
+            ]
         ],
         "HaskellObjectWithOutlet" ~: test [
             "alloc-init" ~: (assertNoLeaks $ do
@@ -203,6 +224,11 @@ tests = test [
             fromNSString str @?= "<HaskellObjectWithDescription: TEST>"
         ),
         "structs" ~: test [
+            "pointArg" ~: (do
+                let point = NSPoint 6.42 7.42
+                result <- _NSValue # valueWithPoint point
+                return ()
+            ),
             "point" ~: (do
                 let point = NSPoint 6.42 7.42
                 result <- _NSValue # valueWithPoint point >>= pointValue
