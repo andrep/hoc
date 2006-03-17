@@ -7,6 +7,7 @@ module HOC (
         ClassAndObject,
         ( # ), ( #* ),
         ObjCArgument(..),
+        withExportedArray,
         castObject,
         declareClass,
         declareSelector,
