@@ -64,7 +64,7 @@ id wrapHaskellException(char *name, HsStablePtr hexc)
     initExceptionWrapper();
 
     cexc = objc_msgSend(clsHOCHaskellException, selExceptionWithNameReasonUserInfo,
-                        utf8ToNSString("HaskellException"), nil, nil);
+                        utf8ToNSString("HaskellException"), utf8ToNSString(name), nil);
     
     * (HsStablePtr*) (((char*)cexc) + stablePtrOffset) = hexc;
     
