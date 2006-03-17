@@ -83,7 +83,8 @@ withMarshalledDummy action = action undefined
 
 objSendMessageWithRetval cif args =
 	withMarshalledDummy $ \dummy ->
-	callWithRetval cif (if isStructType dummy
+	cifIsStret cif >>= \isStret ->
+	callWithRetval cif (if isStret /= 0
                                 then objc_msgSend_stretPtr
                                 else objc_msgSendPtr) args    	 
 
@@ -93,7 +94,8 @@ objSendMessageWithoutRetval cif args =
 
 superSendMessageWithRetval cif args =
 	withMarshalledDummy $ \dummy ->
-	callWithRetval cif (if isStructType dummy
+	cifIsStret cif >>= \isStret ->
+	callWithRetval cif (if isStret /= 0
                                 then objc_msgSendSuper_stretPtr
                                 else objc_msgSendSuperPtr) args    	 
 

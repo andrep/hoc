@@ -52,6 +52,8 @@ makeStructType members = do
     members <- newArray0 (FFIType nullPtr) members
     allocStructType members
 
+foreign import ccall unsafe cifIsStret :: FFICif -> IO CInt
+
 -- typeable instances
     
 instance FFITypeable () where
