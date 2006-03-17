@@ -1,3 +1,4 @@
+#ifdef __ppc__
 /* -----------------------------------------------------------------------
    ffi.c - Copyright (c) 1998 Geoffrey Keating
 
@@ -25,6 +26,7 @@
    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
    OTHER DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
+
 #include <ffi.h>
 #include <ffi_common.h>
 
@@ -81,6 +83,7 @@ enum { ASM_NEEDS_REGISTERS = 4 };
 void ffi_prep_args(extended_cif *ecif, unsigned *const stack)
 /*@=exportheader@*/
 {
+  const unsigned bytes = ecif->cif->bytes;
   const unsigned flags = ecif->cif->flags;
 
   /* 'stacktop' points at the previous backchain pointer.  */
@@ -363,8 +366,7 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
 	      /*@dependent@*/ void **avalue)
 {
   extended_cif ecif;
-  unsigned ret;
-  
+
   ecif.cif = cif;
   ecif.avalue = avalue;
 
@@ -379,19 +381,8 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
       /*@=sysunrecog@*/
     }
   else
-    {
-      switch (cif->rtype->type)
-        {
-        case FFI_TYPE_UINT8:
-        case FFI_TYPE_SINT8:
-        case FFI_TYPE_UINT16:
-        case FFI_TYPE_SINT16:
-          ecif.rvalue = &ret;
-          break;
-        default:
-          ecif.rvalue = rvalue;
-        }
-    }
+    ecif.rvalue = rvalue;
+
   switch (cif->abi)
     {
     case FFI_AIX:
@@ -408,17 +399,6 @@ void ffi_call(/*@dependent@*/ ffi_cif *cif,
       break;
     default:
       FFI_ASSERT(0);
-      break;
-    }
-  switch (cif->rtype->type)
-    {
-    case FFI_TYPE_UINT8:
-    case FFI_TYPE_SINT8:
-      *(unsigned char*)rvalue = ret;  /* signedness doesn't matter */
-      break;
-    case FFI_TYPE_UINT16:
-    case FFI_TYPE_SINT16:
-      *(unsigned short*)rvalue = ret;  /* signedness doesn't matter */
       break;
     }
 }
@@ -721,3 +701,4 @@ int ffi_closure_helper_DARWIN (ffi_closure* closure, void * rvalue,
   /* Tell ffi_closure_ASM to perform return type promotions.  */
   return cif->rtype->type;
 }
+#endif
