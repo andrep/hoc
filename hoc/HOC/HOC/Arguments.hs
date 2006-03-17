@@ -1,3 +1,4 @@
+{-# OPTIONS -fallow-undecidable-instances #-}
 module HOC.Arguments where
 
 import HOC.Base
@@ -6,6 +7,7 @@ import HOC.FFICallInterface
 import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Ptr
+import Foreign.Marshal.Array
 import System.IO.Unsafe(unsafePerformIO)
 
 import HOC.TH
@@ -26,6 +28,15 @@ class (Storable b, FFITypeable b) => ObjCArgument a b | a -> b where
         exportArgument = return
         importArgument = return 
 -}
+
+withExportedArray :: ObjCArgument a b => [a] -> (Ptr b -> IO c) -> IO c
+withExportedArray l a = withExportedList l $ \l' -> withArray l' a
+    where
+        withExportedList [] a = a []
+        withExportedList (x:xs) a
+            = withExportedArgument x $
+              \x' -> withExportedList xs $
+              \xs' -> a (x':xs')
 
 declareStorableObjCArgument :: TypeQ -> String -> Q [Dec]
 
