@@ -10,7 +10,6 @@ import Control.Concurrent   ( threadDelay )
 import Control.Monad        ( when )
 import Control.Exception    ( try, finally )
 
-import Selectors
 
       -- garbage collect and make really sure that finalizers have time to run
 performGCAndWait targetCount time maxRepeat = do
@@ -47,7 +46,7 @@ $(exportClass "HaskellObjectWithOutlet" "ho1_" [
 $(declareClass "HaskellObjectWithDescription" "NSObject")
 
 $(exportClass "HaskellObjectWithDescription" "ho2_" [
-        InstanceMethod info_description
+        InstanceMethod 'description
     ])
     
 ho2_description self
@@ -64,12 +63,15 @@ $(exportClass "HaskellObjectWithIVar" "ho3_" [
 
 $(declareClass "ExceptionThrower" "NSObject")
 
+$(declareSelector "throwHaskellException" [t| IO () |])
+$(declareSelector "throwNSException" [t| IO () |])
+
 instance Has_throwHaskellException (ExceptionThrower a)
 instance Has_throwNSException (ExceptionThrower a)
 
 $(exportClass "ExceptionThrower" "et_" [
-        InstanceMethod info_throwHaskellException,
-        InstanceMethod info_throwNSException
+        InstanceMethod 'throwHaskellException,
+        InstanceMethod 'throwNSException
     ])
 
 et_throwHaskellException self = fail "Test Exception"

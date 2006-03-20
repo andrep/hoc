@@ -5,8 +5,6 @@ import TVUtilities
 import Data.Array
 import Data.List        ( isPrefixOf, elemIndex, sort )
 
-import Selectors
-
 frameworks = ["Foundation", "AppKit"]
 
 data SelInfo = SelInfo {
@@ -26,6 +24,8 @@ instance TVDataItem SelInfo where
 
 $(declareClass "BrowserController" "NSObject")
 
+$(declareSelector "sideBarSelection:" [t| forall a. NSTableView a -> IO () |])
+
 $(exportClass "BrowserController" "bc_" [
         Outlet "sideBarDataSource" [t| SimpleTVDataSource () |],
         Outlet "sideBarTableView" [t| NSTableView () |],
@@ -34,8 +34,8 @@ $(exportClass "BrowserController" "bc_" [
         
         InstanceVariable "allSelectors" [t| [SelInfo] |] [| [] |],
         
-        InstanceMethod info_awakeFromNib,
-        InstanceMethod info_sideBarSelection
+        InstanceMethod 'awakeFromNib,
+        InstanceMethod 'sideBarSelection
     ])
 
 mkArray xs = listArray (0, Prelude.length xs - 1) xs

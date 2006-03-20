@@ -19,8 +19,8 @@ import HOC.TH
 import HOC.Exception
 
 data ClassMember =
-        InstanceMethod SelectorInfo
-    |   ClassMethod SelectorInfo
+        InstanceMethod Name
+    |   ClassMethod Name
     |   Outlet String TypeQ
     |   InstanceVariable String TypeQ ExpQ
 
@@ -108,7 +108,7 @@ exportClass name prefix members = sequence $ [
                 wrap = foldl appE (conE $ mkName instanceDataName) (map (varE.mkName) ivarNames)
                 initIVar (ivar,ty,initial) = bindS (varP $ mkName ivar) [| newMVar $(initial) |]
 
-data Method = ImplementedMethod SelectorInfo String
+data Method = ImplementedMethod Name
             | GetterMethod String
             | SetterMethod String
 
@@ -134,18 +134,16 @@ mkClassExportAction name prefix members =
             `sigE` (conT ''IO `appT` conT (mkName $ name ++ "_IVARS"))
     
         outlets = [ name | Outlet name _ <- members ]
-        classMethods =    [ ImplementedMethod info (prefix ++ selectorInfoHaskellName info)
-                          | ClassMethod info <- members ] 
+        classMethods = [ ImplementedMethod n | ClassMethod n <- members ] 
 
-        explicitInstanceMethods = [ (info, prefix ++ selectorInfoHaskellName info)
-                                  | InstanceMethod info <- members ]         
-        instanceMethodNames = map (selectorInfoObjCName . fst) explicitInstanceMethods
+        explicitInstanceMethods = [ n | InstanceMethod n <- members ]         
+        instanceMethodNames = map nameBase explicitInstanceMethods
         instanceMethods =
-                [ ImplementedMethod i d | (i,d) <- explicitInstanceMethods ] 
+                map ImplementedMethod explicitInstanceMethods 
              ++ [ GetterMethod ivar | ivar <- outlets,
                                       not (ivar `elem` instanceMethodNames) ]
              ++ [ SetterMethod ivar | ivar <- outlets,
-                                      not (setterNameFor ivar
+                                      not (setterNameForH ivar
                                            `elem` instanceMethodNames) ]
   
         nIMethods = length instanceMethods
@@ -159,9 +157,9 @@ mkClassExportAction name prefix members =
                 (zip methods [firstIdx..])
                 
         exportMethod isClassMethod objCMethodList
-                     (ImplementedMethod selectorInfo methodDefinition,num)
+                     (ImplementedMethod selName, num)
             = do
-                VarI _ t _ _ <- reify $ mkName selName
+                VarI _ t _ _ <- reify $ selName
                 let arrowsToList (AppT (AppT ArrowT a) b)
                         = a : arrowsToList b
                     arrowsToList (AppT (ConT c) b)
@@ -177,14 +175,17 @@ mkClassExportAction name prefix members =
                 exportMethod' isClassMethod objCMethodList num methodBody
                               nArgs isUnit impTypeName selExpr cifExpr
             where
-                methodBody = varE $ mkName methodDefinition
-                selName = selectorInfoHaskellName selectorInfo
-                -- nArgs = selectorInfoNArgs selectorInfo
-                -- isUnit = selectorInfoIsUnit selectorInfo
+                methodBody = varE $ mkName $ prefix ++ nameBase selName
                 
-                impTypeName = mkName $ "ImpType_" ++ selName
-                selExpr = [| selectorInfoSel $(varE $ mkName $ "info_" ++ selName) |]
-                cifExpr = [| selectorInfoCif $(varE $ mkName $ "info_" ++ selName) |]
+                -- selName = selectorInfoHaskellName selectorInfo
+                
+                impTypeName = ("ImpType_" ++ nameBase selName)
+                                `fromSameModuleAs_tc` selName
+                infoName = ("info_" ++ nameBase selName)
+                            `fromSameModuleAs_v` selName
+                
+                selExpr = [| selectorInfoSel $(varE $ infoName) |]
+                cifExpr = [| selectorInfoCif $(varE $ infoName) |]
         
         exportMethod isClassMethod objCMethodList (GetterMethod ivarName, num) =
                 exportMethod' isClassMethod objCMethodList num
@@ -202,7 +203,8 @@ mkClassExportAction name prefix members =
             where
                 setterName = setterNameFor ivarName
         
-        setterNameFor ivarName = "set" ++ toUpper (head ivarName) : tail ivarName ++ ":"
+        setterNameFor ivarName = setterNameForH ivarName ++ ":"
+        setterNameForH ivarName = "set" ++ toUpper (head ivarName) : tail ivarName
             
                 
         exportMethod' isClassMethod objCMethodList num methodBody
