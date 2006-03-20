@@ -78,7 +78,12 @@ cTypeToHaskell env retval tyvar bi@(CTBuiltin _ _ _) =
         typ <- builtinTypeToHaskell bi
         return $ HType Nothing [] (Con typ)
 
-cTypeToHaskell env retval tyvar (CTSimple name) 
+cTypeToHaskell env retval tyvar (CTSimple "Class") =
+    Just $ HType (if retval then Nothing else Just (tyvar,[]))
+                 [] (Con "Class" :$
+                        (if retval then Con "()" else Var tyvar))
+
+cTypeToHaskell env retval tyvar (CTSimple name)
     | name /= "" && isPlainType env name =
         return $ HType Nothing [name]
                        (Con $ nameToUppercase name)

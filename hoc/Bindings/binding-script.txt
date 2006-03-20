@@ -1,6 +1,7 @@
 hidePrelude init error minimum maximum null concat words print length compare;
 rename data data';
 rename type type';
+rename class class';
 
 covariant stringWithCString stringWithCStringLength;
 covariant stringWithContentsOfFile stringWithContentsOfURL;
