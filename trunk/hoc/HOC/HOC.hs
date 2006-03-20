@@ -45,6 +45,8 @@ module HOC (
         declareExternConst,
         declareExternFun,
         
+        sel,
+        
         -- debugging & statistics:
         
         objectMapStatistics
@@ -67,3 +69,4 @@ import HOC.Super
 import HOC.CEnum
 import HOC.ExternConstants
 import HOC.ExternFunctions
+import HOC.Selectors

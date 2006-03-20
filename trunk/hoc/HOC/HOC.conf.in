@@ -28,7 +28,8 @@ exposed-modules:
     HOC.ExternConstants,
     HOC.Exception,
     HOC.ExternFunctions,
-    HOC.Unicode
+    HOC.Unicode,
+    HOC.Selectors
 
 hs-libraries:       "HOC", "HOC_cbits"
 depends:            base, template-haskell
