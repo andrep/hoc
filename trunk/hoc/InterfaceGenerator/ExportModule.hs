@@ -16,7 +16,7 @@ import HOC.NameCaseChange
 
 import Data.Set(setToList, unionManySets, mkSet, intersect)
 import qualified Data.HashTable as HashTable
-import Data.List(nub, partition, isPrefixOf)
+import Data.List(nub, partition, isPrefixOf, group, sort)
 import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)
 import qualified Data.Map as Map (lookup, findWithDefault) 
 import Text.PrettyPrint.HughesPJ
@@ -164,12 +164,24 @@ exportModule bindingScript
                          | Right mangledSel <- selsToDefine ]
         
         methodInstances :: [ (String, String) ]
-        methodInstances = mkDecls id instanceSels
-                       ++ mkDecls (++ "Class") classSels
+        methodInstances = map head . group . sort $
+                          instanceDecls
+                       ++ classDecls
+                       ++ nsObjectHackDecls
             where
                 mkDecls f classesAndSels = concat [ [(msMangled sel, f cls) | sel <- sels ]
                                                   | (cls, sels) <- classesAndSels ]
-                        
+
+                instanceDecls = mkDecls id instanceSels
+                classDecls = mkDecls (++ "Class") classSels
+
+                    -- HACK for NSObject.
+                    -- NSObject is it's own meta-class; that's hard to model
+                    -- in our type system, so we just automatically make every
+                    -- instance method of NSObject a class method, too.
+                nsObjectHackDecls = [ (sel, "NSObjectClass")
+                                    | (sel, "NSObject") <- instanceDecls ]
+
         exportedSelNames = map msMangled selsToDefineOrImport
         exportedSels = concatMap idsForSel exportedSelNames
         exportedSelSet = mkSet exportedSelNames
