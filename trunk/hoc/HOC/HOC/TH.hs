@@ -3,7 +3,9 @@ module HOC.TH(
         mkNameG_v,
         mkNameG_tc,
         mkNameG_d,
-        whereQ
+        whereQ,
+        fromSameModuleAs_tc,
+        fromSameModuleAs_v
     ) where
 
 import Language.Haskell.TH
@@ -17,3 +19,14 @@ header `whereQ` declsQ = do
     decls <- declsQ
     header (map return decls)
 
+fromSameModuleAs_tc :: String -> Name -> Name
+s `fromSameModuleAs_tc` n
+    = case nameModule n of
+        Nothing -> mkName s
+        Just m -> mkNameG_tc m s
+        
+fromSameModuleAs_v :: String -> Name -> Name
+s `fromSameModuleAs_v` n
+    = case nameModule n of
+        Nothing -> mkName s
+        Just m -> mkNameG_v m s

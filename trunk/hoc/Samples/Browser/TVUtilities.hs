@@ -63,9 +63,9 @@ $(exportClass "SimpleTVDataSource" "sds_" [
         InstanceVariable "theData" [t| WrappedTVData |]
                                     [| undefined |],
         
-        InstanceMethod info_init,
-        InstanceMethod info_numberOfRowsInTableView,
-        InstanceMethod info_tableViewObjectValueForTableColumnRow
+        InstanceMethod 'init,
+        InstanceMethod 'numberOfRowsInTableView,
+        InstanceMethod 'tableViewObjectValueForTableColumnRow
     ])
 
 sds_init self = do

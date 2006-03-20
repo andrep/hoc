@@ -4,15 +4,16 @@ module EPController where
 
 import Cocoa hiding (parse)
 import ExpressionParser
-import Selectors
 import Text.ParserCombinators.Parsec (parse)
 
 $(declareClass "EPController" "NSObject")
 
+$(declareSelector "evaluateExpression:" [t| forall a. NSButton a -> IO () |])
+
 $(exportClass "EPController" "ep_"
   [ Outlet "expressionEntry" [t| NSTextField () |]
   , Outlet "evaluation"      [t| NSTextField () |]
-  , InstanceMethod Selectors.info_evaluateExpression
+  , InstanceMethod 'evaluateExpression
   ]
  )
 

@@ -13,10 +13,10 @@ $(exportClass "HaskellDocument" "hd_" [
         Outlet "textView" [t| NSTextView () |],
         InstanceVariable "text" [t| Maybe (NSString ()) |] [| Nothing |],
         
-        InstanceMethod info_windowNibName,
-        InstanceMethod info_writeToFileOfType,
-        InstanceMethod info_readFromFileOfType,
-        InstanceMethod info_windowControllerDidLoadNib
+        InstanceMethod 'windowNibName,
+        InstanceMethod 'writeToFileOfType,
+        InstanceMethod 'readFromFileOfType,
+        InstanceMethod 'windowControllerDidLoadNib
     ])
     
 hd_windowNibName self =
