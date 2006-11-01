@@ -14,7 +14,7 @@ Editor.app: Editor
 
 Editor: *.hs
 	mkdir -p build
-	$(GHC) --make -fglasgow-exts Main.hs -odir build -hidir build -O -o Editor 
+	$(GHC) --make -fglasgow-exts  -fth Main.hs -odir build -hidir build -O -o Editor 
 
 interpret:
 	mkdir -p build
@@ -24,6 +24,6 @@ zerolink: nolink interpret
 
 nolink:
 	mkdir -p build
-	$(GHC) --make -fglasgow-exts Main.hs -odir build -hidir build -O -pgml true
+	$(GHC) --make -fglasgow-exts  -fth Main.hs -odir build -hidir build -O -pgml true
 clean:
 	rm -rf build Editor Editor.app 'Interpreted Haskell Application.app/'

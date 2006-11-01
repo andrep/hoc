@@ -18,8 +18,8 @@ import HOC.NameCaseChange
 import HOC.SelectorNameMangling(mangleSelectorName)
 
 import Control.Monad(when)
-import Data.Set(Set, mkSet, setToList, union, minusSet, unionManySets,
-                emptySet, elementOf)
+import Data.Set(Set)
+import qualified Data.Set as Set hiding (Set)
 import qualified Data.Map as Map
 import qualified Data.HashTable as HashTable
 import Data.Maybe(maybeToList, fromMaybe, mapMaybe)
@@ -62,7 +62,7 @@ classInfoForDeclaration (moduleName, SelectorList (Interface name super protocol
         ciProtocol = False,
         ciName = nameToUppercase name,
         ciSuper = fmap nameToUppercase super,
-        ciProtocols = mkSet (map nameToUppercase protocols),
+        ciProtocols = Set.fromList (map nameToUppercase protocols),
         ciDefinedIn = moduleName,
         ciInstanceMethods = Map.fromList [ (sel, SelectorLocation moduleName moduleName)
                                      | InstanceMethod sel <- methods ],
@@ -77,7 +77,7 @@ classInfoForDeclaration (moduleName, SelectorList (Protocol name protocols) meth
         ciProtocol = True,
         ciName = nameToUppercase name ++ "Protocol",
         ciSuper = Nothing,
-        ciProtocols = mkSet (map nameToUppercase protocols),
+        ciProtocols = Set.fromList (map nameToUppercase protocols),
         ciDefinedIn = moduleName,
         ciInstanceMethods = Map.fromList [ (sel, SelectorLocation moduleName cantHappen)
                                      | InstanceMethod sel <- methods ],
@@ -102,7 +102,7 @@ updateClassInfoForCategory
                    "(" ++ catName ++ ") - class undefined"
             Just classInfo -> do                
                 let classInfo' = classInfo {
-                        ciProtocols = ciProtocols classInfo `union` mkSet moreProtocols,
+                        ciProtocols = ciProtocols classInfo `Set.union` Set.fromList moreProtocols,
                         ciInstanceMethods =
                             addListToFM_C (\old new -> old)
                                             (ciInstanceMethods classInfo)
@@ -149,7 +149,7 @@ cleanClassInfo outInfos inInfos name =
             (protocols,protoRecheck) <- fmap unzip $
                                         mapM findOrClean $
                                         map (++"Protocol") $
-                                        setToList $
+                                        Set.toList $
                                         ciProtocols ci
             return (mbSuper, protocols, or (superRecheck : protoRecheck))
         findOrClean name = do
@@ -175,8 +175,8 @@ cleanClassInfo' info mbSuperInfo protocolInfos
             ciNewClassMethods =
                 ciClassMethods info `Map.difference`
                 (unionProtocols ciClassMethods),
-            ciProtocols = ciProtocols info `union` protocolsAdoptedByAdoptedProtocols,
-            ciNewProtocols = ciProtocols info `minusSet` protocolsAdoptedByAdoptedProtocols
+            ciProtocols = ciProtocols info `Set.union` protocolsAdoptedByAdoptedProtocols,
+            ciNewProtocols = ciProtocols info `Set.difference` protocolsAdoptedByAdoptedProtocols
         }
     | otherwise =
         info {
@@ -193,11 +193,11 @@ cleanClassInfo' info mbSuperInfo protocolInfos
                                     (unionProtocols ciClassMethods))
                                 `Map.difference` super ciClassMethods,
             ciProtocols = ciProtocols info
-                          `union` protocolsAdoptedByAdoptedProtocols
-                          `union` protocolsAdoptedBySuper,
+                          `Set.union` protocolsAdoptedByAdoptedProtocols
+                          `Set.union` protocolsAdoptedBySuper,
             ciNewProtocols = ciProtocols info   
-                             `union` protocolsAdoptedByAdoptedProtocols
-                             `minusSet` protocolsAdoptedBySuper
+                             `Set.union` protocolsAdoptedByAdoptedProtocols
+                             `Set.difference` protocolsAdoptedBySuper
         }
         where
             super extract = case mbSuperInfo of
@@ -218,10 +218,10 @@ cleanClassInfo' info mbSuperInfo protocolInfos
                                               (Map.map (\(SelectorLocation def _)
                                                      -> (SelectorLocation def (ciDefinedIn info)))
                                                      proto)
-            protocolsAdoptedByAdoptedProtocols = unionManySets $
+            protocolsAdoptedByAdoptedProtocols = Set.unions $
                                       map ciProtocols $
                                       protocolInfos
-            protocolsAdoptedBySuper = fromMaybe emptySet $ fmap ciProtocols $ mbSuperInfo
+            protocolsAdoptedBySuper = fromMaybe Set.empty $ fmap ciProtocols $ mbSuperInfo
             
                                               
 data MangledSelector = MangledSelector {
@@ -302,9 +302,9 @@ prepareDeclarations bindingScript modules = do
                             Just x -> x
                             Nothing -> sel
                     
-                    when (name `elementOf` soHiddenSelectors selectorOptions) $ Nothing
+                    when (name `Set.member` soHiddenSelectors selectorOptions) $ Nothing
                     
-                    let covariant = mangled `elementOf` soCovariantSelectors selectorOptions
+                    let covariant = mangled `Set.member` soCovariantSelectors selectorOptions
                         kind | covariant && factory = CovariantInstanceSelector
                              | covariant = CovariantSelector
                              | "alloc" `isFirstWordOf` name = AllocSelector

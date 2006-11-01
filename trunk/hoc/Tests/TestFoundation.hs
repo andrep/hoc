@@ -1,3 +1,4 @@
+{-# OPTIONS -fth -fglasgow-exts #-}
 module Main where
 
 import Test.HUnit

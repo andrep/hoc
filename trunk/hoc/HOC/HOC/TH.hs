@@ -19,6 +19,7 @@ header `whereQ` declsQ = do
     decls <- declsQ
     header (map return decls)
 
+{-
 fromSameModuleAs_tc :: String -> Name -> Name
 s `fromSameModuleAs_tc` n
     = case nameModule n of
@@ -30,3 +31,16 @@ s `fromSameModuleAs_v` n
     = case nameModule n of
         Nothing -> mkName s
         Just m -> mkNameG_v m s
+-}
+
+fromSameModuleAs_tc :: String -> Name -> Name
+fromSameModuleAs_tc = fromSameModule TcClsName
+fromSameModuleAs_v :: String -> Name -> Name
+fromSameModuleAs_v = fromSameModule VarName
+
+fromSameModule :: NameSpace -> String -> Name -> Name
+fromSameModule ns s n
+  = Name (mkOccName s) $
+  	case n of
+  		Name _ (NameG _ pkg mod) -> NameG ns pkg mod
+  		Name _ other -> other

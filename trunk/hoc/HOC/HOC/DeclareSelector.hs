@@ -188,7 +188,7 @@ declareRenamedSelector name haskellName typeSigQ =
                                                         then [|n|]
                                                         else stringE haskellName)
                                                 $(staticCifForSelectorType
-                                                        "HOC.DeclareSelector"
+                                                        'marshallersUpTo
                                                         cannedCIFTypeNames
                                                         (return $ simplifyType doctoredTypeSig))
                         |]) [],
@@ -213,8 +213,8 @@ declareRenamedSelector name haskellName typeSigQ =
                                         isUnit isPure resultRetained
                     else valD (varP $ mkName haskellName) (normalB [|
                             $(varE $ 
-                                    mkNameG_v "HOC.DeclareSelector" $
-                                    marshallerName nArgs isUnit
+                                    marshallerName nArgs isUnit `fromSameModuleAs_v`
+                                    	'marshallersUpTo
                                 )
                                 $(varE $ mkName infoName)
                         |]) []

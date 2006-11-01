@@ -45,24 +45,9 @@ HOC.o: libHOC.a
 ghcmake: ghcmake.build-stamp
 
 
-# XXX: GHC 6.4 has a really ... _weird_ bug where it won't compile
-# HOC/StdArgumentTypes.hs properly if you just try ghc --make with HOC.hs.
-# There seems to be a problem with GHC's .hi file chasing with
-# HOC/Arguments.hs; obviously the long-term solution is to fix GHC, but for
-# now, we work around it by compiling HOC/Arguments.hs first.
 ghcmake.build-stamp:
 	mkdir -p build/objects
 	mkdir -p build/imports
-	$(GHC) --make HOC/Arguments.hs	\
-		-odir build/objects -hidir build/imports	\
-		-fglasgow-exts -fth \
-		../HOC_cbits/HOC_cbits.o	\
-		-I../HOC_cbits	\
-		-I../libffi-src/build/include	\
-		-ignore-package HOC \
-		$(FOUNDATION_INCLUDES) \
-		$(FOUNDATION_LIBS)      \
-                $(DEFINES)
 	$(GHC) --make HOC.hs	\
 		-O -fasm \
 		-odir build/objects -hidir build/imports	\
@@ -70,7 +55,7 @@ ghcmake.build-stamp:
 		../HOC_cbits/HOC_cbits.o	\
 		-I../HOC_cbits	\
 		-I../libffi-src/build/include	\
-		-ignore-package HOC \
+		-package-name HOC \
 		$(FOUNDATION_INCLUDES) \
 		$(FOUNDATION_LIBS)      \
                 $(DEFINES)

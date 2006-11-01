@@ -3,7 +3,7 @@ module HOC.CannedCIFs where
 import HOC.Base         ( SEL )
 import HOC.Arguments    ( getCifForSelector )
 import HOC.ID           ( ID )
-import HOC.TH           ( mkNameG_v )
+import HOC.TH           ( fromSameModuleAs_v )
 
 import Data.List        ( intersperse )
 import Data.Maybe       ( catMaybes )
@@ -111,11 +111,11 @@ makeCannedCIFs types
             
         cannedCIFName n = mkName $ "cannedCIF_" ++ n
 
-staticCifForSelectorType mod ns t
+staticCifForSelectorType master ns t
     = do
         mbName <- getCifTypeName t
         xt <- t
         case mbName of
             Just n | n `elem` ns
-                -> varE $ mkNameG_v mod $ "cannedCIF_" ++ n
+                -> varE $ ("cannedCIF_" ++ n) `fromSameModuleAs_v` master
             _ ->   [| getCifForSelector $( [| undefined |] `sigE` t) |]
