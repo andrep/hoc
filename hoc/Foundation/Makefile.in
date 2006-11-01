@@ -45,18 +45,18 @@ ghcmake.build-stamp:
 	$(GHC) --make Foundation.hs	\
 		-O -fasm \
 		-odir build/objects \
-		-ignore-package Foundation \
+		-package-name Foundation \
 		-hidir build/imports	\
 		-package-conf ../inplace.conf \
-		-fglasgow-exts
+		-fglasgow-exts -fth
                 
 	test ! -r GNUstepBase.hs || \
 		$(GHC) --make GNUstepBase.hs	\
-			-ignore-package Foundation	\
+			-package-name Foundation	\
 			-odir build/objects \
 			-hidir build/imports	\
 			-package-conf ../inplace.conf \
-			-fglasgow-exts
+			-fglasgow-exts -fth
 	touch $@
 
 HSFoundation.o: ghcmake.build-stamp

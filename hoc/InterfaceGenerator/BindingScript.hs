@@ -13,7 +13,8 @@ import qualified Parser(selector)
 
 import Control.Monad(when)
 import qualified Data.Map as Map
-import Data.Set(Set, union, mkSet, setToList)
+import Data.Set(Set)
+import qualified Data.Set as Set hiding (Set)
 import Data.List(intersperse)
 
 import Text.ParserCombinators.Parsec.Language(haskellStyle)
@@ -43,9 +44,9 @@ getSelectorOptions bindingScript clsName =
                             soNameMappings = soNameMappings opt
                                     `Map.union` soNameMappings top,
                             soCovariantSelectors = soCovariantSelectors opt
-                                           `union` soCovariantSelectors top,
+                                           `Set.union` soCovariantSelectors top,
                             soHiddenSelectors = soHiddenSelectors opt
-                                        `union` soHiddenSelectors top,
+                                        `Set.union` soHiddenSelectors top,
                             soChangedSelectors = soChangedSelectors opt
                                         `Map.union` soChangedSelectors top
                         }
@@ -80,9 +81,9 @@ extractSelectorOptions statements =
     SelectorOptions {
             soNameMappings = Map.fromList [ (objc, haskell)
                                       | Rename objc haskell <- statements ],
-            soCovariantSelectors = mkSet $ [ ident 
+            soCovariantSelectors = Set.fromList $ [ ident 
                                            | Covariant ident <- statements ],
-            soHiddenSelectors = mkSet $ [ ident | Hide ident <- statements ],
+            soHiddenSelectors = Set.fromList $ [ ident | Hide ident <- statements ],
             soChangedSelectors = Map.fromList [ (selName sel, sel)
                                           | ReplaceSelector sel <- statements ]
     }
@@ -140,8 +141,8 @@ bindingScript = do
     let wrongThings = [ () | ReplaceSelector _ <- statements ]
     
     return $ BindingScript {
-            bsHiddenFromPrelude = mkSet [ ident | HidePrelude ident <- statements ],
-            bsHiddenEnums = mkSet [ ident | HideEnum ident <- statements ],
+            bsHiddenFromPrelude = Set.fromList [ ident | HidePrelude ident <- statements ],
+            bsHiddenEnums = Set.fromList [ ident | HideEnum ident <- statements ],
             bsTopLevelOptions = extractSelectorOptions statements,
             bsAdditionalTypes = [ (typ, mod) | Type typ mod <- statements ],
             bsClassSpecificOptions = Map.fromList [ (cls, opt)
@@ -152,4 +153,4 @@ readBindingScript fn = do
     either <- parseFromFile bindingScript fn
     case either of
         Left err -> error (show err)
-        Right result -> print (setToList $ bsHiddenEnums result) >> return result
+        Right result -> print (Set.toList $ bsHiddenEnums result) >> return result

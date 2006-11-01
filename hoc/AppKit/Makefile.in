@@ -45,25 +45,25 @@ ghcmake.build-stamp:
 	mkdir -p build/imports
 	$(GHC) --make AppKit.hs	\
 		-O -fasm \
-		-ignore-package AppKit	\
+		-package-name AppKit	\
 		-odir build/objects \
 		-hidir build/imports	\
 		-package-conf ../inplace.conf \
-		-fglasgow-exts
+		-fglasgow-exts -fth
 	test ! -r GNUstepGUI.hs || \
 		$(GHC) --make GNUstepGUI.hs	\
-			-ignore-package AppKit	\
+			-package-name AppKit	\
 			-odir build/objects \
 			-hidir build/imports	\
 			-package-conf ../inplace.conf \
-			-fglasgow-exts
+			-fglasgow-exts -fth
 	$(GHC) -c Cocoa.hs \
-		-ignore-package AppKit	\
+		-package-name AppKit	\
 		-ibuild/imports	   \
 		-o build/objects/Cocoa.o	\
 		-ohi build/imports/Cocoa.hi \
 		-package-conf ../inplace.conf \
-		-fglasgow-exts
+		-fglasgow-exts -fth
 	touch $@
 	
 HSAppKit.o: ghcmake.build-stamp

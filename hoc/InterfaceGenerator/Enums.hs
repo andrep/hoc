@@ -14,7 +14,8 @@ import HOC.NameCaseChange
 import Data.Char        ( toUpper )
 import Data.Maybe       ( mapMaybe )
 import qualified Data.Map as Map   ( Map, fromList )
-import Data.Set         ( Set, mkSet, elementOf )
+import Data.Set(Set)
+import qualified Data.Set as Set hiding (Set)
 import Text.PrettyPrint.HughesPJ
 import Debug.Trace
 
@@ -33,7 +34,7 @@ extractEnums bs headers =
 
 
 filterEnumType :: BindingScript -> Maybe EnumType -> Maybe EnumType
-filterEnumType bs (Just (EnumType (Just name) _)) | name `elementOf` bsHiddenEnums bs = Nothing
+filterEnumType bs (Just (EnumType (Just name) _)) | name `Set.member` bsHiddenEnums bs = Nothing
 filterEnumType _ mbTy = mbTy
                   
 extractEnumType :: Declaration -> Maybe EnumType

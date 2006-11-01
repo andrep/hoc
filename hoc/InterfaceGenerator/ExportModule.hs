@@ -14,7 +14,8 @@ import Enums(enumName, pprEnumType)
 
 import HOC.NameCaseChange
 
-import Data.Set(setToList, unionManySets, mkSet, intersect)
+import Data.Set(Set)
+import qualified Data.Set as Set hiding (Set)
 import qualified Data.HashTable as HashTable
 import Data.List(nub, partition, isPrefixOf, group, sort)
 import Data.Maybe(fromMaybe, catMaybes, mapMaybe, maybeToList, isNothing)
@@ -30,8 +31,8 @@ getModuleDependencies (PreparedDeclarations {
     let definedClassInfos = [ ci | (_,ci) <- cleanClassInfos, ciDefinedIn ci == moduleName ]
         superClasses = nub $ catMaybes $ map ciSuper definedClassInfos
         adoptedProtocols = map (++ "Protocol") $
-                           setToList $
-                           unionManySets $
+                           Set.toList $
+                           Set.unions $
                            map ciNewProtocols $
                            definedClassInfos
     
@@ -109,8 +110,8 @@ exportModule bindingScript
 
     adoptedProtoImports <- makeProtocolImports $
                            map (++ "Protocol") $
-                           setToList $
-                           unionManySets $
+                           Set.toList $
+                           Set.unions $
                            map ciNewProtocols $
                            definedClassInfos
 
@@ -184,7 +185,7 @@ exportModule bindingScript
 
         exportedSelNames = map msMangled selsToDefineOrImport
         exportedSels = concatMap idsForSel exportedSelNames
-        exportedSelSet = mkSet exportedSelNames
+        exportedSelSet = Set.fromList exportedSelNames
 
         exportedClasses = concat [ idsForClass $ ciName ci
                                  | ci <- definedClassInfos,
@@ -196,7 +197,7 @@ exportModule bindingScript
             
 
         protoAdoptions = concat [ [ (proto ++ "Protocol", ciName ci)
-                                  | proto <- setToList $ ciNewProtocols ci]
+                                  | proto <- Set.toList $ ciNewProtocols ci]
                                 | ci <- definedClassInfos, not (ciProtocol ci) ]
                                 
         varDeclarations = Map.findWithDefault [] moduleName allVarDeclarations
@@ -221,7 +222,7 @@ exportModule bindingScript
          
     mentionedClassImports <- makeForwardClassImports mentionedClassNames
 
-    categoryImports <- makeForwardClassImports $ setToList $ mkSet $ map fst (instanceSels ++ classSels)
+    categoryImports <- makeForwardClassImports $ Set.toList $ Set.fromList $ map fst (instanceSels ++ classSels)
 
     additionalCode <- readFileOrEmpty (additionalCodePath (dotToSlash moduleName ++ ".hs"))
 
@@ -285,8 +286,8 @@ exportModule bindingScript
                                  ))
                     <+> text "where",
                 text "import Prelude hiding" <+>
-                    parens (sep $ punctuate comma $ map text $ setToList $
-                            bsHiddenFromPrelude bindingScript `intersect` exportedSelSet),
+                    parens (sep $ punctuate comma $ map text $ Set.toList $
+                            bsHiddenFromPrelude bindingScript `Set.intersection` exportedSelSet),
                 text "import Foreign.C.Types",
                 text "import Foreign.Ptr",
                 text "import HOC",
@@ -376,7 +377,7 @@ pprProtocolDecl (ci,selsAndLocs) =
                                         classes) <+> text "=>"
                                        
                 | otherwise = empty
-        classes =    map (++ "Protocol") (setToList $ ciNewProtocols ci)
+        classes =    map (++ "Protocol") (Set.toList $ ciNewProtocols ci)
                   ++ map (("Has_" ++) . msMangled . fst) selsAndLocs
 
 pprSelDecl :: MangledSelector -> Doc
