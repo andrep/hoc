@@ -38,3 +38,9 @@ toNSString = unsafePerformIO . nsString
 
 fromNSString :: NSString () -> String
 fromNSString = unsafePerformIO . haskellString
+
+-- CUT HERE
+import Foreign.C.Types
+--X NSStringEncoding
+-- CUT HERE
+type NSStringEncoding = CUInt

@@ -70,6 +70,8 @@ type NSRangePointer Foundation.NSRange;
 
 type NSTimeInterval Foundation.NSDate;
 
+type NSStringEncoding Foundation.NSString;
+
 -- GNUstep specifics:
 rename rawMimeData: rawMimeData_;
 rename setContent:type: setContentAndType;
