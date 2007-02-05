@@ -49,8 +49,11 @@ declareCEnum name assocs
         values = map snd assocs
         
 declareAnonymousCEnum assocs
-    = sequence [
-            valD (varP constant) (normalB $ litE $ integerL value) []
+    = sequence $ concat [
+            [
+                sigD constant [t| forall a. Num a => a |],
+                valD (varP constant) (normalB $ litE $ integerL value) []
+            ]
             | (constant, value) <- zip constants values
         ]
     where
