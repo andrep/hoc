@@ -61,12 +61,12 @@ cTypeToHaskell :: TypeEnvironment -> Bool -> String -> CType -> Maybe HType
 cTypeToHaskell env retval tyvar (CTIDType protocols) = 
     -- (if protocols /= [] then trace (show (retval,protocols)) else id) $
 
-    Just $ HType (if retval then Nothing else Just (tyvar,[]))
+    return $ HType (if retval then Nothing else Just (tyvar,[]))
                  [] (Con "ID" :$ (if retval then Con "()" else Var tyvar))
 
 cTypeToHaskell env retval tyvar (CTPointer (CTSimple cls))
     | isClassType env cls =
-    Just $ HType (if retval then Nothing else Just (tyvar,[]))
+    return $ HType (if retval then Nothing else Just (tyvar,[]))
                  [cls] (Con (nameToUppercase cls) :$
                         (if retval then Con "()" else Var tyvar))
  
@@ -79,7 +79,7 @@ cTypeToHaskell env retval tyvar bi@(CTBuiltin _ _ _) =
         return $ HType Nothing [] (Con typ)
 
 cTypeToHaskell env retval tyvar (CTSimple "Class") =
-    Just $ HType (if retval then Nothing else Just (tyvar,[]))
+    return $ HType (if retval then Nothing else Just (tyvar,[]))
                  [] (Con "Class" :$
                         (if retval then Con "()" else Var tyvar))
 
@@ -87,20 +87,15 @@ cTypeToHaskell env retval tyvar (CTSimple name)
     | name /= "" && isPlainType env name =
         return $ HType Nothing [name]
                        (Con $ nameToUppercase name)
-    | otherwise = do typ <- simpleTypeToHaskell name
-                     return $ HType Nothing [] (Con typ)
+    | otherwise = case simpleTypeToHaskell name of
+                    Just typ -> return $ HType Nothing [] (Con typ)
+                    Nothing -> trace ("type not found: " ++ show name) Nothing
 
-cTypeToHaskell env retval tyvar (CTPointer pointed) =
-        case pointed of
-            CTSimple _ -> pointerToHaskell
-            CTBuiltin _ _ _ -> pointerToHaskell
-            _ -> Nothing -- we don't want to bother with things like "id *" right now
-    where
-        pointerToHaskell =
-            do
-                HType context mentioned ty
-                    <- cTypeToHaskell env retval tyvar pointed
-                return $ HType context mentioned (Con "Ptr" :$ ty)
+cTypeToHaskell env retval tyvar (CTPointer pointed)
+    = do
+        HType context mentioned ty
+            <- cTypeToHaskell env True tyvar pointed
+        return $ HType context mentioned (Con "Ptr" :$ ty)
 
 cTypeToHaskell env retval tyvar (CTEnum name _) 
     | name /= "" && isPlainType env name = return $ HType Nothing [name]
@@ -109,48 +104,34 @@ cTypeToHaskell env retval tyvar (CTEnum name _)
 
 cTypeToHaskell env retval tyvar _ = Nothing
 
-{-
-cTypeToHaskell classes retval tyvar (CTSimple str) = Nothing
-cTypeToHaskell classes retval tyvar (CTPointer x) = Nothing
-cTypeToHaskell classes retval tyvar (CTUnknown x) = Nothing
-cTypeToHaskell classes retval tyvar (CTEnum x) = Nothing
-cTypeToHaskell classes retval tyvar (CTStruct x) = Nothing
-cTypeToHaskell classes retval tyvar (CTUnion x) = Nothing
--}
-
-
-
-simpleTypeToHaskell "void" = Just "()"
-simpleTypeToHaskell "BOOL" = Just "Bool"
-simpleTypeToHaskell "SEL" = Just "SEL"
+simpleTypeToHaskell "void" = return "()"
+simpleTypeToHaskell "BOOL" = return "Bool"
+simpleTypeToHaskell "SEL" = return "SEL"
 simpleTypeToHaskell _ = Nothing
 
-{-builtinTypeToHaskell (CTBuiltin Nothing Nothing "int") =
-    trace (
--}
-builtinTypeToHaskell (CTBuiltin Nothing Nothing "float") = Just "Float"
-builtinTypeToHaskell (CTBuiltin Nothing Nothing "double") = Just "Double"
+builtinTypeToHaskell (CTBuiltin Nothing Nothing "float") = return "Float"
+builtinTypeToHaskell (CTBuiltin Nothing Nothing "double") = return "Double"
 builtinTypeToHaskell (CTBuiltin signedness Nothing "int") =
     case signedness of
-        Just False -> Just "CUInt"
-        _ -> Just "Int"
+        Just False -> return "CUInt"
+        _ -> return "Int"
 builtinTypeToHaskell (CTBuiltin signedness (Just Short) "int") =
     case signedness of
-        Just False -> Just "CUShort"
-        _ -> Just "CShort"
+        Just False -> return "CUShort"
+        _ -> return "CShort"
 builtinTypeToHaskell (CTBuiltin signedness (Just Long) "int") =
     case signedness of
-        Just False -> Just "CULong"
-        _ -> Just "CLong"
+        Just False -> return "CULong"
+        _ -> return "CLong"
 builtinTypeToHaskell (CTBuiltin signedness (Just LongLong) "int") =
     case signedness of
-        Just False -> Just "CULLong"
-        _ -> Just "CLLong"
+        Just False -> return "CULLong"
+        _ -> return "CLLong"
 builtinTypeToHaskell (CTBuiltin signedness Nothing "char") =
     case signedness of
-        Just False -> Just "CUChar"
-        Just True -> Just "CSChar"
-        Nothing -> Just "CChar"
+        Just False -> return "CUChar"
+        Just True -> return "CSChar"
+        Nothing -> return "CChar"
 
 builtinTypeToHaskell bi = trace (show bi) Nothing
 
