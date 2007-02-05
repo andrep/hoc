@@ -2,7 +2,8 @@ module Enums(
         EnumType,
         extractEnums,
         pprEnumType,
-        enumName
+        enumName,
+        enumExports
     ) where
 
 import Headers(HeaderInfo(..), ModuleName)
@@ -61,6 +62,11 @@ handleCType (CTEnum tag constants)
         mbTag | tag == "" = Nothing
               | otherwise = Just tag
 handleCType _ = Nothing
+
+enumExports (EnumType mbName constants)
+    = (case mbName of Just n -> ((nameToUppercase n ++ "(..)") :)
+                      Nothing -> id)
+      (map (nameToLowercase . fst) constants)
 
 pprEnumType (EnumType name constants) =
 	char '$' <> parens (
