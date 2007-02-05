@@ -146,7 +146,7 @@ builtin_type = do
                 <|> (reserved objc "short" >> return (Just Short))
                 <|> return Nothing
     key <- if isJust signedness || isJust length
-        then option "int" simple_builtin
+        then option "int" (try simple_builtin)
         else simple_builtin
     return $ CTBuiltin signedness length key
     
