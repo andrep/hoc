@@ -10,7 +10,7 @@ import PrepareDeclarations
 import BindingScript
 import Utils(groupByFirst)
 import Headers(ModuleName)
-import Enums(enumName, pprEnumType)
+import Enums(enumExports, pprEnumType)
 
 import HOC.NameCaseChange
 
@@ -257,8 +257,7 @@ exportModule bindingScript
                 text "module " <+> text (moduleName ++ ".Forward")
                     <+> parens (sep $ punctuate comma $
                         map text (exportedClasses
-                                 ++ [ nameToUppercase enum ++ "(..)"
-                                    | enum <- mapMaybe enumName enumDefinitions ]
+                                 ++ concatMap enumExports enumDefinitions
                                  ++ additionalForwardExports
                                  ))
                     <+> text "where",

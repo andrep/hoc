@@ -7,7 +7,6 @@
 --X NSRangePointer
 --X nsMaxRange
 --X nsLocationInRange
---X nsNotFound
 
 import HOC.FFICallInterface
 import HOC.Arguments
@@ -22,7 +21,6 @@ type NSRangePointer = Ptr NSRange
 
 nsMaxRange (NSRange loc len) = loc + len
 nsLocationInRange x (NSRange loc len) = x >= loc && x < loc+len
-nsNotFound = 0x7fffffff :: CUInt
 
 instance Storable NSRange where
     alignment _ = alignment (undefined :: CUInt)
