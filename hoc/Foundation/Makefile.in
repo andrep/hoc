@@ -7,7 +7,15 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHSFoundation.a HSFoundation.o register-inplace.build-stamp
+ifeq "$(HocBuildDylibs)" "YES"
+LIBRARIES=libHSFoundation.a libHSFoundation_dyn.dylib
+else
+LIBRARIES=libHSFoundation.a HSFoundation.o
+endif
+
+FOUNDATIONLIBDIR="$(destdir)"/$(GHC_LIB_PATH)/Foundation
+
+all: $(LIBRARIES) register-inplace.build-stamp
 
 register-inplace.build-stamp: Foundation.conf-inplace
 	[ -f "../inplace.conf" ] || echo '[]' > ../inplace.conf
@@ -48,7 +56,8 @@ ghcmake.build-stamp:
 		-package-name Foundation \
 		-hidir build/imports	\
 		-package-conf ../inplace.conf \
-		-fglasgow-exts -fth
+		-fglasgow-exts -fth\
+		$(EXTRA_GHCFLAGS)
                 
 	test ! -r GNUstepBase.hs || \
 		$(GHC) --make GNUstepBase.hs	\
@@ -56,7 +65,8 @@ ghcmake.build-stamp:
 			-odir build/objects \
 			-hidir build/imports	\
 			-package-conf ../inplace.conf \
-			-fglasgow-exts -fth
+			-fglasgow-exts -fth \
+			$(EXTRA_GHCFLAGS)
 	touch $@
 
 HSFoundation.o: ghcmake.build-stamp
@@ -67,7 +77,7 @@ libHSFoundation.a: ghcmake.build-stamp
 
 libHSFoundation_dyn.dylib: ghcmake.build-stamp
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
-	 | xargs libtool -dynamic -o $@ -undefined dynamic_lookup
+	 | xargs libtool -dynamic -o $@ -undefined dynamic_lookup -single_module
 	install_name_tool -id "`pwd`/$@" $@
 
 clean:
@@ -77,11 +87,15 @@ clean:
 	    register-inplace.build-stamp
 	
 install: install-files
-	ranlib "$(destdir)"/$(GHC_LIB_PATH)/Foundation/libHSFoundation.a
+	ranlib $(FOUNDATIONLIBDIR)/libHSFoundation.a
+ifeq "$(HocBuildDylibs)" "YES"
+	install_name_tool -id $(FOUNDATIONLIBDIR)/libHSFoundation_dyn.dylib \
+	   $(FOUNDATIONLIBDIR)/libHSFoundation_dyn.dylib
+endif
 	$(GHC_PKG) update Foundation.conf
 	
 install-files: all Foundation.conf
-	mkdir -p "$(destdir)"/$(GHC_LIB_PATH)/Foundation
-	cp -R libHSFoundation.a HSFoundation.o \
-	 build/imports "$(destdir)"/$(GHC_LIB_PATH)/Foundation/
+	mkdir -p $(FOUNDATIONLIBDIR)
+	cp -R $(LIBRARIES) \
+	 build/imports $(FOUNDATIONLIBDIR)
 
