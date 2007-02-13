@@ -1,6 +1,7 @@
 module HOC.Invocation where
 
 import Foreign
+import Foreign.C            ( CInt )
 import Control.Monad        ( when )
 
 import HOC.Base
@@ -42,12 +43,23 @@ callWithRetval cif fun args = do
         >> peek retptr >>= importArgument
 
 
-setMarshalledRetval :: ObjCArgument a b => Ptr () -> a -> IO ()
-setMarshalledRetval ptr val =
-    exportArgument val >>= poke (castPtr ptr)
+setMarshalledRetval :: ObjCArgument a b => Bool -> Ptr () -> a -> IO ()
+setMarshalledRetval retained ptr val =
+    (if retained then exportArgumentRetained else exportArgument) val
+        >>= poke (castPtr ptr)
 
 getMarshalledArgument :: ObjCArgument a b => Ptr (Ptr ()) -> Int -> IO a
 getMarshalledArgument args idx = do
     p <- peekElemOff args idx
     arg <- peek (castPtr p)
     importArgument arg
+    
+    
+foreign import ccall unsafe recordHOCEvent :: CInt -> Ptr (Ptr ()) -> IO ()
+
+kHOCEnteredHaskell = 1 :: CInt
+kHOCImportedArguments = 2 :: CInt
+kHOCAboutToExportResult = 3 :: CInt
+kHOCAboutToLeaveHaskell = 4 :: CInt
+
+

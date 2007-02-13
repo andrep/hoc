@@ -2,6 +2,7 @@
 #include <Foundation/NSException.h>
 #include <assert.h>
 #include "NewClass.h"
+#include "Statistics.h"
 
 #ifdef GNUSTEP
 #define isa class_pointer
@@ -101,7 +102,9 @@ void newClass(struct objc_class * super_class,
 
 static void objcIMP(ffi_cif *cif, void * ret, void **args, void *userData)
 {
+    recordHOCEvent(kHOCAboutToEnterHaskell, args);
     NSException *e = (*(haskellIMP)userData)(cif, ret, args);
+    recordHOCEvent(kHOCLeftHaskell, args);
     if(e != nil)
         [e raise];
 }

@@ -1,6 +1,7 @@
 module HOC.SelectorMarshaller(
         SelectorInfo(..),
         mkSelectorInfo,
+        mkSelectorInfoRetained,
         makeMarshaller,
         makeMarshallers,
         marshallerName
@@ -25,17 +26,18 @@ data SelectorInfo = SelectorInfo {
         selectorInfoObjCName :: String,
         selectorInfoHaskellName :: String,
         selectorInfoCif :: !FFICif,
-        selectorInfoSel :: !SEL
+        selectorInfoSel :: !SEL,
+        selectorInfoResultRetained :: !Bool
     }
 
 {-# NOINLINE mkSelectorInfo #-}
 mkSelectorInfo objCName hsName cif
-	= SelectorInfo objCName hsName cif (getSelectorForName objCName)
+	= SelectorInfo objCName hsName cif (getSelectorForName objCName) False
 
 {-# NOINLINE mkSelectorInfo# #-}
 mkSelectorInfo# objCName# hsName# cif
 	-- NOTE: Don't call mkSelectorInfo here, the rule would apply!
-	= SelectorInfo objCName hsName cif (getSelectorForName objCName)
+	= SelectorInfo objCName hsName cif (getSelectorForName objCName) False
 	where
 		objCName = unpackCString# objCName#
 		hsName   = unpackCString# hsName#
@@ -45,6 +47,25 @@ mkSelectorInfo# objCName# hsName# cif
 	mkSelectorInfo (unpackCString# s1) (unpackCString# s2) cif
 	= mkSelectorInfo# s1 s2 cif
   #-}
+
+{-# NOINLINE mkSelectorInfoRetained #-}
+mkSelectorInfoRetained objCName hsName cif
+	= SelectorInfo objCName hsName cif (getSelectorForName objCName) True
+
+{-# NOINLINE mkSelectorInfoRetained# #-}
+mkSelectorInfoRetained# objCName# hsName# cif
+	-- NOTE: Don't call mkSelectorInfo here, the rule would apply!
+	= SelectorInfo objCName hsName cif (getSelectorForName objCName) True
+	where
+		objCName = unpackCString# objCName#
+		hsName   = unpackCString# hsName#
+
+{-# RULES
+"litstr" forall s1 s2 cif.
+	mkSelectorInfoRetained (unpackCString# s1) (unpackCString# s2) cif
+	= mkSelectorInfoRetained# s1 s2 cif
+  #-}
+
 
 makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
             funD haskellName [
