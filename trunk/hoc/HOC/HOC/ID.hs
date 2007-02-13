@@ -136,6 +136,12 @@ instance ObjCArgument (ID a) (Ptr ObjCObject) where
         return arg
     exportArgument Nil = return nullPtr
     
+    exportArgumentRetained (ID thing@(HSO arg _)) = do
+        retainObject arg
+        evaluate thing  -- make sure the HSO has been alive until now
+        return arg
+    exportArgumentRetained Nil = return nullPtr
+    
     importArgument = importArgument' False
     
     objCTypeString _ = "@"

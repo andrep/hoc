@@ -15,11 +15,14 @@ import HOC.TH
 class (Storable b, FFITypeable b) => ObjCArgument a b | a -> b where
     withExportedArgument :: a -> (b -> IO c) -> IO c
     exportArgument :: a -> IO b
+    exportArgumentRetained :: a -> IO b
     importArgument :: b -> IO a
     
     objCTypeString :: a -> String
     
     withExportedArgument arg action = exportArgument arg >>= action
+    
+    exportArgumentRetained = exportArgument
 {-
     For types that are Storable & FFITypeable, define
     

@@ -164,14 +164,17 @@ declareRenamedSelector name haskellName typeSigQ =
 
 
             makeImpType ty = replaceResult (
-                                (ArrowT `AppT` VarT (mkName "target"))
+                                (ArrowT `AppT` fromMaybe (VarT $ mkName "target") target')
                                 `AppT` covariantResult
                             ) ty'
                 where
                     ty' = simplifyType ty
-                    (_retained, _needInstance, _target', covariantResult) =
+                    (_retained, _needInstance, target', covariantResult) =
                         doctorCovariant $ resultType ty'
-        
+            
+            selInfoMaker | resultRetained = [| mkSelectorInfoRetained |]
+                         | otherwise      = [| mkSelectorInfo |]
+            
         sequence $ [
                 
                 -- $(selectorName) = getSelectorForName "name"
@@ -183,7 +186,7 @@ declareRenamedSelector name haskellName typeSigQ =
                     in valD (varP $ mkName $ infoName) (normalB
                         [|
                         	let n = $(stringE name)
-                        	in mkSelectorInfo n
+                        	in $(selInfoMaker) n
                                                 $(if haskellName == name
                                                         then [|n|]
                                                         else stringE haskellName)

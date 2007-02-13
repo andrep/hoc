@@ -1,5 +1,6 @@
+{-# OPTIONS -fallow-undecidable-instances #-}
 module HOC.Super(
-        SuperClass, SuperTarget, super
+        SuperClass, SuperTarget, Super(super), withExportedSuper
     ) where
 
 import HOC.Base
@@ -20,29 +21,34 @@ class SuperClass sub super | sub -> super
 
 data SuperTarget a = SuperTarget a
 
-super :: (Object sub, Object super, SuperClass sub super)
-      => sub -> SuperTarget super
+class Super sub super | sub -> super where
+    super :: sub -> super
 
 --- 
 
 pokeSuper objcSuper obj cls
     = pokeByteOff objcSuper 0 obj >> pokeByteOff objcSuper (sizeOf obj) cls
 
+withExportedSuper p action = 
+    getSuperClassForObject p >>= \cls ->
+    allocaBytes (sizeOf p + sizeOf cls) $ \sptr ->
+    pokeSuper sptr p cls >> action sptr
+
 instance MessageTarget a
         => ObjCArgument (SuperTarget a) (Ptr ObjCObject) where
 
     withExportedArgument (SuperTarget obj) action =
         withExportedArgument obj $ \p ->
-        getSuperClassForObject p >>= \cls ->
-        allocaBytes (sizeOf p + sizeOf cls) $ \sptr ->
-        pokeSuper sptr p cls >> action sptr
+        withExportedSuper p action
         
     exportArgument _ = fail "HOC.Super: exportArgument"
     importArgument _ = fail "HOC.Super: importArgument"
 
     objCTypeString _ = "@"      -- well, close enough.
 
-super obj = SuperTarget (fromID $ toID obj)
+instance (Object (ID sub), Object super, SuperClass (ID sub) super)
+    => Super (ID sub) (SuperTarget super) where
+    super obj = SuperTarget (fromID $ toID obj)
 
 getSuperClassForObject obj = do cls <- peekByteOff obj 0 :: IO (Ptr (Ptr ()))
                                 peekElemOff cls 1

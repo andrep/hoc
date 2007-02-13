@@ -5,8 +5,7 @@ module HOC (
         Object(..),
         Class,
         ClassAndObject,
-        ( # ), ( #* ),
-        ObjCArgument(..),
+        ( # ), ( #. ),
         withExportedArray,
         castObject,
         declareClass,
@@ -46,6 +45,9 @@ module HOC (
         declareExternFun,
         
         sel,
+        
+        ObjCArgument(..),
+        declareMarshalledObjectType,
         
         -- debugging & statistics:
         

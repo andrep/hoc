@@ -1,3 +1,4 @@
+{-# OPTIONS -fallow-undecidable-instances #-}
 module HOC.NewlyAllocated where
 
 {-
@@ -15,15 +16,24 @@ import HOC.Base         ( ObjCObject )
 import HOC.Arguments    ( ObjCArgument(..) )
 import HOC.ID           ( Object(..), MessageTarget(..) )
 import HOC.MsgSend
+import HOC.Super
 
 import Foreign.Ptr      ( Ptr, nullPtr )
 import System.IO.Unsafe ( unsafePerformIO )
 
-newtype NewlyAllocated a = NewlyAllocated (Ptr ObjCObject)
+
+data NewlyAllocated a
+    = NewlyAllocated (Ptr ObjCObject)
+    | NewSuper (Ptr ObjCObject)
 
 instance ObjCArgument (NewlyAllocated a) (Ptr ObjCObject) where
     withExportedArgument (NewlyAllocated p) action = action p
+    withExportedArgument (NewSuper p) action =
+        withExportedSuper p action
+    
     exportArgument (NewlyAllocated p) = return p
+    exportArgument (NewSuper p) = fail "HOC.NewlyAllocated.NewSuper: exportArgument"
+    
     importArgument p = return (NewlyAllocated p)
 
     objCTypeString _ = "@"
@@ -35,6 +45,13 @@ instance ObjCArgument (NewlyAllocated a) (Ptr ObjCObject) where
     
 instance MessageTarget (NewlyAllocated a) where
     isNil (NewlyAllocated p) = p == nullPtr
+    isNil (NewSuper p) = p == nullPtr
 
-    sendMessageWithRetval _ = objSendMessageWithRetval
-    sendMessageWithoutRetval _ = objSendMessageWithoutRetval
+    sendMessageWithRetval (NewlyAllocated _) = objSendMessageWithRetval
+    sendMessageWithRetval (NewSuper _) = superSendMessageWithRetval
+    sendMessageWithoutRetval (NewlyAllocated _) = objSendMessageWithoutRetval
+    sendMessageWithoutRetval (NewSuper _) = superSendMessageWithoutRetval
+
+instance SuperClass sub super
+    => Super (NewlyAllocated sub) (NewlyAllocated super) where
+    super (NewlyAllocated x) = NewSuper x

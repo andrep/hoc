@@ -174,6 +174,7 @@ mkClassExportAction name prefix members =
                 
                 exportMethod' isClassMethod objCMethodList num methodBody
                               nArgs isUnit impTypeName selExpr cifExpr
+                              retainedExpr
             where
                 methodBody = varE $ mkName $ prefix ++ nameBase selName
                 
@@ -186,6 +187,7 @@ mkClassExportAction name prefix members =
                 
                 selExpr = [| selectorInfoSel $(varE $ infoName) |]
                 cifExpr = [| selectorInfoCif $(varE $ infoName) |]
+                retainedExpr = [| selectorInfoResultRetained $(varE $ infoName) |]
         
         exportMethod isClassMethod objCMethodList (GetterMethod ivarName, num) =
                 exportMethod' isClassMethod objCMethodList num
@@ -193,6 +195,7 @@ mkClassExportAction name prefix members =
                               0 False (''GetVarImpType)
                               [| getSelectorForName ivarName |]
                               [| getVarCif |]
+                              [| False |]
             
         exportMethod isClassMethod objCMethodList (SetterMethod ivarName, num) =
                 exportMethod' isClassMethod objCMethodList num
@@ -200,6 +203,7 @@ mkClassExportAction name prefix members =
                               1 True (''SetVarImpType)
                               [| getSelectorForName setterName |]
                               [| setVarCif |]
+                              [| False |]
             where
                 setterName = setterNameFor ivarName
         
@@ -208,7 +212,7 @@ mkClassExportAction name prefix members =
             
                 
         exportMethod' isClassMethod objCMethodList num methodBody
-                       nArgs isUnit impTypeName selExpr cifExpr =
+                       nArgs isUnit impTypeName selExpr cifExpr retainedExpr =
             [|
                 setMethodInList $(objCMethodList)
                                 num
@@ -218,24 +222,29 @@ mkClassExportAction name prefix members =
                                 ($(lamE (map (varP.mkName) ["cif","ret","args"]) marshal))
             |]
             where
-                marshal = [| exceptionHaskellToObjC $(marshal') |]
+                marshal = [| do recordHOCEvent kHOCEnteredHaskell $(varE $ mkName "args")
+                                exc <- exceptionHaskellToObjC $(marshal')
+                                recordHOCEvent kHOCAboutToLeaveHaskell $(varE $ mkName "args")
+                                return exc
+                          |]
                 marshal' = doE $ getArg ("self",0)
                                  : map getArg (zip arguments [2..])
-                                 ++ invokeAndReturn
+                                 ++ [
+                                    noBindS [| recordHOCEvent kHOCImportedArguments $(varE $ mkName "args") |],
+                                    noBindS invokeAndReturn
+                                 ]
                 
                 
                 arguments = [ "arg" ++ show i | i <- [1..nArgs] ]
                 
                 invokeAndReturn
                     | isUnit =
-                        [noBindS typedBodyWithArgs]
+                        typedBodyWithArgs
                     | otherwise =
-                        [
-                            bindS (varP $ mkName "result") typedBodyWithArgs,
-                            noBindS [| setMarshalledRetval
-                                            $(varE $ mkName "ret")
-                                            $(varE $ mkName "result") |]
-                        ]
+                        [| do result <- $(typedBodyWithArgs)
+                              recordHOCEvent kHOCAboutToExportResult $(varE $ mkName "args")
+                              setMarshalledRetval $(retainedExpr) $(varE $ mkName "ret") result
+                        |]
                 
                 typedBodyWithArgs = foldl1 appE (typed methodBody
                                                 : map (varE.mkName)(arguments ++ ["self"])) 
