@@ -11,7 +11,15 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHOC.a HOC.o ../inplace.conf
+ifeq "$(HocBuildDylibs)" "YES"
+LIBRARIES=libHOC.a libHOC_dyn.dylib
+else
+LIBRARIES=libHOC.a HOC.o
+endif
+
+HOCLIBDIR="$(destdir)"/$(GHC_LIB_PATH)/HOC
+
+all: $(LIBRARIES) ../inplace.conf
 
 ../inplace.conf: HOC.conf-inplace
 	[ -f "$@" ] || echo '[]' > $@
@@ -31,11 +39,12 @@ all: libHOC.a HOC.o ../inplace.conf
 libHOC.a: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHOC.a
 
-libHOC_dyn.dylib: ghcmake
+libHOC_dyn.dylib: ghcmake.build-stamp
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
 	 | xargs libtool \
 	   -dynamic \
 	   -undefined dynamic_lookup \
+	   -single_module \
 	   -o $@
 	install_name_tool -id "`pwd`/$@" $@
 
@@ -44,6 +53,11 @@ HOC.o: libHOC.a
 
 ghcmake: ghcmake.build-stamp
 
+ifeq "$(HocBuildDylibs)" "YES"
+CBITS=-L../HOC_cbits -lHOC_cbits_dyn
+else
+CBITS=../HOC_cbits/HOC_cbits.o
+endif
 
 ghcmake.build-stamp:
 	mkdir -p build/objects
@@ -52,13 +66,15 @@ ghcmake.build-stamp:
 		-O -fasm \
 		-odir build/objects -hidir build/imports	\
 		-fglasgow-exts -fth \
-		../HOC_cbits/HOC_cbits.o	\
+        -lobjc      \
+		$(CBITS)	\
 		-I../HOC_cbits	\
 		-I../libffi-src/build/include	\
 		-package-name HOC \
 		$(FOUNDATION_INCLUDES) \
 		$(FOUNDATION_LIBS)      \
-                $(DEFINES)
+                $(DEFINES)  \
+		$(EXTRA_GHCFLAGS)
 	touch $@
 
 clean:
@@ -67,10 +83,13 @@ clean:
 	    ghcmake.build-stamp
 
 install: install-files
-	ranlib "$(destdir)"/$(GHC_LIB_PATH)/HOC/libHOC.a
+	ranlib $(HOCLIBDIR)/libHOC.a
+ifeq "$(HocBuildDylibs)" "YES"
+	install_name_tool -id $(HOCLIBDIR)/libHOC_dyn.dylib $(HOCLIBDIR)/libHOC_dyn.dylib
+endif
 	$(GHC_PKG) update HOC.conf
        
 install-files: all HOC.conf
-	mkdir -p "$(destdir)"/$(GHC_LIB_PATH)/HOC
-	cp -R libHOC.a HOC.o build/imports \
-		"$(destdir)"/$(GHC_LIB_PATH)/HOC/
+	mkdir -p $(HOCLIBDIR)
+	cp -R $(LIBRARIES) build/imports \
+		$(HOCLIBDIR)

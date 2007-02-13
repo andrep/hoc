@@ -7,7 +7,15 @@ dist_FILES = \
 	Makefile.in \
 	$(NULL)
 
-all: libHSAppKit.a HSAppKit.o register-inplace.build-stamp
+ifeq "$(HocBuildDylibs)" "YES"
+LIBRARIES=libHSAppKit.a libHSAppKit_dyn.dylib
+else
+LIBRARIES=libHSAppKit.a HSAppKit.o
+endif
+
+APPKITLIBDIR="$(destdir)"/$(GHC_LIB_PATH)/AppKit
+
+all: $(LIBRARIES) register-inplace.build-stamp
 
 register-inplace.build-stamp: AppKit.conf-inplace
 	[ -f "../inplace.conf" ] || echo '[]' > ../inplace.conf
@@ -49,21 +57,24 @@ ghcmake.build-stamp:
 		-odir build/objects \
 		-hidir build/imports	\
 		-package-conf ../inplace.conf \
-		-fglasgow-exts -fth
+		-fglasgow-exts -fth \
+		$(EXTRA_GHCFLAGS)
 	test ! -r GNUstepGUI.hs || \
 		$(GHC) --make GNUstepGUI.hs	\
 			-package-name AppKit	\
 			-odir build/objects \
 			-hidir build/imports	\
 			-package-conf ../inplace.conf \
-			-fglasgow-exts -fth
+			-fglasgow-exts -fth \
+			$(EXTRA_GHCFLAGS)
 	$(GHC) -c Cocoa.hs \
 		-package-name AppKit	\
 		-ibuild/imports	   \
 		-o build/objects/Cocoa.o	\
 		-ohi build/imports/Cocoa.hi \
 		-package-conf ../inplace.conf \
-		-fglasgow-exts -fth
+		-fglasgow-exts -fth \
+		$(EXTRA_GHCFLAGS)
 	touch $@
 	
 HSAppKit.o: ghcmake.build-stamp
@@ -74,7 +85,7 @@ libHSAppKit.a: ghcmake.build-stamp
 
 libHSAppKit_dyn.dylib: ghcmake.build-stamp
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
-	 | xargs libtool -dynamic -o $@ -undefined dynamic_lookup
+	 | xargs libtool -dynamic -o $@ -undefined dynamic_lookup -single_module
 	install_name_tool -id "`pwd`/$@" $@
 
 clean:
@@ -84,11 +95,15 @@ clean:
 	    register-inplace.build-stamp
 
 install: install-files
-	ranlib "$(destdir)"/$(GHC_LIB_PATH)/AppKit/libHSAppKit.a
+	ranlib $(APPKITLIBDIR)/libHSAppKit.a
+ifeq "$(HocBuildDylibs)" "YES"
+	install_name_tool -id $(APPKITLIBDIR)/libHSAppKit_dyn.dylib \
+	   $(APPKITLIBDIR)/libHSAppKit_dyn.dylib
+endif
 	ghc-pkg --update-package --input-file=AppKit.conf
 
 install-files: all AppKit.conf
-	mkdir -p "$(destdir)"/$(GHC_LIB_PATH)/AppKit
-	cp -R libHSAppKit.a HSAppKit.o build/imports \
-	 "$(destdir)"/$(GHC_LIB_PATH)/AppKit/
+	mkdir -p $(APPKITLIBDIR)
+	cp -R $(LIBRARIES) build/imports \
+	 $(APPKITLIBDIR)
 

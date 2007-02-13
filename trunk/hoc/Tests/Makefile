@@ -1,5 +1,11 @@
-check: TestFoundation.static
+check: static dynamic
+
+static: TestFoundation.static
 	./TestFoundation.static
+
+dynamic: TestFoundation.dynamic
+	./TestFoundation.dynamic
+
 
 build:
 	mkdir -p build/dynamic/imports
@@ -18,5 +24,7 @@ TestFoundation.static: build TestFoundation.hs
 	 -package Foundation --make TestFoundation.hs
 
 clean:
-	-rm *.o *.hi TestFoundation
+	rm -rf build
+	rm -f TestFoundation.static
+	rm -f TestFoundation.dynamic
 

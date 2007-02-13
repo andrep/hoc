@@ -19,6 +19,7 @@ SRCS =  \
 	../libffi-src/src/powerpc/darwin.S \
 	../libffi-src/src/powerpc/darwin_closure.S \
 	Exceptions.m \
+	Statistics.m \
 	$(NULL)
 
 dist_srcdir = HOC_cbits
@@ -35,7 +36,15 @@ OBJS = $(OBJS_tmp2:%.m=%.o)
 CFLAGS += -g -I../libffi-src/include -fno-common -DMACOSX
 ASFLAGS += -I../libffi-src/include -DMACOSX
 
-all: libHOC_cbits.a HOC_cbits.o
+ifeq "$(HocBuildDylibs)" "YES"
+LIBRARIES=libHOC_cbits.a libHOC_cbits_dyn.dylib
+else
+LIBRARIES=libHOC_cbits.a HOC_cbits.o
+endif
+
+HOCLIBDIR="$(destdir)"/$(GHC_LIB_PATH)/HOC
+
+all: $(LIBRARIES)
 
 clean:
 	rm -rf libHOC_cbits.a HOC_cbits.o $(OBJS) depend
@@ -51,9 +60,13 @@ libHOC_cbits.a: $(OBJS)
 
 libHOC_cbits_dyn.dylib: libHOC_cbits.a
 	export MACOSX_DEPLOYMENT_TARGET=10.3 && \
-	 libtool \
-	 -dynamic \
+	 gcc \
+	 -all_load \
+	 -dynamiclib \
 	 -undefined dynamic_lookup \
+	 -lobjc \
+	 -framework Foundation \
+	 -single_module \
 	 -o $@ \
 	 $<
 	install_name_tool -id "`pwd`/$@" $@
@@ -65,11 +78,14 @@ depend: $(SRCS)
 	cc -MM $(CFLAGS) $(SRCS) > depend
 		
 install: install-files
-	ranlib "$(destdir)"/$(GHC_LIB_PATH)/HOC/libHOC_cbits.a
+	ranlib $(HOCLIBDIR)/libHOC_cbits.a
+ifeq "$(HocBuildDylibs)" "YES"
+	install_name_tool -id $(HOCLIBDIR)/libHOC_cbits_dyn.dylib $(HOCLIBDIR)/libHOC_cbits_dyn.dylib
+endif
 
 install-files: all
-	mkdir -p "$(destdir)"/$(GHC_LIB_PATH)/HOC
-	cp -R libHOC_cbits.a HOC_cbits.o "$(destdir)"/$(GHC_LIB_PATH)/HOC/
+	mkdir -p $(HOCLIBDIR)
+	cp -R $(LIBRARIES) $(HOCLIBDIR)
 	
 -include depend
 
