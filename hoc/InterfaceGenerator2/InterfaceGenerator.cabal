@@ -1,0 +1,8 @@
+name: HOC-InterfaceGenerator
+version: 1.0
+build-depends: base, containers, bytestring, mtl, pretty, parsec, fgl,
+               template-haskell, binary >= 0.2, old-time, directory
+
+executable: hoc-ifgen
+main-is: Main.hs
+hs-source-dirs: ., ../HOC/
