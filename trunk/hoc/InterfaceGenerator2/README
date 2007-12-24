@@ -1,0 +1,6 @@
+This is (mostly) a rewrite of the interface generator.
+
+*) Theoretically, the new code is more maintainable and extendable.
+*) Supports separate conversion of frameworks.
+
+It is not yet integrated into the HOC build system; build it manually using Cabal.
