@@ -213,7 +213,7 @@ optionDescs = [
                                  )
                     "framework")
             "generate bindings for framework",
-        Option ['h'] ["headers"]
+        Option ['I'] ["headers"]
             (ReqArg (\path o -> addHeaderDirectory
                                     (Headers path)
                                     o
@@ -247,5 +247,5 @@ main = do
                 options = foldl (flip ($)) options0 optionsF
             in
                 processFramework options
-        (_, _, es) -> mapM_ putStrLn es
+        (_, _, es) -> mapM_ putStrLn es >> putStrLn (usageInfo "hoc-ifgen [options] framework_name" optionDescs)
     
