@@ -25,7 +25,8 @@ idsForEntity e
         ClassEntity _ ->
             [eHaskellName e, '_' `BS.cons` eHaskellName e,
              eHaskellName e `BS.append` BS.pack "Class",
-             BS.pack "super_" `BS.append` eHaskellName e ]
+             BS.pack "super_" `BS.append` eHaskellName e,
+             eHaskellName e `BS.snoc` '_' ]
         EnumEntity complete values ->
             case eName e of
                 CName _ | complete
