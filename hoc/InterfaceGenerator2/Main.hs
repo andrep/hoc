@@ -95,7 +95,9 @@ data Options = Options {
         oHeaderDirectories :: [HeaderDirectory],
         oUmbrella :: Bool,
         oBindingScript :: Maybe String,
-        oAdditionalCode :: Maybe String
+        oAdditionalCode :: Maybe String,
+        oShowZapped :: Bool,
+        oDumpInitial :: Bool
     }
 
 processFramework options -- bs frameworkName requiredFrameworks
@@ -136,8 +138,8 @@ processFramework options -- bs frameworkName requiredFrameworks
         
         importedEMaps <- mapM (\(fn, progress) -> do
                                 if textInterfaces
-                                    then fmap read $ readFileWithProgress progress (fn ++ "/" ++ fn ++ ".pi")
-                                    else decodeFileWithProgress progress (fn ++ "/" ++ fn ++ ".pi") -- ###
+                                    then fmap read $ readFileWithProgress progress ("HOC-" ++ fn ++ "/" ++ fn ++ ".pi")
+                                    else decodeFileWithProgress progress ("HOC-" ++ fn ++ "/" ++ fn ++ ".pi") -- ###
                               )
                               (zip requiredFrameworks importProgress)
         
@@ -166,31 +168,40 @@ processFramework options -- bs frameworkName requiredFrameworks
             combinedEntities = monitor combineProgress $ combineDulicateEntities expandedEntities
             finalEntities = eliminateSubclassInstances eliminateProgress combinedEntities
         
-        createDirectoryIfNecessary frameworkName
+        let packageName = "HOC-" ++ frameworkName
+        createDirectoryIfNecessary packageName
         
-        writeFrameworkModules outputProgress finalEntities (frameworkName ++ "/")
+        writeFrameworkModules outputProgress finalEntities (packageName ++ "/")
+        
         
         -- mapM_ print zapMessages
-
-        -- mapM_ print zapMessages
-        writeFileIfChanged (frameworkName ++ "/" ++ frameworkName ++ ".hs") $ show $
+        writeFileIfChanged (packageName ++ "/" ++ frameworkName ++ ".hs") $ show $
             pprMasterModule (oUmbrella options)
                             (finalEntities)
                             (BS.pack frameworkName)
-        writeFileIfChanged (frameworkName ++ "/" ++ frameworkName ++ ".cabal") $ show $
+        writeFileIfChanged (packageName ++ "/" ++ packageName ++ ".cabal") $ show $
             pprCabalFile frameworkName requiredFrameworks finalEntities
-        writeFileIfChanged (frameworkName ++ "/" ++ "Setup.hs") $
+        writeFileIfChanged (packageName ++ "/" ++ "Setup.hs") $
             "import Distribution.Simple\nmain = defaultMain\n"
         
         if textInterfaces
             then
-                writeFileIfChanged (frameworkName ++ "/" ++ frameworkName ++ ".pi") $ 
+                writeFileIfChanged (packageName ++ "/" ++ frameworkName ++ ".pi") $ 
                     show $ monitor exportProgress $ localEntities $ finalEntities
             else
-                encodeFile (frameworkName ++ "/" ++ frameworkName ++ ".pi") $
+                encodeFile (packageName ++ "/" ++ frameworkName ++ ".pi") $
                     monitor exportProgress $ localEntities $ finalEntities
 
         closeMultiProgress multiProgress
+        
+        when (oDumpInitial options) $ do
+            putStrLn "Initial entities:"
+            mapM_ print $ Map.toList $ epEntities initialEntities
+
+        when (oShowZapped options && not (null zapMessages)) $ do
+            putStrLn "Zapped entities:"
+            mapM_ print zapMessages
+        
         putStrLn $ "done."
 
         
@@ -230,7 +241,13 @@ optionDescs = [
         Option ['a'] ["additional-code"]
             (ReqArg (\ac o -> o { oAdditionalCode = Just ac })
                     "path")
-            "additional code directory"
+            "additional code directory",
+        Option ['z'] ["show-zapped"]
+            (NoArg (\o -> o { oShowZapped = True }))
+            "print messages about entities that couldn't be translated",
+        Option [] ["dump-initial"]
+            (NoArg (\o -> o { oDumpInitial = True }))
+            "dump all entities after parsing"
     ]
 main = do
     args <- getArgs
@@ -242,7 +259,9 @@ main = do
                         oHeaderDirectories = [],
                         oUmbrella = False,
                         oBindingScript = Nothing,
-                        oAdditionalCode = Nothing
+                        oAdditionalCode = Nothing,
+                        oShowZapped = False,
+                        oDumpInitial = False
                     }
                 options = foldl (flip ($)) options0 optionsF
             in
