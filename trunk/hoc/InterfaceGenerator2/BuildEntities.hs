@@ -198,11 +198,11 @@ makeEntities bindingScript headers importedEntities
             = return ()
         makeEntity modName (Typedef (CTEnum n2 vals) name)
             | notHidden name
-            = -- makeEnum name modName vals
-              makeAnonymousEnum modName vals -- ### HACK for 10.5: ignore enum names
+            = makeEnum name modName vals
+              -- makeAnonymousEnum modName vals -- ### HACK for 10.5: ignore enum names
         makeEntity modName (CTypeDecl (CTEnum name vals))
             | null name || notHidden name
-            = (if null name || True {- ### see above -} then makeAnonymousEnum else makeEnum name) modName vals
+            = (if null name {- || True {- ### see above -}-} then makeAnonymousEnum else makeEnum name) modName vals
         
         makeEntity modName (Typedef ct name)
             | notHidden name
