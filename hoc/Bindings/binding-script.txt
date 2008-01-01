@@ -63,6 +63,11 @@ type NSSize Foundation.NSGeometry;
 type NSRect Foundation.NSGeometry;
 type NSRange Foundation.NSRange;
 
+type NSInteger Foundation.NSObjCRuntime;
+type NSUInteger Foundation.NSObjCRuntime;
+
+
+{-
 type NSPointPointer Foundation.NSGeometry;
 type NSSizePointer Foundation.NSGeometry;
 type NSRectPointer Foundation.NSGeometry;
@@ -71,6 +76,7 @@ type NSRangePointer Foundation.NSRange;
 type NSTimeInterval Foundation.NSDate;
 
 type NSStringEncoding Foundation.NSString;
+-}
 
 -- GNUstep specifics:
 rename rawMimeData: rawMimeData_;
