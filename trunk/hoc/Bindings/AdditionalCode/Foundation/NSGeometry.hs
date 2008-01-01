@@ -6,9 +6,6 @@
 --X NSPoint(..)
 --X NSSize(..)
 --X NSRect(..)
---X NSPointPointer
---X NSRectPointer
---X NSSizePointer
 --X nsMaxX
 --X nsMaxY
 --X nsMidX
@@ -19,19 +16,14 @@
 --X nsHeight
 
 
-import HOC.FFICallInterface
-import HOC.Arguments
 import Foreign
+import Prelude
 -- CUT HERE
 -- below NSGeometry.Forward
 
 data NSPoint = NSPoint Float Float  deriving(Read, Show, Eq)
 data NSSize = NSSize Float Float    deriving(Read, Show, Eq)
 data NSRect = NSRect NSPoint NSSize deriving(Read, Show, Eq)
-
-type NSPointPointer = Ptr NSPoint
-type NSSizePointer  = Ptr NSSize
-type NSRectPointer  = Ptr NSRect
 
 {-
 -- They're imported automatically now.

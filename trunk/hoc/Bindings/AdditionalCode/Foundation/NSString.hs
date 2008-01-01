@@ -7,6 +7,7 @@
 import Foreign.C.String
 import Foundation.NSObject  ( alloc )
 import System.IO.Unsafe     ( unsafePerformIO )
+import Prelude( String, (>>=), (.) ) 
 -- CUT HERE
 
 haskellString :: NSString a -> IO String
@@ -41,6 +42,4 @@ fromNSString = unsafePerformIO . haskellString
 
 -- CUT HERE
 import Foreign.C.Types
---X NSStringEncoding
--- CUT HERE
-type NSStringEncoding = CUInt
+
