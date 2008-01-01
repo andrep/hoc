@@ -14,7 +14,7 @@ module HOC.NewlyAllocated where
 
 import HOC.Base         ( ObjCObject )
 import HOC.Arguments    ( ObjCArgument(..) )
-import HOC.ID           ( Object(..), MessageTarget(..) )
+import HOC.MessageTarget( Object(..), MessageTarget(..) )
 import HOC.MsgSend
 import HOC.Super
 

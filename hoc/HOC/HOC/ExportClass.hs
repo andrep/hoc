@@ -10,6 +10,7 @@ import Data.Char(toUpper)
 
 import HOC.Base
 import HOC.ID
+import HOC.MessageTarget
 import HOC.Arguments
 import HOC.Invocation
 import HOC.SelectorMarshaller

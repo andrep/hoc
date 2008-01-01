@@ -3,6 +3,7 @@ module HOC.Class where
 import HOC.Base
 import HOC.Arguments
 import HOC.ID
+import HOC.MessageTarget
 
 import Foreign
 import Foreign.C.String

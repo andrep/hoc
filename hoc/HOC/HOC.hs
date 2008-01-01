@@ -47,7 +47,13 @@ module HOC (
         sel,
         
         ObjCArgument(..),
+        declareStorableObjCArgument,
         declareMarshalledObjectType,
+        
+        FFITypeable(..),
+        makeStructType,
+        
+        WrappedNSException(..),
         
         -- debugging & statistics:
         
@@ -58,6 +64,7 @@ import HOC.Base
 import HOC.Arguments
 import HOC.Invocation
 import HOC.ID
+import HOC.MessageTarget
 import HOC.Class
 import HOC.DeclareClass
 import HOC.ExportClass
@@ -72,3 +79,5 @@ import HOC.CEnum
 import HOC.ExternConstants
 import HOC.ExternFunctions
 import HOC.Selectors
+import HOC.Exception
+import HOC.FFICallInterface

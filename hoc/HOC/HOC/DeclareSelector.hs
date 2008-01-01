@@ -13,6 +13,7 @@ import HOC.ID
 import HOC.NewlyAllocated(NewlyAllocated)
 import HOC.Super
 import HOC.CannedCIFs
+import HOC.MessageTarget
 
 import Data.Char(isUpper, toLower, toUpper)
 import Data.Maybe(fromMaybe)
