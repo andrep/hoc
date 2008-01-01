@@ -1,0 +1,49 @@
+name: HOC
+version: 1.0
+build-depends: base, containers, bytestring, mtl, pretty, parsec, fgl,
+               template-haskell, binary >= 0.2, old-time, directory
+
+
+exposed-modules:
+    HOC,
+    HOC.NameCaseChange,
+    HOC.Exception,
+    HOC.SelectorNameMangling
+other-modules:
+    HOC.Arguments,
+    HOC.Base,
+    HOC.CEnum,
+    HOC.CannedCIFs,
+    HOC.Class,
+    HOC.DeclareClass,
+    HOC.DeclareSelector,
+    HOC.Dyld,
+    HOC.ExportClass,
+    HOC.ExternConstants,
+    HOC.ExternFunctions,
+    HOC.FFICallInterface,
+    HOC.ID,
+    HOC.MessageTarget,
+    HOC.Invocation,
+    HOC.MsgSend,
+    HOC.NewClass,
+    HOC.NewlyAllocated,
+    HOC.SelectorMarshaller,
+    HOC.Selectors,
+    HOC.StdArgumentTypes,
+    HOC.Super,
+    HOC.TH,
+    HOC.Unicode,
+    HOC.Utilities
+extra-libraries: objc, ffi
+frameworks: Foundation
+hs-source-dirs: HOC
+extensions: MagicHash, TemplateHaskell,
+            ForeignFunctionInterface, GeneralizedNewtypeDeriving,
+            EmptyDataDecls, MultiParamTypeClasses, FunctionalDependencies,
+            ScopedTypeVariables, RecursiveDo, FlexibleContexts,
+            FlexibleInstances, TypeSynonymInstances, DeriveDataTypeable
+
+executable: hoc-ifgen
+main-is: Main.hs
+hs-source-dirs: HOC, InterfaceGenerator2
