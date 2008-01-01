@@ -9,7 +9,6 @@ import Control.Monad.State as StateM
 
 import qualified Data.Map as Map
 
-
 cppDef = emptyDef
     { commentStart   = "/*"
     , commentEnd     = "*/"
@@ -38,7 +37,7 @@ instance Show PPLine where
 
 preprocessor = 
     many $
-    (symbol cpp "#" >> preprocessorLine) <|> fmap Text plainLine
+    (try (whiteSpace cpp >> symbol cpp "#") >> preprocessorLine) <|> fmap Text plainLine
     
 preprocessorLine = 
     (reserved cpp "if" >> expression >>= \e -> return $ If e)
@@ -73,7 +72,7 @@ expression = buildExpressionParser optable basic
                      Infix (bop "<=" (<=)) AssocLeft,
                      Infix (bop "==" (==)) AssocLeft,
                      Infix (bop "!=" (/=)) AssocLeft,
-                     Infix (bop ">=" (<=)) AssocLeft,
+                     Infix (bop ">=" (>=)) AssocLeft,
                      Infix (bop ">" (>)) AssocLeft],
                     [Infix (bbop "||" (||)) AssocLeft,
                      Infix (bbop "&&" (&&)) AssocLeft]
@@ -163,6 +162,7 @@ test3 fn = do
     putStrLn fn
     print $ length $ either show execute $
         parse preprocessor f f
+        
         
 preprocess fn f = either (\x -> error $ "Preprocessor error:" ++ show x) 
                          execute
