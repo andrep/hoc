@@ -15,6 +15,7 @@ import HOC.Invocation
 import HOC.SelectorNameMangling
 import HOC.MsgSend
 import HOC.FFICallInterface
+import HOC.MessageTarget
 
 import Foreign                      ( withArray, Ptr, nullPtr )
 import System.IO.Unsafe             ( unsafePerformIO )

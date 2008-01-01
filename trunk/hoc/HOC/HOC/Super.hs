@@ -7,6 +7,7 @@ import HOC.Base
 import HOC.Arguments
 import HOC.ID
 import HOC.MsgSend
+import HOC.MessageTarget
 
 import Foreign
 

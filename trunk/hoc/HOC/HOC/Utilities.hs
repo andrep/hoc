@@ -6,6 +6,7 @@ import HOC.ID
 import HOC.TH
 import HOC.ExportClass
 import Foreign.Ptr
+import HOC.MessageTarget
 
 x # f = f x
 

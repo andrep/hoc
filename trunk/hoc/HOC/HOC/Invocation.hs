@@ -8,7 +8,7 @@ import HOC.Base
 import HOC.Arguments
 import HOC.FFICallInterface
 
-import {-# SOURCE #-} HOC.Exception
+import HOC.Exception
 
 foreign import ccall "Invocation.h callWithExceptions"
     c_callWithExceptions :: FFICif -> FunPtr a
