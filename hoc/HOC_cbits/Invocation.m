@@ -1,6 +1,6 @@
 #import <Foundation/NSException.h>
 #import <Foundation/NSString.h>
-#include <ffi/ffi.h>
+#include <ffi.h>
 
 #include "Invocation.h"
 

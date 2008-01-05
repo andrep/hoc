@@ -4,7 +4,7 @@
 #include <objc/objc-runtime.h>
 #endif
 
-#include <ffi/ffi.h>
+#include <ffi.h>
 
 #ifdef __OBJC__
 @class NSException;
