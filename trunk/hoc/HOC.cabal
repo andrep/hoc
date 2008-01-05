@@ -1,7 +1,7 @@
 name: HOC
 version: 1.0
 build-depends: base, containers, bytestring, mtl, pretty, parsec, fgl,
-               template-haskell, binary >= 0.2, old-time, directory
+               template-haskell, binary >= 0.2, old-time, directory, unix
 
 
 exposed-modules:
