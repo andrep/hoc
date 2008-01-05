@@ -14,7 +14,7 @@ customPreBuild :: Args -> BuildFlags -> IO HookedBuildInfo
 customPreBuild args buildFlags = do
     putStrLn "Compiling HOC_cbits..."
     system "mkdir dist/build/"
-    exitCode <- system "gcc -r -nostdlib -I`ghc --print-libdir`/include -DMACOSX HOC_cbits/*.m -o dist/build/HOC_cbits.o"
+    exitCode <- system "gcc -r -nostdlib -I`ghc --print-libdir`/include -I/usr/include/ffi -DMACOSX HOC_cbits/*.m -o dist/build/HOC_cbits.o"
     
     case exitCode of
         ExitSuccess -> return ()
