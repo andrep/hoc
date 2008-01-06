@@ -10,3 +10,4 @@ enum
     kHOCLeftHaskell
 };
 void recordHOCEvent(int what, void ** args);
+

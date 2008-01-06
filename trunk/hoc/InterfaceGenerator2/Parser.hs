@@ -311,6 +311,7 @@ extern_keyword =
         reserved objc "extern"
     <|> reserved objc "FOUNDATION_EXPORT" -- N.B. "Export" vs. "Extern".
     <|> reserved objc "APPKIT_EXTERN"
+    <|> reserved objc "GS_EXPORT"
 
 skipParens = parens objc (skipMany (
     (satisfy (\x -> x /= '(' && x /= ')') >> return ())
@@ -321,3 +322,4 @@ skipBlock = braces objc (skipMany (
     (satisfy (\x -> x /= '{' && x /= '}') >> return ())
     <|> skipBlock
     ))
+

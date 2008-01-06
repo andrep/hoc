@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <Foundation/NSException.h>
 #include <assert.h>
+#include "Class.h"
 #include "NewClass.h"
 #include "Statistics.h"
 

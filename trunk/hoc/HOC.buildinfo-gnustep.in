@@ -1,0 +1,1 @@
+extra-lib-dirs: $GCC_LIBDIR, $GNUSTEP_SYSTEM_ROOT/Library/Libraries

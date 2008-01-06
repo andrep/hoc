@@ -3,14 +3,14 @@ module Main where
 
 import Test.HUnit
 import Prelude hiding(init)
-import Foundation hiding(test)
+import Foundation -- hiding(test)
 import Foundation.NSObject(init)
 
 import System.Mem           ( performGC )
 import Control.Concurrent   ( threadDelay )
 import Control.Monad        ( when )
 import Control.Exception    ( try, finally )
-
+import qualified System.Info( os )
 
       -- garbage collect and make really sure that finalizers have time to run
 performGCAndWait targetCount time maxRepeat = do
@@ -252,8 +252,8 @@ tests = test [
             fromNSString nsParseErrorException @?= "NSParseErrorException"
         ),
         "externFunction" ~: (do
-            result <- nsStringFromPoint (NSPoint 42 23)
-            fromNSString result @?= "{42, 23}"
+            result <- nsStringFromSize (NSSize 42 23)
+            fromNSString result @?= if System.Info.os == "darwin" then "{42, 23}" else "{width = 42; height = 23}"
         ),
         "exceptions" ~: test [
             "CtoH" ~: (do
