@@ -36,6 +36,7 @@ customConfig pdbi cf = do
         else do
             (gcclibdir, gnustepsysroot) <- gnustepPaths
             writeFile "HOC.buildinfo" $ "extra-lib-dirs: " ++ gcclibdir ++ ", " ++ gnustepsysroot </> "Library/Headers" ++ "\n"
+
     return lbi
 
 customPreBuild :: Args -> BuildFlags -> IO HookedBuildInfo
@@ -46,7 +47,7 @@ customPreBuild args buildFlags = do
     (cflags, paths, extralibs) <- 
         if System.Info.os == "darwin"
             then do
-                return ("-DMACOSX", [], ["-framework Foundation"])
+                return ("-I/usr/include/ffi -DMACOSX", [], ["-framework Foundation"])
             else do
                 (gcclibdir, sysroot) <- gnustepPaths
                 return ("-I$GNUSTEP_SYSTEM_ROOT/Library/Headers -DGNUSTEP",
