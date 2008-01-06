@@ -1,7 +1,6 @@
 name: HOC
 version: 1.0
 cabal-version: >= 1.2
-extra-source-files: configure, HOC.buildinfo-gnustep.in
 extra-tmp-files: HOC.buildinfo
 
 Library
