@@ -21,6 +21,7 @@ import Progress
 import qualified Data.ByteString.Char8 as BS
 import System.Environment
 import System.Console.GetOpt
+import Control.Exception
 
 import Data.Binary      ( encodeFile, decode )
 import BinaryInstances  ()
@@ -151,8 +152,8 @@ processFramework options -- bs frameworkName requiredFrameworks
                         zip (map BS.pack requiredFrameworks) importedEMaps
         
         let initialEntities = monitor initialProgress $ makeEntities bs loaded importedEntities
-        writeFile "dump.txt" $ show [ x | x @ (HeaderInfo n _ _) <- loaded, n == BS.pack "Foundation.NSObject" ]
         
+
         additionalEntities <-
             maybe (return initialEntities)
                   (\additionalCode ->
@@ -167,40 +168,42 @@ processFramework options -- bs frameworkName requiredFrameworks
             expandedEntities = monitor expandProgress $ expandProtocolRequirements zappedEntities
             combinedEntities = monitor combineProgress $ combineDulicateEntities expandedEntities
             finalEntities = eliminateSubclassInstances eliminateProgress combinedEntities
-        
-        let packageName = "HOC-" ++ frameworkName
-        createDirectoryIfNecessary packageName
-        
-        writeFrameworkModules outputProgress finalEntities (packageName ++ "/")
-        
-        
-        -- mapM_ print zapMessages
-        writeFileIfChanged (packageName ++ "/" ++ frameworkName ++ ".hs") $ show $
-            pprMasterModule (oUmbrella options)
-                            (finalEntities)
-                            (BS.pack frameworkName)
-        writeFileIfChanged (packageName ++ "/" ++ packageName ++ ".cabal") $ show $
-            pprCabalFile frameworkName requiredFrameworks finalEntities
-        writeFileIfChanged (packageName ++ "/" ++ "Setup.hs") $
-            "import Distribution.Simple\nmain = defaultMain\n"
-        
-        if textInterfaces
-            then
-                writeFileIfChanged (packageName ++ "/" ++ frameworkName ++ ".pi") $ 
-                    show $ monitor exportProgress $ localEntities $ finalEntities
-            else
-                encodeFile (packageName ++ "/" ++ frameworkName ++ ".pi") $
-                    monitor exportProgress $ localEntities $ finalEntities
+            
+        do
+            let packageName = "HOC-" ++ frameworkName
+            createDirectoryIfNecessary packageName
+            
+            writeFrameworkModules outputProgress finalEntities (packageName ++ "/")
+            
+            
+            -- mapM_ print zapMessages
+            writeFileIfChanged (packageName ++ "/" ++ frameworkName ++ ".hs") $ show $
+                pprMasterModule (oUmbrella options)
+                                (finalEntities)
+                                (BS.pack frameworkName)
+            writeFileIfChanged (packageName ++ "/" ++ packageName ++ ".cabal") $ show $
+                pprCabalFile frameworkName requiredFrameworks finalEntities
+            writeFileIfChanged (packageName ++ "/" ++ "Setup.hs") $
+                "import Distribution.Simple\nmain = defaultMain\n"
+            
+            if textInterfaces
+                then
+                    writeFileIfChanged (packageName ++ "/" ++ frameworkName ++ ".pi") $ 
+                        show $ monitor exportProgress $ localEntities $ finalEntities
+                else
+                    encodeFile (packageName ++ "/" ++ frameworkName ++ ".pi") $
+                        monitor exportProgress $ localEntities $ finalEntities
+          `finally` do
+                
+            closeMultiProgress multiProgress
+            
+            when (oDumpInitial options) $ do
+                putStrLn "Initial entities:"
+                mapM_ print $ Map.toList $ epEntities initialEntities
 
-        closeMultiProgress multiProgress
-        
-        when (oDumpInitial options) $ do
-            putStrLn "Initial entities:"
-            mapM_ print $ Map.toList $ epEntities initialEntities
-
-        when (oShowZapped options && not (null zapMessages)) $ do
-            putStrLn "Zapped entities:"
-            mapM_ print zapMessages
+            when (oShowZapped options && not (null zapMessages)) $ do
+                putStrLn "Zapped entities:"
+                mapM_ print zapMessages
         
         putStrLn $ "done."
 

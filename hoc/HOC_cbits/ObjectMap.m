@@ -42,8 +42,10 @@ void setHaskellPart(void* objcPart, void* haskellPart, int immortal)
     {
         if(!NSMapGet(gObjectMap, objcPart))
             immortalCount++;
+#if DO_LOG
         else
             NSLog(@"### setHaskellPart ### -> immortal re-set");
+#endif
     }
     return NSMapInsert(gObjectMap, objcPart, haskellPart);
 }
@@ -75,3 +77,4 @@ void objectMapStatistics(unsigned *allocated, unsigned *immortal)
             *allocated, *immortal, *allocated - *immortal);
 #endif
 }
+

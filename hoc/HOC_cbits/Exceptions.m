@@ -2,6 +2,7 @@
 #include "NewClass.h"
 #include "Class.h"
 #include "Selector.h"
+#include "Marshalling.h"
 #include "HsFFI.h"
 
 static BOOL excWrapperInited = NO;
@@ -18,9 +19,16 @@ static void exc_dealloc(id self, SEL sel)
 
     hs_free_stable_ptr(sp);
     
+#if GNUSTEP
+    super.self = self;
+    super.class = self->class_pointer->super_class;
+    
+    (*objc_msg_lookup_super(&super, selDealloc))(self, selDealloc);
+#else
     super.receiver = self;
     super.class = self->isa->super_class;
     objc_msgSendSuper(&super, selDealloc);
+#endif
 }
 
 static void initExceptionWrapper()
@@ -34,7 +42,7 @@ static void initExceptionWrapper()
         selDealloc = getSelectorForName("dealloc");
         
 #ifdef GNUSTEP
-        methods->method_list[0].method_name = "dealloc";
+        methods->method_list[0].method_name = (SEL)"dealloc";
 #else
         methods->method_list[0].method_name = selDealloc;
 #endif
@@ -61,10 +69,22 @@ static void initExceptionWrapper()
 id wrapHaskellException(char *name, HsStablePtr hexc)
 {
     id cexc;
+
+#if GNUSTEP
+    id (*imp)(id, SEL, id, NSString*, NSString*);
+    
+    initExceptionWrapper();
+
+    imp = (void*) objc_msg_lookup(clsHOCHaskellException, selExceptionWithNameReasonUserInfo);
+    
+    cexc = (*imp)(clsHOCHaskellException, selExceptionWithNameReasonUserInfo,
+                  utf8ToNSString("HaskellException"), utf8ToNSString(name), nil);
+#else
     initExceptionWrapper();
 
     cexc = objc_msgSend(clsHOCHaskellException, selExceptionWithNameReasonUserInfo,
                         utf8ToNSString("HaskellException"), utf8ToNSString(name), nil);
+#endif
     
     * (HsStablePtr*) (((char*)cexc) + stablePtrOffset) = hexc;
     
@@ -74,7 +94,11 @@ id wrapHaskellException(char *name, HsStablePtr hexc)
 
 HsStablePtr unwrapHaskellException(id cexc)
 {
+#if GNUSTEP
+    if(cexc->class_pointer == clsHOCHaskellException)
+#else
     if(cexc->isa == clsHOCHaskellException)
+#endif
     {
         return *(HsStablePtr*) (((char*)cexc) + stablePtrOffset);
     }

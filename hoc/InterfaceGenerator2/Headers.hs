@@ -92,6 +92,11 @@ orderModules mods = if null ok
 
 haskellizeModuleName = firstUpper . concatMap translateChar
     where firstUpper [] = []
-          firstUpper (x:xs) = toUpper x : xs
+          firstUpper (x:xs) = toUpper x : upperAfterDot xs
+          upperAfterDot ('.':xs) = '.' : firstUpper xs
+          upperAfterDot (x:xs) = x : upperAfterDot xs
+          upperAfterDot [] = []
+
           translateChar c | isAlphaNum c || c `elem` "/." = [c]
                           | otherwise = []
+

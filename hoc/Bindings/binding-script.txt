@@ -66,23 +66,14 @@ type NSRange Foundation.NSRange;
 type NSInteger Foundation.NSObjCRuntime;
 type NSUInteger Foundation.NSObjCRuntime;
 
-
-{-
-type NSPointPointer Foundation.NSGeometry;
-type NSSizePointer Foundation.NSGeometry;
-type NSRectPointer Foundation.NSGeometry;
-type NSRangePointer Foundation.NSRange;
-
-type NSTimeInterval Foundation.NSDate;
-
-type NSStringEncoding Foundation.NSString;
--}
-
 -- GNUstep specifics:
 rename rawMimeData: rawMimeData_;
 rename setContent:type: setContentAndType;
 rename setContent:type:name: setContentAndTypeAndName;
 rename removePort:forName: removePort_forName;
+
+hide performSelector:withObject:afterDelay:;
+hide performSelector:withObject:afterDelay:inModes:;
 
 class GSXMLNamespace {
     rename next nextNamespace;
@@ -93,6 +84,12 @@ hidePrelude break;
 class NSMenuValidationProtocol {
     - (BOOL) validateMenuItem: (NSMenuItem*) item;
 }
+class GSServicesManager {
+    - (BOOL) validateMenuItem: (NSMenuItem*) item;
+}
+class NSObject {- defined in NSMenu -} {
+    - (BOOL) validateMenuItem: (NSMenuItem*) item;
+}
 
 class GSDisplayServer {
     rename window::: window3;
@@ -101,3 +98,4 @@ class GSDisplayServer {
 
 
 hideEnums _NSGNUstepStringEncoding NSGNUstepStringEncoding;
+

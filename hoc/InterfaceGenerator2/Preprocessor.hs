@@ -27,7 +27,7 @@ cpp = makeTokenParser cppDef
 
 type Expr = StateM.State (Map.Map String Integer) Integer
 data PPLine = Text String | If Expr | Else | Endif | Elif Expr
-
+    
 instance Show PPLine where
     show (Text s) = "Text " ++ show s
     show (If _) = "If"
@@ -35,11 +35,9 @@ instance Show PPLine where
     show Endif = "Endif"
     show (Elif _) = "Elif"
 
-preprocessor = 
-    many $
-    (try (whiteSpace cpp >> symbol cpp "#") >> preprocessorLine) <|> fmap Text plainLine
-    
-preprocessorLine = 
+line = (try (whiteSpace cpp >> symbol cpp "#") >> directive) <|> fmap Text plainLine
+
+directive = 
     (reserved cpp "if" >> expression >>= \e -> return $ If e)
     <|> (reserved cpp "elif" >> expression >>= \e -> return $ Elif e)
     <|> (reserved cpp "ifdef" >> definedMacroCondition >>= \e -> return $ If e)
@@ -54,7 +52,7 @@ definedMacroCondition = do
 
 negateExpr e = e >>= \x -> return (if x /= 0 then 0 else 1)
     
-expression = buildExpressionParser optable basic
+expression = try (buildExpressionParser optable basic) <|> return (return 0)
     where
         basic :: CharParser () Expr    
         basic = do i <- integer cpp
@@ -88,7 +86,7 @@ expression = buildExpressionParser optable basic
 
 plainLine = do
     cs <- many (noneOf "\n\r")
-    oneOf "\n\r"
+   --  oneOf "\n\r"
     return cs
 
 data PPState = PPSIf Bool | PPSElse
@@ -101,11 +99,12 @@ macros = Map.fromList
      ("MAC_OS_X_VERSION_10_2", 1020),
      ("MAC_OS_X_VERSION_10_3", 1030),
      ("MAC_OS_X_VERSION_10_4", 1040),
-     ("MAC_OS_X_VERSION_10_5", 1050)
+     ("MAC_OS_X_VERSION_10_5", 1050),
+     ("__OBJC__", 1)
     ]
 
-execute :: [PPLine] -> String
-execute xs = unlines $ evalState (exec xs []) macros where
+execute :: String -> [PPLine] -> String
+execute filename xs = unlines $ evalState (exec xs []) macros where
     exec (If e : xs) state@( (_, False) : _ )
         = output "//#if" $ exec xs ((PPSIf False, False) : state)
 --    exec (Elif e : xs) state@( (PPSIf False, False) : (_, False) : _ )
@@ -132,15 +131,15 @@ execute xs = unlines $ evalState (exec xs []) macros where
         = output "//#else" $ exec xs ((PPSElse, b) : state)
     exec (Text t : xs) state
         = output t $ exec xs state
-    exec a@(_:_) b = error $ show (a,b)
+    exec a@(_:_) b = error $ "Preprocessor error in file " ++ filename ++ " " ++ show (a,b)
     exec [] [] = return []
-    exec [] s = error (show $ s)
+    exec [] s = error $ "Preprocessor error in file " ++ filename ++ " " ++ show s
 
     output t more = do moreText <- more
                        return (t : moreText)
                        
     
-test = putStrLn $ either show execute $ parse preprocessor "" 
+test = putStrLn $ execute "test" $ parseDirectives 
    "#include <foo>\n\
     \blah\n\
     \foo bar\n\
@@ -150,20 +149,30 @@ test = putStrLn $ either show execute $ parse preprocessor ""
     \quux\n\
     \#endif\n"
 
+unblockComments ('/' : '*' : xs) = "/*" ++ handleComment xs
+    where handleComment ('*' : '/' : xs) = "*/" ++ unblockComments xs
+          handleComment ('\n' : xs) = "*/\n/*" ++ handleComment xs
+          handleComment (c : xs) = c : handleComment xs
+          handleComment [] = []
+unblockComments (c : xs) = c : unblockComments xs
+unblockComments [] = "\n"
+
+parseDirectives = map (\l -> case parse line "" l of
+                                Left e -> Text $ l ++ "// " ++ show (show e)
+                                Right x -> x) . lines . unblockComments
+
 test2 fn = do
-    f <- readFile $ "/System/Library/Frameworks/Foundation.framework/Versions/C/Headers/" ++ fn
-    putStrLn $ either show execute $
-        parse preprocessor fn f
+--    f <- readFile $ "/System/Library/Frameworks/Foundation.framework/Versions/C/Headers/" ++ fn
+    f <- readFile $ "/usr/lib/GNUstep/System/Library/Headers/" ++ fn
+    putStrLn $ execute fn $ parseDirectives f
         
 
 test3 fn = do
     f <- readFile $ "/System/Library/Frameworks/Foundation.framework/Versions/C/Headers/" ++ fn
     -- putStrLn $ 
     putStrLn fn
-    print $ length $ either show execute $
-        parse preprocessor f f
+    print $ length $ execute fn $ parseDirectives f
         
         
-preprocess fn f = either (\x -> error $ "Preprocessor error:" ++ show x) 
-                         execute
-                         $ parse preprocessor fn $ (++"\n") $ f
+preprocess fn f = execute fn $ parseDirectives f
+
