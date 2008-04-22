@@ -1,4 +1,4 @@
-check: static dynamic
+check: static
 
 static: TestFoundation.static
 	./TestFoundation.static

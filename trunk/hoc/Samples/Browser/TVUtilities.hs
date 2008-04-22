@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fglasgow-exts -fth #-}
+
 module TVUtilities(
         TVData(..),
         TVDataItem(..),

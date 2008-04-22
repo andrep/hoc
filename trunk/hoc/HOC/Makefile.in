@@ -49,7 +49,7 @@ libHOC_dyn.dylib: ghcmake.build-stamp
 	install_name_tool -id "`pwd`/$@" $@
 
 HOC.o: libHOC.a
-	ld -r -x -o HOC.o $(ALL_LOAD) libHOC.a
+	ld_classic -r -x -o HOC.o $(ALL_LOAD) libHOC.a
 
 ghcmake: ghcmake.build-stamp
 
@@ -71,6 +71,7 @@ ghcmake.build-stamp:
 		-I../HOC_cbits	\
 		-I../libffi-src/build/include	\
 		-package-name HOC \
+		-package unix \
 		$(FOUNDATION_INCLUDES) \
 		$(FOUNDATION_LIBS)      \
                 $(DEFINES)  \

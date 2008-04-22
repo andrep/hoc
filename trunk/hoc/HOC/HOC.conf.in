@@ -32,7 +32,7 @@ exposed-modules:
     HOC.Selectors
 
 hs-libraries:       "HOC", "HOC_cbits"
-depends:            base, template-haskell
+depends:            base, template-haskell, unix
 
 #if GNUSTEP
 extra-libraries:    "gnustep-base", "objc"
