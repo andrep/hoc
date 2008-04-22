@@ -3,7 +3,7 @@ module Main where
 
 import Test.HUnit
 import Prelude hiding(init)
-import Foundation -- hiding(test)
+import Foundation hiding(test)
 import Foundation.NSObject(init)
 
 import System.Mem           ( performGC )

@@ -1,4 +1,4 @@
-{-# OPTIONS -fglasgow-exts #-}
+{-# OPTIONS_GHC -fglasgow-exts -fth #-}
 
 module EPController where
 
@@ -17,7 +17,7 @@ $(exportClass "EPController" "ep_"
   ]
  )
 
-obj #. var = obj # getIVar var
+-- obj #. var = obj # getIVar var
 
 ep_evaluateExpression _ self = do
 expression <- self #. _expressionEntry >>= stringValue >>= haskellString

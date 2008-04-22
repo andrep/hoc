@@ -33,7 +33,7 @@ OBJS_tmp1 = $(SRCS:%.c=%.o)
 OBJS_tmp2 = $(OBJS_tmp1:%.S=%.o)	
 OBJS = $(OBJS_tmp2:%.m=%.o)
 
-CFLAGS += -g -I../libffi-src/include -fno-common -DMACOSX
+CFLAGS += -isysroot /Developer/SDKs/MacOSX10.4u.sdk -g -I../libffi-src/include -fno-common -DMACOSX
 ASFLAGS += -I../libffi-src/include -DMACOSX
 
 ifeq "$(HocBuildDylibs)" "YES"
@@ -50,7 +50,7 @@ clean:
 	rm -rf libHOC_cbits.a HOC_cbits.o $(OBJS) depend
 
 HOC_cbits.o: libHOC_cbits.a
-	ld -r -x -o HOC_cbits.o $(ALL_LOAD) libHOC_cbits.a
+	ld_classic -r -x -o HOC_cbits.o $(ALL_LOAD) libHOC_cbits.a
 	if test $(PLATFORM) == gnustep; then \
 	  strip --strip-debug HOC_cbits.o; \
 	fi

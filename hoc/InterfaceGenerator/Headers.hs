@@ -44,7 +44,7 @@ headersIn dirName prefix = do
 
 headersForFramework framework =
     if System.Info.os == "darwin"
-        then headersIn ("/System/Library/Frameworks/" ++ framework ++ ".framework/Headers/") framework
+        then headersIn ("/Developer/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks/" ++ framework ++ ".framework/Headers/") framework
         else headersIn ("/usr/lib/GNUstep/System/Library/Headers/" ++ framework ++ "/") framework
 
 translateObjCImport imp = haskellizeModuleName $

@@ -57,6 +57,7 @@ ghcmake.build-stamp:
 		-hidir build/imports	\
 		-package-conf ../inplace.conf \
 		-fglasgow-exts -fth\
+		-package unix \
 		$(EXTRA_GHCFLAGS)
                 
 	test ! -r GNUstepBase.hs || \
