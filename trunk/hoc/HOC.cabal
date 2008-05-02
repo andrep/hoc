@@ -1,5 +1,7 @@
 name: HOC
 version: 1.0
+license: BSD4
+license-file: LICENSE
 cabal-version: >= 1.2
 extra-tmp-files: HOC.buildinfo
 
