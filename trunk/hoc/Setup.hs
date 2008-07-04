@@ -61,6 +61,8 @@ customPreBuild args buildFlags = do
         ExitSuccess -> return ()
         _ -> fail "Failed in C compilation."
     
+    -- system "cp dist/build/HOC_cbits.o dist/build/HOC_cbits.dyn_o"
+    
     let buildInfo = emptyBuildInfo {
             options = [ (GHC, ["dist/build/HOC_cbits.o" ]
                               ++ paths ++

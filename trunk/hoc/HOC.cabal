@@ -5,9 +5,13 @@ license-file: LICENSE
 cabal-version: >= 1.2
 extra-tmp-files: HOC.buildinfo
 
+Flag BinaryInterfaces
+    description: write HOC interface generator files in binary format
+                 (requires binary package)
+
 Library
     build-depends: base, containers, bytestring, mtl, pretty, parsec, fgl,
-                   template-haskell, binary >= 0.2, old-time, directory, unix
+                   template-haskell, old-time, directory, unix
     exposed-modules:
         HOC,
         HOC.NameCaseChange,
@@ -39,8 +43,6 @@ Library
         HOC.TH,
         HOC.Unicode,
         HOC.Utilities
-    extra-libraries: objc, ffi
-    frameworks: Foundation
     hs-source-dirs: HOC
     extensions: MagicHash, TemplateHaskell,
                 ForeignFunctionInterface, GeneralizedNewtypeDeriving,
@@ -57,8 +59,12 @@ Library
         extra-libraries: gnustep-base
         ghc-options: -DGNUSTEP
 
+
 Executable hoc-ifgen
     main-is: Main.hs
     hs-source-dirs: HOC, InterfaceGenerator2
 
-
+    if flag(BinaryInterfaces)
+        build-depends: binary >= 0.2
+    if flag(BinaryInterfaces)
+        ghc-options: -DBINARY_INTERFACES
