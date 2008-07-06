@@ -9,6 +9,7 @@ function build()
 
 ARGUMENTS=$*
 
+set -e
 mkdir -p Generated
 cd Generated
 
