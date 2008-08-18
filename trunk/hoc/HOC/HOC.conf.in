@@ -35,9 +35,9 @@ hs-libraries:       "HOC", "HOC_cbits"
 depends:            base, template-haskell, unix
 
 #if GNUSTEP
-extra-libraries:    "gnustep-base", "objc"
+extra-libraries:    "gnustep-base", "objc" PKG_EXTRA_LIBS
 #else
-extra-libraries:    "objc"
+extra-libraries:    "objc" PKG_EXTRA_LIBS
 frameworks:         Foundation
 #endif
 
@@ -46,8 +46,10 @@ import-dirs:        "../HOC/build/imports"
 library-dirs:       "../HOC"
                     "../HOC_cbits"
                     FOUNDATION_LIB_DIRS
+                    FFI_LIB_DIRS
 #else
 import-dirs:        GHC_LIB_PATH/HOC/imports
 library-dirs:       GHC_LIB_PATH/HOC
                     FOUNDATION_LIB_DIRS
+                    FFI_LIB_DIRS
 #endif

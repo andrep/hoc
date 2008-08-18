@@ -1,23 +1,22 @@
 include ../config.mk
 
-dist_srcdir = InterfaceGenerator
+dist_srcdir = InterfaceGenerator2
 dist_FILES = \
 	$(wildcard *.hs) \
 	Makefile.in \
 	$(NULL)
 
-all: ifgen
+all: hoc-ifgen
 
-ifgen:
+hoc-ifgen:
 	mkdir -p build
 	$(GHC)  --make Main.hs	\
-		-fPIC \
 		-odir build -hidir build \
 		-package-conf ../inplace.conf \
 		-o $@
 		
 clean:
-	rm -rf ifgen build
+	rm -rf hoc-ifgen build
 
 install: all
 	echo "Interface Generator will be used in-place."
