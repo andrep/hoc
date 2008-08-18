@@ -12,10 +12,12 @@ dist_FILES = \
 	$(NULL)
 
 ifeq "$(HocBuildDylibs)" "YES"
-LIBRARIES=libHOC.a libHOC_dyn.dylib
+LIBRARIES=libHOC.a libHOC.dylib
 else
 LIBRARIES=libHOC.a HOC.o
 endif
+
+FOUND_SOURCES := $(shell find . -name '*.hs')
 
 HOCLIBDIR="$(destdir)"/$(GHC_LIB_PATH)/HOC
 
@@ -29,52 +31,59 @@ all: $(LIBRARIES) ../inplace.conf
 %.conf: %.conf.in
 	gcc -E -x c -DGHC_LIB_PATH=@GHC_LIB_PATH@ \
         	-DFOUNDATION_LIB_DIRS=@HOC_FOUNDATION_LIB_DIRS@ \
+			-DFFI_LIB_DIRS=@FFI_LIB_DIRS@ \
+			-DPKG_EXTRA_LIBS=@PKG_EXTRA_LIBS@ \
 		@HOC_DEFINES@ $< | grep -v '^#' > $@ 
 %.conf-inplace: %.conf.in
 	gcc -E -x c -DINPLACE=1 \
 		-DGHC_LIB_PATH=@GHC_LIB_PATH@ \
         	-DFOUNDATION_LIB_DIRS=@HOC_FOUNDATION_LIB_DIRS@ \
+			-DFFI_LIB_DIRS=@FFI_LIB_DIRS@ \
+			-DPKG_EXTRA_LIBS=@PKG_EXTRA_LIBS@ \
 		@HOC_DEFINES@ $< | grep -v '^#' > $@ 
 
 libHOC.a: ghcmake.build-stamp
 	find build/objects/ -name \*.o | xargs $(MAKE_STATIC_LIB) libHOC.a
 
-libHOC_dyn.dylib: ghcmake.build-stamp
-	export MACOSX_DEPLOYMENT_TARGET=10.3 && find build/objects/ -name \*.o \
+libHOC.dylib: ghcmake.build-stamp
+	find build/objects/ -name \*.o \
 	 | xargs libtool \
 	   -dynamic \
+	   $(FFI_LIBS) \
 	   -undefined dynamic_lookup \
 	   -single_module \
 	   -o $@
 	install_name_tool -id "`pwd`/$@" $@
 
 HOC.o: libHOC.a
-	ld_classic -r -x -o HOC.o $(ALL_LOAD) libHOC.a
+	ld -r -x -o HOC.o $(FFI_LIBS) $(ALL_LOAD) libHOC.a
 
 ghcmake: ghcmake.build-stamp
 
 ifeq "$(HocBuildDylibs)" "YES"
-CBITS=-L../HOC_cbits -lHOC_cbits_dyn
+CBITS=-L../HOC_cbits -lHOC_cbits
 else
 CBITS=../HOC_cbits/HOC_cbits.o
 endif
 
-ghcmake.build-stamp:
+ghcmake.build-stamp: $(FOUND_SOURCES)
 	mkdir -p build/objects
 	mkdir -p build/imports
-	$(GHC) --make HOC.hs	\
+	$(GHC) --make HOC.hs \
 		-O -fasm \
+		-fPIC \
 		-odir build/objects -hidir build/imports	\
 		-fglasgow-exts -fth \
-        -lobjc      \
+		-lobjc      \
 		$(CBITS)	\
 		-I../HOC_cbits	\
-		-I../libffi-src/build/include	\
+		$(FFI_CFLAGS)	\
+		$(FFI_LIBS)     \
 		-package-name HOC \
 		-package unix \
 		$(FOUNDATION_INCLUDES) \
 		$(FOUNDATION_LIBS)      \
-                $(DEFINES)  \
+		$(DEFINES)  \
 		$(EXTRA_GHCFLAGS)
 	touch $@
 
@@ -86,7 +95,7 @@ clean:
 install: install-files
 	ranlib $(HOCLIBDIR)/libHOC.a
 ifeq "$(HocBuildDylibs)" "YES"
-	install_name_tool -id $(HOCLIBDIR)/libHOC_dyn.dylib $(HOCLIBDIR)/libHOC_dyn.dylib
+	install_name_tool -id $(HOCLIBDIR)/libHOC.dylib $(HOCLIBDIR)/libHOC.dylib
 endif
 	$(GHC_PKG) update HOC.conf
        
