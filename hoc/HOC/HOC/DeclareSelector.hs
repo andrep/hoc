@@ -83,9 +83,11 @@ declareRenamedSelector name haskellName typeSigQ =
             (isPure, pureType) = case resultType typeSig of
                 (ConT con) `AppT` ty
                     | con == ''IO -> (False, ty)
-                ty -> error $ haskellName ++ " --- selector type must be in the IO monad"
-                -- ty -> (True, ty)
-            
+                    | otherwise -> badType
+                ty -> badType
+                where
+                    badType = error $ haskellName ++ " --- selector type must be in the IO monad"
+  
             -- isUnit is a boolean which is true if pureType is unit.  This 
             -- will eventually be used by makeMarsheller and marshellerName
             isUnit = pureType == ConT ''()
