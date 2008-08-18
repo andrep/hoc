@@ -19,6 +19,8 @@ foreign import ccall unsafe unwrapHaskellException :: Ptr ObjCObject -> IO (Stab
 
 exceptionObjCToHaskell :: Ptr ObjCObject -> IO a
 
+-- get the exception pointer figure out if it is a NSException
+-- or a haskell exception and throw it.
 exceptionObjCToHaskell exception = do
     sptr <- unwrapHaskellException exception
     if (castStablePtrToPtr sptr == nullPtr)

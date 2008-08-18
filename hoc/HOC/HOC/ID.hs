@@ -53,19 +53,31 @@ instance Eq (ID a) where
 -- HSO: HaskellSideObject
 data HSO = HSO (Ptr ObjCObject) [Dynamic]
 
+-- don't we love globals?  This needs -fno-cse to be truely safe.
 objectMapLock = unsafePerformIO $ newMVar ()
 {-# NOINLINE objectMapLock #-}
 
+-- given a pointer to an ObjCObject, return a stablePtr to a Weak reference to 
+-- a HSO
 foreign import ccall unsafe "ObjectMap.h getHaskellPart"
     getHaskellPart :: Ptr ObjCObject -> IO (StablePtr (Weak HSO))
+-- Sets the mapping of an ObjCObject to the HSO.  The CInt is a boolean flag 
+-- used to set whether or not this objective-c object is immortal.  The is 
+-- equivelent to saying removeHaskellPart will never be called for this object
 foreign import ccall unsafe "ObjectMap.h setHaskellPart"
     setHaskellPart :: Ptr ObjCObject -> StablePtr (Weak HSO) -> CInt -> IO ()
+-- remove the objcobject->HSO mapping.  You have to pass both because this 
+-- method does nothing if the objCObject maps to a different HSO.  This can 
+-- happen if the finalizer ran late and the object was reimported in the 
+-- meantime.
 foreign import ccall unsafe "ObjectMap.h removeHaskellPart"
     removeHaskellPart :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
+-- returns number of objects allocated in the map and the immortal count in the 
+-- two pointers.
 foreign import ccall unsafe "ObjectMap.h objectMapStatistics"
     c_objectMapStatistics :: Ptr CUInt -> Ptr CUInt -> IO ()
 
-    -- must be "safe", because it calls methods implemented in Haskell
+-- must be "safe", because it calls methods implemented in Haskell.
 foreign import ccall safe "GetNewHaskellData.h getNewHaskellData"
     getNewHaskellData :: Ptr ObjCObject -> IO (StablePtr ([Dynamic]))
 foreign import ccall safe "GetNewHaskellData.h getNewHaskellDataForClass"
@@ -85,20 +97,28 @@ foreign import ccall unsafe "NSObjectReferenceCount.h NSDecrementExtraRefCountWa
 foreign import ccall unsafe "NSObjectReferenceCount.h NSExtraRefCount"
     nsExtraRefCount :: Ptr ObjCObject -> IO CUInt
 
+
 instance ObjCArgument (ID a) (Ptr ObjCObject) where
+    -- remember that thing may be lazy and never evaluated,
+    -- including by "action"  Thus you must evaluate "thing"
+    -- to ensure that the HSO object is properly allocated.
     withExportedArgument (ID thing@(HSO arg _)) action = do
         result <- action arg
         evaluate thing  -- make sure it's still alive
         return result
     withExportedArgument Nil action = action (nullPtr)
-
+    
+    -- Again, as above, only this time, we need to make sure the object is 
+    -- retained long enough to be useful as an argument.
     exportArgument (ID thing@(HSO arg _)) = do
         retainObject arg
         evaluate thing  -- make sure the HSO has been alive until now
         autoreleaseObject arg
         return arg
     exportArgument Nil = return nullPtr
-    
+   
+    -- this time with no autorelease.  This method effectively claims
+    -- ownership of the object.
     exportArgumentRetained (ID thing@(HSO arg _)) = do
         retainObject arg
         evaluate thing  -- make sure the HSO has been alive until now
@@ -111,8 +131,10 @@ instance ObjCArgument (ID a) (Ptr ObjCObject) where
 
 importImmortal = importArgument' True
 
+-- this is where the mogic happens.
 importArgument' immortal p
     | p == nullPtr = return Nil
+    -- objectMapLock is a global, thanks to unsafePerformIO
     | otherwise = withMVar objectMapLock $ \_ -> do
         sptr <- getHaskellPart p
         mbHaskellObj <-
@@ -123,7 +145,9 @@ importArgument' immortal p
                 else
                     return Nothing
         case mbHaskellObj of
+            -- if the HSO already exists, we're done!
             Just haskellObj -> return $ ID haskellObj
+            -- notice that the finalizer definition requires new_sptr
             Nothing -> mdo  {- it's much more pratical than fixM -}
                 haskellData <- makeNewHaskellData p
                 let haskellObj = HSO p (fromMaybe [] haskellData)
@@ -154,6 +178,7 @@ finalizeHaskellID cObj sptr = do
     assert (extraRefs == 0) deallocObject cObj
     freeStablePtr sptr
 
+-- 
 makeNewHaskellData p = do
     stable <- getNewHaskellData p
     if (castStablePtrToPtr stable == nullPtr)
@@ -227,6 +252,7 @@ haskellObject_release self = do
     when (wasZero /= 0) $ do
         deallocObject self
 
+-- this is the implementation of the __getHaskellData__ selector.
 getHaskellData_IMP :: Ptr ObjCObject -> Maybe (IO Dynamic)
                     -> FFICif -> Ptr () -> Ptr (Ptr ()) -> IO (Ptr ObjCObject)
 getHaskellData_IMP super mbDat cif ret args = do

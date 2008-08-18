@@ -73,37 +73,60 @@ declareRenamedSelector name haskellName typeSigQ =
             imptypeName = "ImpType_" ++ haskellName
        
             nArgs = countArgs typeSig
-       
+            
+            -- isPure is a boolean that indicates if the resultType of our type
+            -- signature is not in the IO mondad
+            -- 
+            -- pureType is the type that was used to initalize IO
+            -- 
+            -- all selectors must be in the IO monad.
             (isPure, pureType) = case resultType typeSig of
                 (ConT con) `AppT` ty
                     | con == ''IO -> (False, ty)
                 ty -> error $ haskellName ++ " --- selector type must be in the IO monad"
                 -- ty -> (True, ty)
-    
+            
+            -- isUnit is a boolean which is true if pureType is unit.  This 
+            -- will eventually be used by makeMarsheller and marshellerName
             isUnit = pureType == ConT ''()
 
             (resultRetained, doctoredTypeSig) = doctorType typeSig className
             
+            -- resultType --
+            -- given a type, returns the return value, all applications
             resultType (ForallT vars ctxt ty) = resultType ty
             resultType ((ArrowT `AppT` _) `AppT` rest) = resultType rest
             resultType other = other
-
+            
+            -- countArgs
+            -- return the number of arguments that the function takes.
             countArgs (ForallT vars ctxt ty) = countArgs ty
             countArgs ((ArrowT `AppT` _) `AppT` rest) = 1 + countArgs rest
             countArgs other = 0
-
+            
+            -- substitute the result of the second argument for the first. 
             replaceResult new (ForallT vars ctxt ty) = ForallT vars ctxt (replaceResult new ty)
             replaceResult new ((ArrowT `AppT` arg) `AppT` rest) =
                 (ArrowT `AppT` arg) `AppT` replaceResult new rest
             replaceResult new result = new
 
+            -- this takes:
+            -- forall <names> (context). (forall <names>' (context'). type')
+            -- and turns it into
+            -- forall <names> ++ <names>' (context ++ context'). type'
+            -- Thus it "flattens" foralls
             liftForalls (ForallT names cxt ty)
                 = case liftForalls ty of
                     ForallT names' cxt' ty'
                         -> ForallT (names ++ names') (cxt ++ cxt') ty'
                     ty' -> ForallT names cxt ty'
             liftForalls other = other
-			
+            
+            -- this takes a type and a class name and produces another type:
+            -- forall target instance.
+            --     (className target, ClassAndObject target instance) .
+            --     (target-> covarientResult)
+            --  
             doctorType ty className = 
                     (
                         retained,
@@ -123,7 +146,18 @@ declareRenamedSelector name haskellName typeSigQ =
                 where
                     (retained, needInstance, targetType, covariantResult) =
                         doctorCovariant $ resultType ty
-
+            -- 
+            -- doctorCovariant --
+            -- The values returned in the 4-tuple are:
+            -- retained: true if this object has been retained after this 
+            -- method call
+            -- needInstance: true if this method needs an instance passed in 
+            -- (eg. is it "static")
+            -- targetType:
+            -- covarientResult: TODO
+            --
+            -- the first form handles almost all the types that deal with 
+            -- reference count types.  Retained is handled below
             doctorCovariant (ConT con)
                 | con == ''Covariant =
                     (False, False, Nothing, VarT $ mkName "target")
@@ -136,7 +170,7 @@ declareRenamedSelector name haskellName typeSigQ =
                     (True, False,
                         Just (ConT ''NewlyAllocated `AppT` VarT (mkName "target")),
                                     VarT (mkName "target"))
-                                    
+             
             doctorCovariant (ConT con `AppT` ty) | con == ''Retained =
                     (True,inst', target', ty')
                 where (_,inst', target', ty') = doctorCovariant ty

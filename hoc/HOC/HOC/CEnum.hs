@@ -10,7 +10,29 @@ import Foreign.C        ( CInt )
 class CEnum a where
     fromCEnum :: a -> CInt
     toCEnum :: CInt -> a
-    
+
+-- CEnums  Typesafe C enumerations (gasp!)
+--
+-- looks like this:
+-- data TransformedName = Name1 | Name2 | Name3 | Name4
+--  deriving (Eq,Ord,Read,Show)
+-- 
+-- instance CEnum TransformedName where
+--      fromCEnum = \x -> case x of
+--          Name1 = 1
+--          Name2 = 2
+--          ...
+--      ... similarily for toCEnum
+-- instance ObjCArgument TransformedName CInt
+--      where
+--          exportArgument = return . fromCEnum
+--          ...
+--  name1 = Name1
+--  name2 = Name2
+--  ...
+--where all the names are more or less transformed by mkName . nameToUppercase
+--I don't know why there is both the constructors and the literal names.
+
 declareCEnum name assocs
     = sequence $ [
             dataD (cxt []) typ []
@@ -48,6 +70,10 @@ declareCEnum name assocs
         constants = map (mkName . nameToLowercase . fst) assocs
         values = map snd assocs
         
+-- delcarAnonymousCEnum --
+-- A list of:
+-- anon1 :: forall a. Num a => a
+-- anon1 = 1
 declareAnonymousCEnum assocs
     = sequence $ concat [
             [
@@ -59,7 +85,12 @@ declareAnonymousCEnum assocs
     where
         constants = map (mkName . nameToLowercase . fst) assocs
         values = map snd assocs
-
+-- takes a list of (pattern, block) tuples and returns a list of lamnda quotes 
+-- of the form:
+-- \x -> case x of
+--      p1 -> b1
+--      b2 -> b2
+--      ...
 mkCaseMap ps = [| \x -> $(caseE [|x|] $ map (\(a,b) -> match a (normalB b) []) ps) |]
 
     -- use Read and Show classes to avoid a GHC 6.4 bug:

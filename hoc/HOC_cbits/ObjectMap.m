@@ -25,6 +25,9 @@ NSMapTable *getTheObjectMap()
     return gObjectMap;
 }
 
+/* 
+ * This gets the HSO, given a obj-c part of an object.
+ */
 void *getHaskellPart(void* objcPart)
 {
 #if DO_LOG
