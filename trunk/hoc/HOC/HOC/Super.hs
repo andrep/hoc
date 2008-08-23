@@ -18,6 +18,8 @@ import Foreign
         super self # foo
 -}
 
+-- This defines the type class for type inheritance.  sub uniquely defines 
+-- super, which is sufficient to define a class hierarchy.
 class SuperClass sub super | sub -> super
 
 data SuperTarget a = SuperTarget a
