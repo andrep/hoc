@@ -51,8 +51,10 @@ writeMasterModule masterModuleName realModuleNames selNamesList = do
     
 
 main = do
+    -- the binding script contains various instructions on how to type, rename 
+    -- or otherwise process our modules.
     bindingScript <- readBindingScript "binding-script.txt"
-    
+   
     if System.Info.os == "darwin"
         then createOutputDirectories ["Foundation", "AppKit"]
         else createOutputDirectories ["Foundation", "AppKit", "GNUstepBase", "GNUstepGUI"]
@@ -66,6 +68,8 @@ main = do
         if System.Info.os == "darwin"
             then headersForFramework "AppKit"
             else fmap concat $ mapM headersForFramework ["AppKit", "GNUstepGUI" ]
+    -- loadHeaders returns a HeaderInfo which contains a module name, a list of 
+    -- imports, and a list of declarations.
     foundationModules <- loadHeaders foundationHeaders
     appKitModules <- loadHeaders appKitHeaders
     

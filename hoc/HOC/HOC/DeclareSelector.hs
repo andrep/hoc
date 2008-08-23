@@ -41,6 +41,10 @@ marshallersUpTo = 4
 {-# NOINLINE method4 #-}
 {-# NOINLINE method4_ #-}
 
+-- This creates a bunch of common CIFs, and a list describing what has been 
+-- created.  Prior to instantiating a new CIF, this list is checked to see if 
+-- one has been provided by this library and use that instead.  This saves 
+-- memory.
 $(makeCannedCIFs [
         [t| ID () -> IO () |],
         [t| ID () -> IO (ID ()) |],
@@ -106,7 +110,8 @@ declareRenamedSelector name haskellName typeSigQ =
             countArgs ((ArrowT `AppT` _) `AppT` rest) = 1 + countArgs rest
             countArgs other = 0
             
-            -- substitute the result of the second argument for the first. 
+            -- substitute the result of the second argument for the first from 
+            -- within arrows and foralls only.
             replaceResult new (ForallT vars ctxt ty) = ForallT vars ctxt (replaceResult new ty)
             replaceResult new ((ArrowT `AppT` arg) `AppT` rest) =
                 (ArrowT `AppT` arg) `AppT` replaceResult new rest
@@ -124,11 +129,18 @@ declareRenamedSelector name haskellName typeSigQ =
                     ty' -> ForallT names cxt ty'
             liftForalls other = other
             
-            -- this takes a type and a class name and produces another type:
-            -- forall target instance.
+            -- this takes a type and a class name.
+            --
+            -- It starts by producing one of two polymorphic type declarations:
+            -- if needInstance is true:
+            -- forall target instance =>
             --     (className target, ClassAndObject target instance) .
-            --     (target-> covarientResult)
-            --  
+            --     (target-> covariantResult)
+            -- if needInstances is false:
+            --  forall target =>  (className target) .
+            --      (target-> covariantResult)
+            -- covarianResult is determined by:
+            --
             doctorType ty className = 
                     (
                         retained,
@@ -156,10 +168,21 @@ declareRenamedSelector name haskellName typeSigQ =
             -- needInstance: true if this method needs an instance passed in 
             -- (eg. is it "static")
             -- targetType:
-            -- covarientResult: TODO
+            -- covarientResult: This is the covarient return type.  It's 
+            -- "target" 
             --
             -- the first form handles almost all the types that deal with 
             -- reference count types.  Retained is handled below
+            --
+            -- A Covarient type is a type that returns an object.
+            -- typical Objective C object returns are Covariant because you can 
+            -- return any type more specific than the declared one, and assign 
+            -- upwards as well.
+            -- A CovariantInstance type that is a factory method.  This is a 
+            -- Covariant return that also initializes a new object.
+            --
+            -- However, currently Covariant and Covariant instance are not 
+            -- detected.  It has to be specified in the binding script.
             doctorCovariant (ConT con)
                 | con == ''Covariant =
                     (False, False, Nothing, VarT $ mkName "target")
@@ -172,7 +195,8 @@ declareRenamedSelector name haskellName typeSigQ =
                     (True, False,
                         Just (ConT ''NewlyAllocated `AppT` VarT (mkName "target")),
                                     VarT (mkName "target"))
-             
+            
+            -- 
             doctorCovariant (ConT con `AppT` ty) | con == ''Retained =
                     (True,inst', target', ty')
                 where (_,inst', target', ty') = doctorCovariant ty
