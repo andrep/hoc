@@ -1,3 +1,5 @@
+.PHONY: thtests cleanthbuild
+
 check: static
 
 static: TestFoundation.static
@@ -23,7 +25,22 @@ TestFoundation.static: build TestFoundation.hs
 	 -o $@  -package-conf ../inplace.conf \
 	 -package Foundation --make TestFoundation.hs
 
-clean:
+thbuild:
+	mkdir -p thbuild/static/imports
+	mkdir -p thbuild/static/objects
+
+cleanthbuild:
+	rm -rf thbuild
+
+TestHOCDeclareSelector: thbuild TestHOCDeclareSelector.hs TestHOCDeclareSelectorForward.hs
+	ghc -odir thbuild/static/objects -hidir thbuild/static/imports \
+	 -pgml true  -fth -o $@ -package-conf ../inplace.conf \
+	 -package HOC --make TestHOCDeclareSelector.hs \
+	 -main-is TestHOCDeclareSelector
+
+thtests: cleanthbuild TestHOCDeclareSelector
+
+clean: cleanthbuild
 	rm -rf build
 	rm -f TestFoundation.static
 	rm -f TestFoundation.dynamic

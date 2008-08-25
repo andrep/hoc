@@ -29,7 +29,9 @@ exposed-modules:
     HOC.Exception,
     HOC.ExternFunctions,
     HOC.Unicode,
-    HOC.Selectors
+    HOC.Selectors,
+    HOC.THDebug,
+    HOC.CannedCIFs
 
 hs-libraries:       "HOC", "HOC_cbits"
 depends:            base, template-haskell, unix
