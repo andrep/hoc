@@ -4,34 +4,88 @@ import HOC.Base         ( SEL )
 import HOC.Arguments    ( getCifForSelector )
 import HOC.ID           ( ID )
 import HOC.TH           ( fromSameModuleAs_v )
+import HOC.THDebug
+import Control.Monad    (when)
 
 import Data.List        ( intersperse )
-import Data.Maybe       ( catMaybes )
+import Data.Maybe       ( catMaybes, fromMaybe )
 import Data.Word        ( Word )
+import Data.Generics
 import Foreign          ( Ptr )
 import Foreign.C
 import Language.Haskell.TH
 
--- expandSynonyms (VarT Name) = (VarT Name)
--- expandSynonyms AppT (ConsT Name') (VarT Name) = typ >>= expandSynonyms1 
--- (ConstT Name') (VarT Name)
--- which goes back too AppT (ConsT Name') (VarT Name)
---
--- Transforms the type in the following way:
--- This effectively discards all polymorphism and type synonyms.
--- * Simple types (VarT, TupleT, ArrowT, ListT) are returned as is.
--- * Type applications are unpacked, first the latter half is expanded,
--- then the former have is expanded.
--- * Polymorphism is discarded
--- * If a constructor is encountered, the type of the constuctor is inspected.  
--- If that constructor is constructing a type synonym then the type synonym is 
--- removed by consuming a number of soon-to-be applyed types (stored in 
--- "pending") equal to the number of arguments in the type synonym, discarding 
--- the type synonym construct, and substituting the type of the arguments to 
--- the body of the type synonym (thus effectively removing all type synonyms)
--- 
-expandSynonyms typ
-    = typ >>= flip expandSynonyms1 []
+-- removes all foralls (leaving in type variables) and de-sugars all type 
+-- synonyms.
+expandSynonyms :: Type -> Q Type
+expandSynonyms typ = do
+    appTargs <- fromAppT typ [] >>= stripForalls >>= applySynonyms
+    return $ foldl1 AppT appTargs
+    where
+        -- turn a series of AppT arguments to a list recursively expanding the 
+        -- arguments as we go.
+        -- Notice that if a and b, after type synonym expansion consist of 
+        -- AppTs, we continue to expand them, so in a certain sense, this 
+        -- expansion "flattens" our AppTs
+        fromAppT :: Type -> [Type] -> Q [Type]
+        fromAppT (AppT a b) rest = do 
+            b' <- expandSynonyms b
+            fromAppT a (b' : rest)
+        fromAppT other rest = return $ other : rest
+        
+        -- While we're at it, we'll discard polymorphism.
+        stripForalls :: [Type] -> Q [Type]
+        stripForalls ((ForallT _ _ t):rest) = do
+            t' <- expandSynonyms t
+            rest' <- stripForalls rest
+            return $ t': rest'
+        stripForalls (x:xs) = stripForalls xs >>= return.(x:)
+        stripForalls [] = return []
+         
+        applySynonyms :: [Type] -> Q [Type]
+        applySynonyms args@((ConT n):typs) = do
+            info <- reify n
+            case info of
+                TyConI (TySynD _ args body) -> do
+                    -- so when we apply our synonym and remove them from the 
+                    -- list we might have a synonym left over!  So return the 
+                    -- whole list and applySynonyms again.  Essentially the 
+                    -- only way we can ever move forward through the list is if 
+                    -- the head element, after expansion, is not a type synonym
+                    -- constructor
+                    body' <- expandSynonyms (substTy taken body)
+                    syns <- applySynonyms $ body' : rest
+                    -- runIO $ showAST syns
+                    return syns
+                    where
+                        taken = zip args typs
+                        rest = drop (length taken) typs
+                _ -> skip1AndContinue args
+        applySynonyms args = skip1AndContinue args
+        
+        skip1AndContinue (t:typs)= do
+            typs' <- applySynonyms(typs)
+            return $ t:typs'
+        skip1AndContinue t = return t
+        
+        -- use mapping to replace all occurances of types.
+        -- the ForallT has to exclude names that were used as polymorphic type 
+        -- names, since they are unrelated to the types we're intending to
+        -- substitute.
+        -- Note that we still have ForallTs here because substTy is called on 
+        -- the result of a reify
+        substTy mapping (ForallT names cxt t)
+            = ForallT names cxt (substTy mapping' t)
+            where mapping' = filter (not . (`elem` names) . fst) mapping
+        substTy mapping (VarT name)
+            = fromMaybe (VarT name) (lookup name mapping)
+        substTy mapping (AppT a b)
+            = AppT (substTy mapping a) (substTy mapping b)
+        substTy _ other
+            = other
+
+expandSynonymsOrig
+    = flip expandSynonyms1 []
     where
         -- unwrap the AppT, expand b, push b' onto the pending list
         expandSynonyms1 (AppT a b) pending
@@ -77,6 +131,7 @@ expandSynonyms typ
         substTy _ other
             = other
 
+
 toplevelConstructor (AppT a b) = toplevelConstructor a
 toplevelConstructor (ConT n)   = Just n
 toplevelConstructor _          = Nothing
@@ -109,7 +164,13 @@ repTypeName t
 -- for quoted type qt, this returns 
 getCifTypeName qt
     = do
-        t <- expandSynonyms qt
+        runIO (putStrLn "Input" >> ppQ qt >> putStrLn "expandSynonyms:")
+        t <- expandSynonyms =<< qt
+        runIO (ppAST t)
+        t' <- expandSynonymsOrig =<< qt
+        runIO (putStrLn "expandSynonymsOrig:" >> ppAST t)
+        assertQ (t == t') "t and t' are not equal"
+
         -- arrowsToList --
         -- converts a type of a->b->c->d-> IO e to an
         -- array of the from [a b c d e]
