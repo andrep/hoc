@@ -164,12 +164,12 @@ repTypeName t
 -- for quoted type qt, this returns 
 getCifTypeName qt
     = do
-        runIO (putStrLn "Input" >> ppQ qt >> putStrLn "expandSynonyms:")
+        --runIO (putStrLn "Input" >> ppQ qt >> putStrLn "expandSynonyms:")
         t <- expandSynonyms =<< qt
-        runIO (ppAST t)
-        t' <- expandSynonymsOrig =<< qt
-        runIO (putStrLn "expandSynonymsOrig:" >> ppAST t)
-        assertQ (t == t') "t and t' are not equal"
+        --runIO (ppAST t)
+        --t' <- expandSynonymsOrig =<< qt
+        --runIO (putStrLn "expandSynonymsOrig:" >> ppAST t)
+        --assertQ (t == t') "t and t' are not equal"
 
         -- arrowsToList --
         -- converts a type of a->b->c->d-> IO e to an
