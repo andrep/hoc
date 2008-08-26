@@ -167,7 +167,7 @@ importArgument' immortal p
 finalizeID :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
 finalizeID cObj sptr = do
     withMVar objectMapLock $ \_ -> removeHaskellPart cObj sptr
-    releaseObject cObj
+    withAutoreleasePool (releaseObject cObj)
     freeStablePtr sptr
 
 finalizeHaskellID :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
@@ -175,7 +175,7 @@ finalizeHaskellID cObj sptr = do
     withMVar objectMapLock $ \_ -> removeHaskellPart cObj sptr
     extraRefs <- nsExtraRefCount cObj
     -- putStrLn "destroy haskelll object"
-    assert (extraRefs == 0) deallocObject cObj
+    assert (extraRefs == 0) (withAutoreleasePool $ deallocObject cObj)
     freeStablePtr sptr
 
 -- 
