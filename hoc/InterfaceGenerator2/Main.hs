@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Main where
 
 import Headers
@@ -23,8 +24,11 @@ import System.Environment
 import System.Console.GetOpt
 import Control.Exception
 
+#ifdef BINARY_INTERFACES
 import Data.Binary      ( encodeFile, decode )
 import BinaryInstances  ()
+#endif
+
 import qualified Data.ByteString.Lazy as LBS
 
 import BuildEntities
@@ -79,12 +83,29 @@ readFileWithProgress progress fn
         let n = BS.length bs
         return $ monitorList progress n $ BS.unpack bs
 
+#ifdef BINARY_INTERFACES
 decodeFileWithProgress progress fn
     = do
         bs <- fmap LBS.toChunks $ LBS.readFile fn
         let n = length bs
         return $ decode $ LBS.fromChunks $ monitorList progress n $ bs
+#endif
 
+readInterfaceFileWithProgress progress fn
+#ifdef BINARY_INTERFACES
+    = decodeFileWithProgress progress fn
+#else
+    = fmap read $ readFileWithProgress progress fn
+#endif
+
+writeInterfaceFileWithProgress progress fn entities
+#ifdef BINARY_INTERFACES
+    = encodeFile fn $
+        monitor progress $ localEntities $ entities
+#else
+    = writeFileIfChanged fn $ 
+        show $ monitor progress $ localEntities $ entities
+#endif
 
 data HeaderDirectory
     = FrameworkHeaders String
@@ -107,6 +128,8 @@ processFramework options -- bs frameworkName requiredFrameworks
                 oBindingScript options
         let requiredFrameworks = oRequiredFrameworks options
             frameworkName = oFrameworkName options
+        
+        putStrLn $ "*** Processing Framework " ++ frameworkName ++ " ***"
         
         importProgress    <- mapM newProgressReporter $
                              map ("Importing " ++) requiredFrameworks
@@ -137,10 +160,9 @@ processFramework options -- bs frameworkName requiredFrameworks
 
         loaded <- loadHeaders parseProgress headers
         
-        importedEMaps <- mapM (\(fn, progress) -> do
-                                if textInterfaces
-                                    then fmap read $ readFileWithProgress progress ("HOC-" ++ fn ++ "/" ++ fn ++ ".pi")
-                                    else decodeFileWithProgress progress ("HOC-" ++ fn ++ "/" ++ fn ++ ".pi") -- ###
+        importedEMaps <- mapM (\(fn, progress) ->
+                                readInterfaceFileWithProgress progress
+                                    ("HOC-" ++ fn ++ "/" ++ fn ++ ".pi")
                               )
                               (zip requiredFrameworks importProgress)
         
@@ -186,13 +208,9 @@ processFramework options -- bs frameworkName requiredFrameworks
             writeFileIfChanged (packageName ++ "/" ++ "Setup.hs") $
                 "import Distribution.Simple\nmain = defaultMain\n"
             
-            if textInterfaces
-                then
-                    writeFileIfChanged (packageName ++ "/" ++ frameworkName ++ ".pi") $ 
-                        show $ monitor exportProgress $ localEntities $ finalEntities
-                else
-                    encodeFile (packageName ++ "/" ++ frameworkName ++ ".pi") $
-                        monitor exportProgress $ localEntities $ finalEntities
+            writeInterfaceFileWithProgress exportProgress
+                                           (packageName ++ "/" ++ frameworkName ++ ".pi")
+                                           finalEntities
           `finally` do
                 
             closeMultiProgress multiProgress
