@@ -42,7 +42,9 @@ Library
         HOC.Super,
         HOC.TH,
         HOC.Unicode,
-        HOC.Utilities
+        HOC.Utilities,
+        HOC.THDebug
+
     hs-source-dirs: HOC
     extensions: MagicHash, TemplateHaskell,
                 ForeignFunctionInterface, GeneralizedNewtypeDeriving,
