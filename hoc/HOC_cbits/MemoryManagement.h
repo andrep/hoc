@@ -12,3 +12,6 @@ void deallocObject(id obj);
 
 void autoreleaseObject(id obj);
 NSAutoreleasePool *newAutoreleasePool();
+
+void releaseObjectWithPool(id obj);
+void deallocObjectWithPool(id obj);
