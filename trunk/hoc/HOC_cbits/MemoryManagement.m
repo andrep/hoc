@@ -105,3 +105,17 @@ NSAutoreleasePool *newAutoreleasePool()
 }
 
 #endif
+
+void releaseObjectWithPool(id obj)
+{
+    NSAutoreleasePool *pool = newAutoreleasePool();
+    releaseObject(obj);
+    releaseObject(pool);
+}
+
+void deallocObjectWithPool(id obj)
+{
+    NSAutoreleasePool *pool = newAutoreleasePool();
+    deallocObject(obj);
+    releaseObject(pool);
+}

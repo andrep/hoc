@@ -97,6 +97,20 @@ foreign import ccall unsafe "NSObjectReferenceCount.h NSDecrementExtraRefCountWa
 foreign import ccall unsafe "NSObjectReferenceCount.h NSExtraRefCount"
     nsExtraRefCount :: Ptr ObjCObject -> IO CUInt
 
+-- Since finalizers are executed in arbitrary threads, we must
+-- ensure that we establish an autoreleasepool for the duration
+-- of the execution of the release/dealloc messages.
+-- Since the execution of each finalizer might get spread out
+-- over several native threads, we perform the operation
+-- together with pool allocation in c, to avoid allocating the
+-- pool in one thread, executing the release/dealloc in a second
+-- and freeing the pool in a third.
+foreign import ccall "MemoryManagement.h releaseObjectWithPool"
+    releaseObjectWithPool :: Ptr ObjCObject -> IO ()
+foreign import ccall "MemoryManagement.h deallocObjectWithPool"
+    deallocObjectWithPool :: Ptr ObjCObject -> IO ()
+
+
 
 instance ObjCArgument (ID a) (Ptr ObjCObject) where
     -- remember that thing may be lazy and never evaluated,
@@ -167,7 +181,7 @@ importArgument' immortal p
 finalizeID :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
 finalizeID cObj sptr = do
     withMVar objectMapLock $ \_ -> removeHaskellPart cObj sptr
-    withAutoreleasePool (releaseObject cObj)
+    releaseObjectWithPool cObj
     freeStablePtr sptr
 
 finalizeHaskellID :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
@@ -175,7 +189,7 @@ finalizeHaskellID cObj sptr = do
     withMVar objectMapLock $ \_ -> removeHaskellPart cObj sptr
     extraRefs <- nsExtraRefCount cObj
     -- putStrLn "destroy haskelll object"
-    assert (extraRefs == 0) (withAutoreleasePool $ deallocObject cObj)
+    assert (extraRefs == 0) (deallocObjectWithPool cObj)
     freeStablePtr sptr
 
 -- 
