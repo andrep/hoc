@@ -66,6 +66,7 @@ exportClass :: String -- ^ Name of class you're exporting, e.g. "MyDocument"
 	    -> Q [Dec] -- ^ A Haskell declaration, which can be spliced in
 	               --   with Template Haskell's $(...) syntax
 exportClass name prefix members = sequence $ [
+        sigD (mkName exportFunName) [t| IO () |],
         valD (varP $ mkName exportFunName)
             (normalB (mkClassExportAction name prefix members)) [],
         dataD (cxt []) (mkName instanceDataName) []
@@ -96,18 +97,26 @@ exportClass name prefix members = sequence $ [
         instTy = conT (mkName instanceDataName)
         nIVars = length ivarNames
         
-        declaredIVars = zipWith declareIVar ivarNames [1..]
-        declareIVar ivar n = valD (varP $ mkName ('_' : ivar))
-                                   (normalB [| IVar $(getNth n) |]) []
+        declaredIVars = concat $ zipWith declareIVar ivars [1..]
+        declareIVar (name, ty, _) n = [
+            sigD (mkName ('_':name))
+              (conT ''IVar `appT` (conT $ mkName instanceDataName) `appT` ty)
+          , valD (varP $ mkName ('_':name))
+              (normalB [| IVar $(getNth n) |]) []
+          ]
             where
-                getNth n = lamE [conP (mkName instanceDataName) args]
+                getNth n = lamE [conP (mkName instanceDataName) (args n)]
                                 (varE $ mkName $ "arg" ++ show n)
-                args = [ varP $ mkName $ "arg" ++ show i | i <- [1..nIVars] ]
+                args n = [ mkVarP (n == i) $ "arg" ++ show i | i <- [1..nIVars] ]
         
         initIVars = doE (map initIVar ivars ++ [noBindS [| return $(wrap) |]])
             where
                 wrap = foldl appE (conE $ mkName instanceDataName) (map (varE.mkName) ivarNames)
                 initIVar (ivar,ty,initial) = bindS (varP $ mkName ivar) [| newMVar $(initial) |]
+
+-- | Declare a variable (with a preceeding _ unless it is used)
+mkVarP :: Bool -> String -> PatQ
+mkVarP used = varP . mkName . (if used then id else ('_':))
 
 data Method = ImplementedMethod Name
             | GetterMethod String
@@ -220,7 +229,7 @@ mkClassExportAction name prefix members =
                                 $(selExpr)
                                 (objCMethodType $(typed [|undefined|]))
                                 $(cifExpr)
-                                ($(lamE (map (varP.mkName) ["cif","ret","args"]) marshal))
+                                ($(lamE (map (uncurry mkVarP) [(False,"cif"),(not isUnit,"ret"),(True,"args")]) marshal))
             |]
             where
                 marshal = [| do recordHOCEvent kHOCEnteredHaskell $(varE $ mkName "args")
@@ -228,7 +237,7 @@ mkClassExportAction name prefix members =
                                 recordHOCEvent kHOCAboutToLeaveHaskell $(varE $ mkName "args")
                                 return exc
                           |]
-                marshal' = doE $ getArg ("self",0)
+                marshal' = doE $ getArg ("slf",0)
                                  : map getArg (zip arguments [2..])
                                  ++ [
                                     noBindS [| recordHOCEvent kHOCImportedArguments $(varE $ mkName "args") |],
@@ -248,7 +257,7 @@ mkClassExportAction name prefix members =
                         |]
                 
                 typedBodyWithArgs = foldl1 appE (typed methodBody
-                                                : map (varE.mkName)(arguments ++ ["self"])) 
+                                                : map (varE.mkName)(arguments ++ ["slf"])) 
                     where
                         arguments = ["arg" ++ show i | i <- [1..nArgs]]
                 

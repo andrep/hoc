@@ -38,6 +38,8 @@ declareClass name super = sequence $ [
         valD (return $ VarP (mkName classObjectName))
             (normalB [| unsafeGetClassObject $(stringE name) |]) [],         
 
+        sigD (mkName superName) [t| String |],
+
         -- $(superName) = "super"
         valD (return $ VarP (mkName superName)) (normalB $ stringE super) [],
         
