@@ -89,6 +89,8 @@ printProgress alignAt progress msg
 
 newtype MultiProgress = MultiProgress (IO ())
 
+dummyMultiProgress = MultiProgress (return ())
+
 openMultiProgress :: [ProgressReporter] -> IO MultiProgress
 openMultiProgress reporters'
     = do
