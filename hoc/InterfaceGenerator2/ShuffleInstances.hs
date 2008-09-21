@@ -37,6 +37,7 @@ expandProtocolRequirements = execState $
                             = newEntity $ Entity {
                                 eName = SelectorInstanceName cls sel False,
                                 eHaskellName = BS.empty,
+                                eAlternateHaskellNames = [],
                                 eInfo = MethodEntity,
                                 eModule = eModule entity
                             }
@@ -45,6 +46,7 @@ expandProtocolRequirements = execState $
                             = newEntity $ Entity {
                                 eName = ProtocolAdoptionName cls proto,
                                 eHaskellName = BS.empty,
+                                eAlternateHaskellNames = [],
                                 eInfo = ProtocolAdoptionEntity,
                                 eModule = eModule entity
                             }

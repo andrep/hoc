@@ -57,6 +57,7 @@ makeEntities bindingScript headers importedEntities
                     newEntity $ Entity {
                         eName = CName $ BS.pack typeName,
                         eHaskellName = assertHaskellTypeName $ BS.pack typeName,
+                        eAlternateHaskellNames = [],
                         eInfo = AdditionalTypeEntity,
                         eModule = LocalModule $ BS.pack moduleName
                     }
@@ -92,6 +93,7 @@ makeEntities bindingScript headers importedEntities
                     entity <- newEntity $ Entity {
                             eName = SelectorName $ BS.pack name,
                             eHaskellName = BS.pack mangled,
+                            eAlternateHaskellNames = moreMangled,
                             eInfo = SelectorEntity (UnconvertedType (kind, sel')),
                             eModule = LocalModule modName
                         }
@@ -104,6 +106,10 @@ makeEntities bindingScript headers importedEntities
                 mangled = case mapped of
                             Just x -> x
                             Nothing -> mangleSelectorName name
+                moreMangled = map BS.pack $ case mapped of
+                    Just _ -> [mangleSelectorName name, mangleSelectorNameWithUnderscores name]
+                    Nothing -> [mangleSelectorNameWithUnderscores name]
+                            
                 replacement = Map.lookup name (soChangedSelectors selectorOptions)
                 sel' = case replacement of
                     Just x -> x
@@ -141,6 +147,7 @@ makeEntities bindingScript headers importedEntities
             = newEntity $ Entity {
                     eName = SelectorInstanceName classEntity selectorEntity factory,
                     eHaskellName = BS.empty,
+                    eAlternateHaskellNames = [],
                     eInfo = MethodEntity,
                     eModule = LocalModule modName
                 }
@@ -151,6 +158,7 @@ makeEntities bindingScript headers importedEntities
                 classEntity <- newEntity $ Entity {
                         eName = CName $ BS.pack clsName,
                         eHaskellName = getName clsName (nameToUppercase clsName),
+                        eAlternateHaskellNames = [],
                         eInfo = ClassEntity (fmap (DelayedClassLookup . BS.pack) mbSuper),
                         eModule = LocalModule modName
                     }
@@ -159,6 +167,7 @@ makeEntities bindingScript headers importedEntities
                             eName = ProtocolAdoptionName (DelayedClassLookup $ BS.pack clsName)
                                         (DelayedProtocolLookup $ BS.pack protocol),
                             eHaskellName = BS.empty,
+                            eAlternateHaskellNames = [],
                             eInfo = ProtocolAdoptionEntity,
                             eModule = LocalModule modName
                         }
@@ -173,6 +182,7 @@ makeEntities bindingScript headers importedEntities
                             eName = ProtocolAdoptionName (DelayedClassLookup $ BS.pack clsName)
                                         (DelayedProtocolLookup $ BS.pack protocol),
                             eHaskellName = BS.empty,
+                            eAlternateHaskellNames = [],
                             eInfo = ProtocolAdoptionEntity,
                             eModule = LocalModule modName
                         }
@@ -187,6 +197,7 @@ makeEntities bindingScript headers importedEntities
                 newEntity $ Entity {
                         eName = ProtocolName $ BS.pack protoName,
                         eHaskellName = getName protoName (nameToUppercase protoName ++ "Protocol"),
+                        eAlternateHaskellNames = [],
                         eInfo = ProtocolEntity (map (DelayedProtocolLookup . BS.pack) protocols)
                                                selectors,
                         eModule = LocalModule modName
@@ -210,6 +221,7 @@ makeEntities bindingScript headers importedEntities
                 newEntity $ Entity {
                         eName = CName $ BS.pack name,
                         eHaskellName = getName name (nameToUppercase name),
+                        eAlternateHaskellNames = [],
                         eInfo = TypeSynonymEntity (UnconvertedType ct),
                         eModule = LocalModule modName
                     }
@@ -220,6 +232,7 @@ makeEntities bindingScript headers importedEntities
                 newEntity $ Entity {
                         eName = CName $ BS.pack name,
                         eHaskellName = getName name (nameToLowercase name),
+                        eAlternateHaskellNames = [],
                         eInfo = ExternVarEntity (UnconvertedType ct),
                         eModule = LocalModule modName
                     }
@@ -230,6 +243,7 @@ makeEntities bindingScript headers importedEntities
                 newEntity $ Entity {
                         eName = CName $ BS.pack name,
                         eHaskellName = getName name (nameToLowercase name),
+                        eAlternateHaskellNames = [],
                         eInfo = ExternFunEntity (UnconvertedType (PlainSelector, sel)),
                         eModule = LocalModule modName
                     }
@@ -259,6 +273,7 @@ makeEntities bindingScript headers importedEntities
                     newEntity $ Entity {
                             eName = CName $ BS.pack name,
                             eHaskellName = getName name (nameToUppercase name),
+                            eAlternateHaskellNames = [],
                             eInfo = EnumEntity True values',
                             eModule = LocalModule modName
                         }
@@ -267,12 +282,14 @@ makeEntities bindingScript headers importedEntities
                     newEntity $ Entity {
                             eName = Anonymous,
                             eHaskellName = BS.empty,
+                            eAlternateHaskellNames = [],
                             eInfo = EnumEntity False values',
                             eModule = LocalModule modName
                         }
                     newEntity $ Entity {
                             eName = CName $ BS.pack name,
                             eHaskellName = getName name (nameToUppercase name),
+                            eAlternateHaskellNames = [],
                             eInfo = TypeSynonymEntity (UnconvertedType cTypeInt),
                             eModule = LocalModule modName
                         }                    
@@ -283,6 +300,7 @@ makeEntities bindingScript headers importedEntities
                 newEntity $ Entity {
                         eName = Anonymous,
                         eHaskellName = BS.empty,
+                        eAlternateHaskellNames = [],
                         eInfo = EnumEntity complete values',
                         eModule = LocalModule modName
                     }
@@ -322,6 +340,7 @@ loadAdditionalCode additionalCodePath0 modNames entityPile
                 newEntity $ Entity {
                         eName = Anonymous,
                         eHaskellName = BS.empty,
+                        eAlternateHaskellNames = [],
                         eInfo = AdditionalCodeEntity
                                     2
                                     exports
@@ -332,6 +351,7 @@ loadAdditionalCode additionalCodePath0 modNames entityPile
                 newEntity $ Entity {
                         eName = Anonymous,
                         eHaskellName = BS.empty,
+                        eAlternateHaskellNames = [],
                         eInfo = AdditionalCodeEntity
                                     9
                                     []

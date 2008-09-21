@@ -75,6 +75,7 @@ data Name
 data Entity = Entity {
         eName :: Name,
         eHaskellName :: ByteString,
+        eAlternateHaskellNames :: [ByteString],
         eInfo :: EntityInfo,
         eModule :: Module
     }
