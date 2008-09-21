@@ -36,7 +36,6 @@ import ResolveAndZap
 import DependenceGraphs
 import ShuffleInstances
 import DuplicateEntities
-import RenameClashingIdentifiers
 import Output
 
 textInterfaces = False  -- Overall 3 times faster with binary
@@ -195,7 +194,7 @@ processFramework options -- bs frameworkName requiredFrameworks
             (zappedEntities, zapMessages) = runMessages $ zapAndReportFailedTypes zapProgress typedEntities
             expandedEntities = monitor expandProgress $ expandProtocolRequirements zappedEntities
             combinedEntities = monitor combineProgress $ combineDulicateEntities expandedEntities
-            finalEntities = renameClashingIdentifiers $ eliminateSubclassInstances eliminateProgress combinedEntities
+            finalEntities = eliminateSubclassInstances eliminateProgress combinedEntities
             
         do
             let packageName = "HOC-" ++ frameworkName
