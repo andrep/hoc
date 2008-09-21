@@ -159,8 +159,8 @@ instance Binary Entities.Name where
       _ -> fail "no parse"
 
 instance Binary Entities.Entity where
-  put (Entity a b c d) = put a >> put b >> put c >> put d
-  get = get >>= \a -> get >>= \b -> get >>= \c -> get >>= \d -> return (Entity a b c d)
+  put (Entity a b c d e) = put a >> put b >> put c >> put d >> put e
+  get = get >>= \a -> get >>= \b -> get >>= \c -> get >>= \d -> get >>= \e -> return (Entity a b c d e)
 
 instance Binary Entities.EntityPile where
   put (EntityPile a b c) = put a >> put b >> put c
