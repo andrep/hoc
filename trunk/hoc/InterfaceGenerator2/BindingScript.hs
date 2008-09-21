@@ -44,7 +44,7 @@ emptyBindingScript
         bsHiddenFromPrelude = Set.empty,
         bsHiddenEnums = Set.empty,
         bsTopLevelOptions = SelectorOptions {
-                soNameMappings = Map.empty,
+                soNameMappings = defaultNameMappings,
                 soCovariantSelectors = Set.empty,
                 soHiddenSelectors = Set.empty,
                 soChangedSelectors = Map.empty
@@ -52,6 +52,13 @@ emptyBindingScript
         bsAdditionalTypes = [],
         bsClassSpecificOptions = Map.empty
     }
+    
+defaultNameMappings = Map.fromList [
+        ("data", "data'"),
+        ("type", "type'"),
+        ("class", "class'"),
+        ("where", "where'")
+    ]
 
 getSelectorOptions :: BindingScript -> String -> SelectorOptions
 
