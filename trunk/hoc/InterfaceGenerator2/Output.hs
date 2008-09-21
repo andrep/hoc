@@ -264,6 +264,7 @@ pprMasterModule umbrella entityPile frameworkName
 pprCabalFile frameworkName dependencies entities
     = text "name:" <+> text "HOC-" <> text frameworkName $+$
       text "version: 1.0" $+$
+      text "build-type: Simple" $+$
       text "build-depends:" <+>
         hsep (punctuate comma $ map text $
                 ["base", "HOC"] ++ map ("HOC-" ++) dependencies) $+$
