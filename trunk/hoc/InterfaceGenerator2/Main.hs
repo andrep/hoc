@@ -36,6 +36,7 @@ import ResolveAndZap
 import DependenceGraphs
 import ShuffleInstances
 import DuplicateEntities
+import RenameClashingIdentifiers
 import Output
 
 textInterfaces = False  -- Overall 3 times faster with binary
@@ -119,7 +120,8 @@ data Options = Options {
         oBindingScript :: Maybe String,
         oAdditionalCode :: Maybe String,
         oShowZapped :: Bool,
-        oDumpInitial :: Bool
+        oDumpInitial :: Bool,
+        oQuiet :: Bool
     }
 
 processFramework options -- bs frameworkName requiredFrameworks
@@ -131,20 +133,24 @@ processFramework options -- bs frameworkName requiredFrameworks
         
         putStrLn $ "*** Processing Framework " ++ frameworkName ++ " ***"
         
-        importProgress    <- mapM newProgressReporter $
+        let mkProgress n | oQuiet options = return dummyProgressReporter
+                         | otherwise      = newProgressReporter n
+        
+        importProgress    <- mapM mkProgress $
                              map ("Importing " ++) requiredFrameworks
-        parseProgress     <- newProgressReporter "Parsing Objective-C header files"
-        initialProgress   <- newProgressReporter "Building initial entities"
-        resolveProgress   <- newProgressReporter "Resolving cross-references"
-        typeProgress      <- newProgressReporter "Converting types"
-        zapProgress       <- newProgressReporter "Zapping unconvertable entities"
-        expandProgress    <- newProgressReporter "Filling in additional instance declarations"
-        combineProgress   <- newProgressReporter "Combining duplicate entities"
-        eliminateProgress <- newProgressReporter "Eliminating redundant instances"
-        outputProgress    <- newProgressReporter "Writing binding modules"
-        masterProgress    <- newProgressReporter $ "Writing " ++ frameworkName ++ ".hs"
-        exportProgress    <- newProgressReporter $ "Writing " ++ frameworkName ++ ".pi"
-        multiProgress <- openMultiProgress $ parseProgress : importProgress ++ 
+        parseProgress     <- mkProgress "Parsing Objective-C header files"
+        initialProgress   <- mkProgress "Building initial entities"
+        resolveProgress   <- mkProgress "Resolving cross-references"
+        typeProgress      <- mkProgress "Converting types"
+        zapProgress       <- mkProgress "Zapping unconvertable entities"
+        expandProgress    <- mkProgress "Filling in additional instance declarations"
+        combineProgress   <- mkProgress "Combining duplicate entities"
+        eliminateProgress <- mkProgress "Eliminating redundant instances"
+        outputProgress    <- mkProgress "Writing binding modules"
+        masterProgress    <- mkProgress $ "Writing " ++ frameworkName ++ ".hs"
+        exportProgress    <- mkProgress $ "Writing " ++ frameworkName ++ ".pi"
+        multiProgress <- if oQuiet options then return dummyMultiProgress else
+                            openMultiProgress $ parseProgress : importProgress ++ 
                                            [initialProgress, resolveProgress,
                                             typeProgress, zapProgress,
                                             expandProgress, combineProgress,
@@ -189,7 +195,7 @@ processFramework options -- bs frameworkName requiredFrameworks
             (zappedEntities, zapMessages) = runMessages $ zapAndReportFailedTypes zapProgress typedEntities
             expandedEntities = monitor expandProgress $ expandProtocolRequirements zappedEntities
             combinedEntities = monitor combineProgress $ combineDulicateEntities expandedEntities
-            finalEntities = eliminateSubclassInstances eliminateProgress combinedEntities
+            finalEntities = renameClashingIdentifiers $ eliminateSubclassInstances eliminateProgress combinedEntities
             
         do
             let packageName = "HOC-" ++ frameworkName
@@ -268,7 +274,10 @@ optionDescs = [
             "print messages about entities that couldn't be translated",
         Option [] ["dump-initial"]
             (NoArg (\o -> o { oDumpInitial = True }))
-            "dump all entities after parsing"
+            "dump all entities after parsing",
+        Option ['q'] ["quiet"]
+            (NoArg (\o -> o { oQuiet = True }))
+            "don't report progress"
     ]
 main = do
     args <- getArgs
@@ -282,7 +291,8 @@ main = do
                         oBindingScript = Nothing,
                         oAdditionalCode = Nothing,
                         oShowZapped = False,
-                        oDumpInitial = False
+                        oDumpInitial = False,
+                        oQuiet = False
                     }
                 options = foldl (flip ($)) options0 optionsF
             in
