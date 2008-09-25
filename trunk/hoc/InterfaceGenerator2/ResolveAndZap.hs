@@ -103,15 +103,7 @@ zapAndReportWith worker progress entityPile
             _  -> zapAndReportBrokenReferences progress pile'
     where            
         
-        {-
-zapAndReportFailedTypes :: ProgressReporter -> EntityPile -> Messages EntityPile
-
-zapAndReportFailedTypes progress entityPile
-    = return entityPile
-    where
-        
-        -}
-    
+zapAndReportFailedTypes :: ProgressReporter -> EntityPile -> Messages EntityPile    
 zapAndReportFailedTypes progress entityPile
     = zapAndReportWith worker progress entityPile
     where
@@ -120,7 +112,7 @@ zapAndReportFailedTypes progress entityPile
             >> return x
         
         reportUnconvertedType t@(UnconvertedType ctype)
-            = message $ text "Coudn't convert type" -- <+> text (show ctype)
+            = message $ text "Coudn't convert type" <+> text (show ctype)
         reportUnconvertedType t
             = return ()
 

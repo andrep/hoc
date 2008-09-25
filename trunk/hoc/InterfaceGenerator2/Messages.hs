@@ -18,9 +18,6 @@ bagToList b = helper b []
         helper (UnitBag x) xs = x : xs
         helper (BagOfTwo a b) xs = helper a $ helper b xs 
 
-nullBag EmptyBag = True
-nullBag _ = False
-
 instance Monoid (Bag a) where
     mempty = EmptyBag
     mappend EmptyBag b = b

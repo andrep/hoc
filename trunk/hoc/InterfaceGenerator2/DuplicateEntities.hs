@@ -61,6 +61,7 @@ reexportEntities remappings pile
                         
         redirect eid = fromMaybe eid $ Map.lookup eid remappings
 
+combineDulicateEntities :: EntityPile -> EntityPile
 combineDulicateEntities entityPile
     = resolve entityPile
     where

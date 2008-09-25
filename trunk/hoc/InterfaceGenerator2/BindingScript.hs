@@ -38,7 +38,8 @@ data SelectorOptions = SelectorOptions {
         soHiddenSelectors :: Set String,
         soChangedSelectors :: Map.Map String Selector
     }
-    
+
+emptyBindingScript :: BindingScript
 emptyBindingScript
     = BindingScript {
         bsHiddenFromPrelude = Set.empty,
@@ -52,7 +53,8 @@ emptyBindingScript
         bsAdditionalTypes = [],
         bsClassSpecificOptions = Map.empty
     }
-    
+
+defaultNameMappings :: Map.Map String String    
 defaultNameMappings = Map.fromList [
         ("data", "data'"),
         ("type", "type'"),
@@ -78,8 +80,10 @@ getSelectorOptions bindingScript clsName =
     where
         top = bsTopLevelOptions bindingScript
 
+tokenParser :: TokenParser ()
 tokenParser = makeTokenParser $ haskellStyle { identStart = letter <|> char '_' }
 
+selector, qualified :: TokenParser () -> Parser String
 selector tp = lexeme tp $ do
                 c <- letter <|> char '_'
                 s <- many (alphaNum <|> oneOf "_:")
@@ -163,6 +167,7 @@ bindingScript = do
     eof
 
     let wrongThings = [ () | ReplaceSelector _ <- statements ]
+    when (not $ null wrongThings) $ fail "illegal thing at top level"
     
     return $ BindingScript {
             bsHiddenFromPrelude = Set.fromList [ ident | HidePrelude ident <- statements ],

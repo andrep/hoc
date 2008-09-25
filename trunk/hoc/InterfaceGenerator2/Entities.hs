@@ -95,7 +95,7 @@ emptyEntityPile = EntityPile Map.empty Map.empty 1
 
 addImportedEntities :: ModuleName -> EntityMap
                     -> EntityPile -> EntityPile
-addImportedEntities mod entities pile
+addImportedEntities _mod entities pile
     = pile { epFrameworkEntities = entities `Map.union` epFrameworkEntities pile }
 
 newEntity :: MonadState EntityPile m => Entity -> m EntityID
@@ -147,33 +147,15 @@ entityPileToList pile
 
 transformLocalEntities :: (EntityMap -> EntityMap)
                        -> EntityPile -> EntityPile
-{-transformLocalEntities f (EntityPile entities nextID)
-    = EntityPile (fwEntities `Map.union` localEntities') nextID
-    where
-        (fwEntities, localEntities)
-            = Map.partitionWithKey isFramework entities
-        localEntities' = f localEntities
-
-        isFramework (FrameworkEntity _ _) _ = True
-        isFramework _ _ = False-}
 transformLocalEntities f pile
     = pile { epEntities = f (epEntities pile) }
--- transformLocalEntities f = f
 
-localEntities :: EntityPile -> EntityMap
-{-
-localEntities = Map.filterWithKey notFramework . epEntities
-    where
-        notFramework (FrameworkEntity _ _) _ = False
-        notFramework _ _ = True
--}
+localEntities, frameworkEntities :: EntityPile -> EntityMap
 localEntities = epEntities
 frameworkEntities = epFrameworkEntities
 
 replaceLocalEntities :: EntityMap -> EntityPile -> EntityPile
 replaceLocalEntities locals = transformLocalEntities (const locals)
 
--- localEntityPile :: EntityPile -> EntityPile
--- localEntityPile pile = EntityPile (localEntities pile) (epNextID pile)
-
+reportProgressForPile :: ProgressReporter -> EntityPile -> EntityPile
 reportProgressForPile pr = transformLocalEntities (reportProgressForMap pr)

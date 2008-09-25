@@ -1,9 +1,10 @@
 module DependenceGraphs(
-        entitiesRequiredByEntity,
         RGr,
-        makeEntityGraph,
+            -- used by DuplicateEntities:
+        makeModuleDAG,      
+            -- used by Output & Main:
+        entitiesRequiredByEntity,
         makeModuleGraph,
-        makeModuleDAG,
         topsortEntities,
         minimizeSourceImports,
         isSourceImport
@@ -25,28 +26,6 @@ entitiesRequiredByEntity e
     = mentionedEntityIDs e
 
 type RGr a b = (Gr a b, Map.Map a Node)
-
-makeEntityGraph :: EntityPile -> RGr EntityID Bool
-makeEntityGraph entityPile
-    = (gr, entityToNode)
-    where
-        entities = localEntities entityPile
-        entityToNode = Map.fromList $ zip (Map.keys entities) [1..]
-        gr = mkGraph (zip [1..] (Map.keys entities)) $
-                do {- list -}
-                    (fromEntityID, e) <- Map.toList entities
-                    let from = entityToNode Map.! fromEntityID
-                        weak = case eInfo e of
-                                ProtocolEntity _ _ -> True
-                                _ -> False
-                    toEntityID <- entitiesRequiredByEntity e
-                    
-                    case toEntityID of
-                        LocalEntity _ ->
-                            return (from, entityToNode Map.! toEntityID,
-                                    weak)
-                        FrameworkEntity _ _ ->
-                            []
 
 makeModuleGraph :: EntityPile -> RGr Module Bool
 makeModuleGraph entityPile

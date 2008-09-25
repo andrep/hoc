@@ -1,27 +1,23 @@
 {-# LANGUAGE CPP #-}
 module Main where
 
-import Headers
+import qualified Data.ByteString.Char8 as BS
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Control.Monad.Writer
-import BindingScript
-import Data.Char
-import Data.Maybe
--- import Data.Generics
+import Data.Maybe                   ( fromMaybe )
+import Control.Monad                ( when )
 import System.IO
+import System.Environment           ( getArgs )
+import System.Console.GetOpt
+import Control.Exception            ( finally )
 
 import Messages
 import Entities
--- import Traversals
+import BindingScript
 
 import Files
 
 import Progress
-import qualified Data.ByteString.Char8 as BS
-import System.Environment
-import System.Console.GetOpt
-import Control.Exception
 
 #ifdef BINARY_INTERFACES
 import Data.Binary      ( encodeFile, decode )
@@ -29,26 +25,23 @@ import BinaryInstances  ()
 import qualified Data.ByteString.Lazy as LBS
 #endif
 
-import HackEnumNames
-import BuildEntities
+
+import Headers              -- (on disk) -> [HeaderInfo]
+import HackEnumNames        -- HeaderInfo -> HeaderInfo
+import BuildEntities        -- [HeaderInfo] -> EntityPile
+
+    -- EntityPile -> EntityPile passes
 import ResolveAndZap
-import DependenceGraphs
 import ShuffleInstances
 import DuplicateEntities
+
+import DependenceGraphs
 import Output
-
-textInterfaces = False  -- Overall 3 times faster with binary
-
-{-deepEvaluatePile = mapM_ deepEvaluateEntity . Map.elems . localEntities
-
-evalWithProgress str pile
-    = runShowingProgress str $
-        \progress -> deepEvaluatePile $ reportProgressForPile progress $ pile
--}
 
 instance Monitorable EntityPile where
     monitor pr = transformLocalEntities (monitor pr)
 
+writeFrameworkModules :: ProgressReporter -> EntityPile -> FilePath -> IO ()
 writeFrameworkModules progress entityPile path
     = do
         let byModule = makeEntityPileLocalMultiIndex eModule $
@@ -62,8 +55,8 @@ writeFrameworkModules progress entityPile path
         
             modGraph = minimizeSourceImports $ makeModuleGraph entityPile
         
-        flip mapM_ (zip [0..] $ Map.toList byModule) $
-            \(index, (mod, entityID)) -> do
+        flip mapM_ (Map.toList byModule) $
+            \(mod, entityID) -> do
                 case mod of
                     FrameworkModule _ _ -> return ()
                     LocalModule modName -> do
@@ -76,6 +69,7 @@ writeFrameworkModules progress entityPile path
                             show $ pprHsModule entityPile modGraph modName entities
                         reportProgress progress nModules
 
+readFileWithProgress :: ProgressReporter -> FilePath -> IO String
 readFileWithProgress progress fn
     = do
         bs <- BS.readFile fn
@@ -83,6 +77,7 @@ readFileWithProgress progress fn
         return $ monitorList progress n $ BS.unpack bs
 
 #ifdef BINARY_INTERFACES
+decodeFileWithProgress :: ProgressReporter -> FilePath -> IO EntityMap
 decodeFileWithProgress progress fn
     = do
         bs <- fmap LBS.toChunks $ LBS.readFile fn
@@ -90,6 +85,7 @@ decodeFileWithProgress progress fn
         return $ decode $ LBS.fromChunks $ monitorList progress n $ bs
 #endif
 
+readInterfaceFileWithProgress :: ProgressReporter -> FilePath -> IO EntityMap
 readInterfaceFileWithProgress progress fn
 #ifdef BINARY_INTERFACES
     = decodeFileWithProgress progress fn
@@ -97,6 +93,7 @@ readInterfaceFileWithProgress progress fn
     = fmap read $ readFileWithProgress progress fn
 #endif
 
+writeInterfaceFileWithProgress :: ProgressReporter -> FilePath -> EntityPile -> IO ()
 writeInterfaceFileWithProgress progress fn entities
 #ifdef BINARY_INTERFACES
     = encodeFile fn $
@@ -122,6 +119,7 @@ data Options = Options {
         oQuiet :: Bool
     }
 
+processFramework :: Options -> IO ()
 processFramework options -- bs frameworkName requiredFrameworks
     = do
         bs <- maybe (return emptyBindingScript) readBindingScript $ 
@@ -232,12 +230,14 @@ processFramework options -- bs frameworkName requiredFrameworks
         putStrLn $ "done."
 
         
-        
+addRequiredFramework :: String -> Options -> Options
 addRequiredFramework fw o
     = o { oRequiredFrameworks = fw : oRequiredFrameworks o }
+addHeaderDirectory :: HeaderDirectory -> Options -> Options
 addHeaderDirectory hd o
     = o { oHeaderDirectories = hd : oHeaderDirectories o }
- 
+
+optionDescs :: [OptDescr (Options -> Options)]
 optionDescs = [
         Option ['d'] ["depend"]
             (ReqArg addRequiredFramework
@@ -279,6 +279,8 @@ optionDescs = [
             (NoArg (\o -> o { oQuiet = True }))
             "don't report progress"
     ]
+    
+main :: IO ()
 main = do
     args <- getArgs
     case getOpt Permute optionDescs args of

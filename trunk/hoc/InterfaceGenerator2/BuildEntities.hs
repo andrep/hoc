@@ -43,6 +43,7 @@ renameToFramework eMap framework
 
 makeEntities :: BindingScript -> [HeaderInfo] -> EntityPile -> EntityPile
 
+assertHaskellTypeName :: BS.ByteString -> BS.ByteString
 assertHaskellTypeName xs
     | not (BS.null xs)
     && isUpper x && BS.all (\c -> isAlphaNum c || c `elem` "_'") xs
@@ -86,7 +87,7 @@ makeEntities bindingScript headers importedEntities
             -- Workaround: If there is both an instance method and a class method of the
             --             same name, don't use covariant.
             
-        makeSelectorEntity factory modName clsID clsName sel
+        makeSelectorEntity factory modName _clsID clsName sel
             = if hidden
                 then return Nothing
                 else do
@@ -132,11 +133,11 @@ makeEntities bindingScript headers importedEntities
             = makeSelectorEntity False modName clsID clsName sel
         makeEntitiesForSelectorListItem modName clsID clsName (ClassMethod sel)
             = makeSelectorEntity True modName clsID clsName sel
-        makeEntitiesForSelectorListItem modName clsID clsName (LocalDecl decl)
+        makeEntitiesForSelectorListItem modName _clsID _clsName (LocalDecl decl)
             = makeEntity modName decl >> return Nothing
-        makeEntitiesForSelectorListItem modName clsID clsName PropertyDecl
+        makeEntitiesForSelectorListItem _modName _clsID _clsName PropertyDecl
             = return Nothing
-        makeEntitiesForSelectorListItem modName clsID clsName (Required _)
+        makeEntitiesForSelectorListItem _modName _clsID _clsName (Required _)
             = return Nothing
         
         makeSelectorEntities modName clsID clsName items
@@ -203,11 +204,11 @@ makeEntities bindingScript headers importedEntities
                         eModule = LocalModule modName
                     }               
               ) >> return ()
-        makeEntity modName (Typedef (CTStruct n2 fields) name)
+        makeEntity _modName (Typedef (CTStruct _n2 _fields) _name)
             = return ()
-        makeEntity modName (Typedef (CTUnion n2 fields) name)
+        makeEntity _modName (Typedef (CTUnion _n2 _fields) _name)
             = return ()
-        makeEntity modName (Typedef (CTEnum n2 vals) name)
+        makeEntity modName (Typedef (CTEnum _n2 vals) name)
             | notHidden name
             = makeEnum name modName vals
               -- makeAnonymousEnum modName vals -- ### HACK for 10.5: ignore enum names
@@ -250,7 +251,7 @@ makeEntities bindingScript headers importedEntities
                 return ()
             where name = selName sel
 
-        makeEntity modName _ = return ()
+        makeEntity _modName _ = return ()
 
         convertEnumEntities :: [(String, EnumValue)]
                             -> (Bool, [(BS.ByteString, Integer)])
