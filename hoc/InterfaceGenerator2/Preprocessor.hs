@@ -107,10 +107,6 @@ execute :: String -> [PPLine] -> String
 execute filename xs = unlines $ evalState (exec xs []) macros where
     exec (If e : xs) state@( (_, False) : _ )
         = output "//#if" $ exec xs ((PPSIf False, False) : state)
---    exec (Elif e : xs) state@( (PPSIf False, False) : (_, False) : _ )
---        = output "//#elif" $ exec xs state
---    exec (Else : xs) state@( (_, False) : _ )
---        = output "//#else" $ exec xs ((PPSElse, False) : state)
     exec (Text t : xs) state@( (_, False) : _ )
         = output ("//T " ++ t) $ exec xs state
     exec (Endif : xs) (_ : state)
@@ -139,16 +135,6 @@ execute filename xs = unlines $ evalState (exec xs []) macros where
                        return (t : moreText)
                        
     
-test = putStrLn $ execute "test" $ parseDirectives 
-   "#include <foo>\n\
-    \blah\n\
-    \foo bar\n\
-    \#if 1\n\
-    \baz\n\
-    \#else\n\
-    \quux\n\
-    \#endif\n"
-
 unblockComments ('/' : '*' : xs) = "/*" ++ handleComment xs
     where handleComment ('*' : '/' : xs) = "*/" ++ unblockComments xs
           handleComment ('\n' : xs) = "*/\n/*" ++ handleComment xs
@@ -159,7 +145,20 @@ unblockComments [] = "\n"
 
 parseDirectives = map (\l -> case parse line "" l of
                                 Left e -> Text $ l ++ "// " ++ show (show e)
-                                Right x -> x) . lines . unblockComments
+                                Right x -> x) . lines . unblockComments        
+        
+preprocess fn f = execute fn $ parseDirectives f
+
+{-
+test = putStrLn $ execute "test" $ parseDirectives 
+   "#include <foo>\n\
+    \blah\n\
+    \foo bar\n\
+    \#if 1\n\
+    \baz\n\
+    \#else\n\
+    \quux\n\
+    \#endif\n"
 
 test2 fn = do
 --    f <- readFile $ "/System/Library/Frameworks/Foundation.framework/Versions/C/Headers/" ++ fn
@@ -172,7 +171,4 @@ test3 fn = do
     -- putStrLn $ 
     putStrLn fn
     print $ length $ execute fn $ parseDirectives f
-        
-        
-preprocess fn f = execute fn $ parseDirectives f
-
+-}

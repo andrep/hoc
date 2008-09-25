@@ -204,14 +204,14 @@ pprHsModule entityPile modGraph modName idsAndEntities
         pprEntity e@(Entity { eInfo = EnumEntity complete constants })
             = char '$' <> parens (
                     declare <+> brackets (
-			hcat $ punctuate comma $ map pprAssoc constants
-		    )
+                        hcat $ punctuate comma $ map pprAssoc constants
+                    )
                 )
-	    where
+            where
                 declare = case eName e of
                     CName cname -> text "declareCEnum" <+> doubleQuotes (textBS cname)
                     Anonymous   -> text "declareAnonymousCEnum"
-	        pprAssoc (n, v)
+                pprAssoc (n, v)
                     = parens (doubleQuotes (textBS n) <> comma <+> integer v)
 
         pprEntity e@(Entity { eInfo = AdditionalCodeEntity _ _ _ txt })

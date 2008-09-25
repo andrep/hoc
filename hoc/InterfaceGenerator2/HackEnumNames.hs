@@ -4,6 +4,8 @@ module HackEnumNames where
 import SyntaxTree
 import Headers
 
+hackEnumNames :: HeaderInfo -> HeaderInfo
+
 hackEnumNames (HeaderInfo name imports decls)
     = HeaderInfo name imports (hackEnums1 Just id decls)
     where
