@@ -12,6 +12,8 @@ import Text.ParserCombinators.Parsec.Expr
 
 import SyntaxTree
 
+import qualified Data.Map as Map
+
 objcDef = emptyDef
     { commentStart   = "/*"
     , commentEnd     = "*/"
@@ -197,50 +199,36 @@ multiCharConstant =
             return $ sum $ zipWith (*)  
                 (map (fromIntegral.ord) $ reverse chars)
                 (iterate (*256) 1)
-        
-const_int_expr = buildExpressionParser optable basic
+
+
+const_int_expr env = buildExpressionParser optable basic
     where
-        basic = fmap GivenValue (integer objc)
-            <|> fmap GivenValue multiCharConstant
-            <|> fmap TooComplicatedValue
-                     (many1 (satisfy (\x -> x /= ';' && x /= '}')))
+        basic = (integer objc) <|> multiCharConstant
+            <|> (do name <- identifier objc
+                    Map.lookup name env)
         optable = [ [Infix shiftLeft AssocLeft] ]
         
         shiftLeft = op "<<" (flip $ flip shiftL . fromIntegral)
         
-        op str f = reservedOp objc str >> return (opFun f)
-        opFun f (GivenValue x) (GivenValue y) = GivenValue $ f x y
-        opFun f v@(TooComplicatedValue _) _ = v
-        opFun f _ v@(TooComplicatedValue _) = v
-        opFun f _ _ = TooComplicatedValue "..."
-        
-sloppyCommaSep lang thing
-    = do
-        x <- thing
-        {-xs <- ( do
-                    comma lang
-                    (sloppyCommaSep lang thing <|> return [])
-            <|> return []
-            )-}
-        xs <- option [] $ comma lang >> option [] (sloppyCommaSep lang thing)
-        return $ x : xs
-            
+        op str f = reservedOp objc str >> return f
         
 enum_type =
     do
         key <- reserved objc "enum"
         id <- identifier objc <|> return ""
-        body <- braces objc enum_body <|> return []
+        body <- braces objc (enum_body Map.empty (-1)) <|> return []
         return $ CTEnum id body
     where
-        enum_body = sloppyCommaSep objc enum_entry
-        enum_entry = do
+        enum_body env lastVal = do
             id <- identifier objc
             val <- (do
                     symbol objc "="
-                    const_int_expr
-                ) <|> return NextValue
-            return (id,val)
+                    const_int_expr env
+                ) <|> return (lastVal + 1)
+            
+            let env' = Map.insert id val env
+            xs <- option [] $ comma objc >> option [] (enum_body env' val)
+            return $ (id, GivenValue val) : xs
     
 struct_type =
     do
