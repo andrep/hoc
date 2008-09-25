@@ -16,7 +16,6 @@ import Entities
 -- import Traversals
 
 import Files
--- import Debug.Trace
 
 import Progress
 import qualified Data.ByteString.Char8 as BS
@@ -27,10 +26,10 @@ import Control.Exception
 #ifdef BINARY_INTERFACES
 import Data.Binary      ( encodeFile, decode )
 import BinaryInstances  ()
+import qualified Data.ByteString.Lazy as LBS
 #endif
 
-import qualified Data.ByteString.Lazy as LBS
-
+import HackEnumNames
 import BuildEntities
 import ResolveAndZap
 import DependenceGraphs
@@ -165,6 +164,8 @@ processFramework options -- bs frameworkName requiredFrameworks
 
         loaded <- loadHeaders parseProgress headers
         
+        let enumHacked = map hackEnumNames loaded
+
         importedEMaps <- mapM (\(fn, progress) ->
                                 readInterfaceFileWithProgress progress
                                     ("HOC-" ++ fn ++ "/" ++ fn ++ ".pi")
@@ -178,7 +179,7 @@ processFramework options -- bs frameworkName requiredFrameworks
                         emptyEntityPile $
                         zip (map BS.pack requiredFrameworks) importedEMaps
         
-        let initialEntities = monitor initialProgress $ makeEntities bs loaded importedEntities
+        let initialEntities = monitor initialProgress $ makeEntities bs enumHacked importedEntities
         
 
         additionalEntities <-
