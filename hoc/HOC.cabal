@@ -67,6 +67,7 @@ Executable hoc-ifgen
     main-is: Main.hs
     hs-source-dirs: HOC, InterfaceGenerator2
 
+    build-depends: filepath
     if flag(BinaryInterfaces)
         build-depends: binary >= 0.2
         cpp-options: -DBINARY_INTERFACES

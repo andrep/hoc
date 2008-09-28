@@ -9,6 +9,7 @@ import Control.Monad                ( when )
 import System.IO
 import System.Environment           ( getArgs )
 import System.Console.GetOpt
+import System.FilePath              ( (</>) )
 import Control.Exception            ( finally )
 
 import Messages
@@ -116,7 +117,10 @@ data Options = Options {
         oAdditionalCode :: Maybe String,
         oShowZapped :: Bool,
         oDumpInitial :: Bool,
-        oQuiet :: Bool
+        oQuiet :: Bool,
+        oPrefix :: String,
+        oDumpPreprocessed :: Bool,
+        oDumpParsed :: Bool
     }
 
 processFramework :: Options -> IO ()
@@ -156,11 +160,12 @@ processFramework options -- bs frameworkName requiredFrameworks
         headers <- fmap concat $ flip mapM (oHeaderDirectories options) $
                         \hd -> case hd of
                             FrameworkHeaders framework
-                                -> headersForFramework framework
+                                -> headersForFramework (oPrefix options) framework
                             Headers path
                                 -> headersIn path (oFrameworkName options)
 
-        loaded <- loadHeaders parseProgress headers
+        loaded <- loadHeaders (oDumpPreprocessed options, oDumpParsed options)
+                              parseProgress headers
         
         let enumHacked = map hackEnumNames loaded
 
@@ -277,8 +282,24 @@ optionDescs = [
             "dump all entities after parsing",
         Option ['q'] ["quiet"]
             (NoArg (\o -> o { oQuiet = True }))
-            "don't report progress"
+            "don't report progress",
+        Option ['p'] ["prefix"]
+            (ReqArg (\p o -> o { oPrefix = p }) "path")
+            "prefix for system framework paths",
+        Option ['s'] ["sdk"]
+            (ReqArg (\sdk o -> o { oPrefix = sdkDirectory sdk }) "sdk")
+            "name of SDK to use",
+        Option [] ["dump-preprocessed"]
+            (NoArg (\o -> o { oDumpPreprocessed = True }))
+            "dump preprocessor result to many little files",
+        Option [] ["dump-parsed"]
+            (NoArg (\o -> o { oDumpParsed = True }))
+            "dump parse result to many little files"
+
     ]
+    
+sdkDirectory sdk = "/Developer/SDKs"
+               </> (sdk ++ ".sdk")
     
 main :: IO ()
 main = do
@@ -294,7 +315,10 @@ main = do
                         oAdditionalCode = Nothing,
                         oShowZapped = False,
                         oDumpInitial = False,
-                        oQuiet = False
+                        oQuiet = False,
+                        oPrefix = "/",
+                        oDumpPreprocessed = False,
+                        oDumpParsed = False
                     }
                 options = foldl (flip ($)) options0 optionsF
             in
