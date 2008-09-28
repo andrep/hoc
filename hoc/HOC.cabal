@@ -11,8 +11,8 @@ Flag BinaryInterfaces
                  (requires binary package)
 
 Library
-    build-depends: base, containers, bytestring, mtl, pretty, parsec, fgl,
-                   template-haskell, old-time, directory, unix
+    build-depends: base, template-haskell, unix
+                   
     exposed-modules:
         HOC,
         HOC.NameCaseChange,
@@ -67,7 +67,8 @@ Executable hoc-ifgen
     main-is: Main.hs
     hs-source-dirs: HOC, InterfaceGenerator2
 
-    build-depends: filepath
+    build-depends: containers, bytestring, mtl, pretty, parsec >= 3.0, fgl,
+                   old-time, directory, filepath
     if flag(BinaryInterfaces)
         build-depends: binary >= 0.2
         cpp-options: -DBINARY_INTERFACES
