@@ -1,9 +1,9 @@
 module Preprocessor( preprocess ) where
 
-import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Token
-import Text.ParserCombinators.Parsec.Language(emptyDef)
-import Text.ParserCombinators.Parsec.Expr
+import Text.Parsec
+import Text.Parsec.Token
+import Text.Parsec.Language(emptyDef)
+import Text.Parsec.Expr
 
 import Control.Monad.State as StateM
 
@@ -54,7 +54,7 @@ negateExpr e = e >>= \x -> return (if x /= 0 then 0 else 1)
     
 expression = try (buildExpressionParser optable basic) <|> return (return 0)
     where
-        basic :: CharParser () Expr    
+        basic :: Parsec String () Expr    
         basic = do i <- integer cpp
                    return (return i)
             <|> do reserved cpp "defined"
@@ -145,7 +145,15 @@ unblockComments [] = "\n"
 
 parseDirectives = map (\l -> case parse line "" l of
                                 Left e -> Text $ l ++ "// " ++ show (show e)
-                                Right x -> x) . lines . unblockComments        
+                                Right x -> x) . handleBackslashes . lines . unblockComments        
+        
+handleBackslashes [] = []
+handleBackslashes (l : ls)
+    | null l = [] : handleBackslashes ls
+    | last l == '\\' = case handleBackslashes ls of
+                            (l2 : ls') -> (l ++ '\n' : l2) : ls'
+                            ls' -> ls'
+    | otherwise = l : handleBackslashes ls
         
 preprocess fn f = execute fn $ parseDirectives f
 

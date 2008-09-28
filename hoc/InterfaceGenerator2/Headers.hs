@@ -14,7 +14,8 @@ import Data.List(isPrefixOf,isSuffixOf,partition)
 import Data.Maybe(mapMaybe)
 import System.Directory(getDirectoryContents)
 import System.Info(os)
-import Text.ParserCombinators.Parsec(parse)
+import Text.Parsec( runParserT )
+import Messages( runMessages )
 import Data.ByteString.Char8(ByteString)
 import qualified Data.ByteString.Char8 as BS
 import Progress
@@ -71,7 +72,10 @@ loadHeaders (dumpPreprocessed, dumpParsed) progress headers =
                 let imports = findImports contents
                     preprocessed = preprocess headerFileName {- stripPreprocessor -} contents
                 when dumpPreprocessed $ writeFile ("preprocessed-" ++ headerFileName) $ preprocessed
-                result <- case parse header headerFileName preprocessed of
+                
+                let (parseResult, parseMessages) = runMessages (runParserT header () headerFileName preprocessed)
+                mapM_ print parseMessages
+                result <- case parseResult of
                     Left err -> error $ show err
                     Right decls -> do
                         when dumpParsed $ writeFile ("parsed-" ++ headerFileName) $ unlines $ map show decls

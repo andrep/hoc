@@ -24,7 +24,7 @@ instance Monoid (Bag a) where
 --    mappend a EmptyBag = a    more lazyness!
     mappend a b = BagOfTwo a b
 
-type Messages a = Writer (Bag Doc) a
+type Messages = Writer (Bag Doc)
 message d = tell (UnitBag d)
 
 runMessages :: Messages a -> (a, [Doc])
