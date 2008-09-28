@@ -135,7 +135,7 @@ makeEntities bindingScript headers importedEntities
             = makeSelectorEntity True modName clsID clsName sel
         makeEntitiesForSelectorListItem modName _clsID _clsName (LocalDecl decl)
             = makeEntity modName decl >> return Nothing
-        makeEntitiesForSelectorListItem _modName _clsID _clsName PropertyDecl
+        makeEntitiesForSelectorListItem _modName _clsID _clsName (PropertyDecl _)
             = return Nothing
         makeEntitiesForSelectorListItem _modName _clsID _clsName (Required _)
             = return Nothing
