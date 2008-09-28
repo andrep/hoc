@@ -12,9 +12,9 @@ hackEnumNames (HeaderInfo name imports decls)
         hackEnums1 :: (a -> Maybe Declaration) -> (Declaration -> a) -> [a] -> [a]
         hackEnums1 unwrap wrap (x : y : xs)
             | Just (CTypeDecl (CTEnum name1 vals)) <- unwrap x,
-              Just (Typedef (CTSimple baseType) name2) <- unwrap y,
+              Just (Typedef baseType name2) <- unwrap y,
               null name1 || name1 == name2 || name1 == '_' : name2,
-              baseType == "NSInteger" || baseType == "NSUInteger"
+              acceptableEnumBaseType baseType
             = wrap (Typedef (CTEnum name1 vals) name2)
                 : hackEnums1 unwrap wrap xs
         hackEnums1 unwrap wrap (x : xs)
@@ -27,3 +27,8 @@ hackEnumNames (HeaderInfo name imports decls)
                   decl other = Nothing
         hackEnums1 unwrap wrap [] = []
         
+        acceptableEnumBaseType (CTSimple name)
+            | name == "NSInteger" || name == "NSUInteger" = True
+        acceptableEnumBaseType (CTBuiltin _ _ name)
+            | name == "int" = True
+        acceptableEnumBaseType _ = False
