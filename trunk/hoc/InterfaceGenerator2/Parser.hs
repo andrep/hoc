@@ -1,47 +1,66 @@
-module Parser( header, selector ) where
+{-# LANGUAGE TypeSynonymInstances #-}
+module Parser( Parser, header, selector ) where
 
 import Data.Maybe(catMaybes, isJust, fromJust)
 import Data.Char(ord, isUpper, isDigit)
 import Data.Bits(shiftL, (.|.))
 import Control.Monad(guard)
 
-import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Token
-import Text.ParserCombinators.Parsec.Language(emptyDef)
-import Text.ParserCombinators.Parsec.Expr
+import Text.Parsec
+import Text.Parsec.Token
+import Text.Parsec.Language(emptyDef)
+import Text.Parsec.Expr
 
 import SyntaxTree
 
 import qualified Data.Map as Map
 
-objcDef = emptyDef
+import Control.Monad.Trans( lift )
+import Messages
+
+import qualified Text.PrettyPrint.HughesPJ as PP
+
+type Parser a = ParsecT String () Messages a
+
+objcDef = LanguageDef
     { commentStart   = "/*"
     , commentEnd     = "*/"
     , commentLine    = "//"
     , nestedComments = False
     , identStart     = letter <|> char '_'
     , identLetter    = alphaNum <|> char '_'
+    , opStart        = oneOf ":!#$%&*+./<=>?@\\^|-~"
+    , opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"
+    , reservedOpNames = []
     , reservedNames  = ["@class","@protocol","@interface","@implementation","@end","@property",
-                        "const", "volatile", "struct", "union", "enum",
+                        "const", "volatile", "struct", "union", "enum", "typedef",
                         "__attribute__", "__strong",
                         "@required", "@optional", "@private", "@public" ]
     , caseSensitive  = True
     }
 
-objc :: TokenParser ()
+objc :: GenTokenParser String () Messages
 objc = makeTokenParser objcDef
 
 singleton x = [x]
+
+parseWarning :: String -> Parser ()
+parseWarning msg
+    = do
+        pos <- getPosition
+        lift (message $ PP.text (show pos ++ ": " ++ msg))
 
 header :: Parser [Declaration]
     
 header = do
     optional (whiteSpace objc)
-    fmap concat $ many $ do
+    things <- fmap concat $ many $ do
         -- thing <- try interestingThing <|> uninterestingThing -- lenient parsing
         thing <- interestingThing   -- strict parsing
         optional (whiteSpace objc)
         return thing
+    eof
+    return things
 
 uninterestingThing :: Parser (Maybe Declaration)
 uninterestingThing = skipMany1 (satisfy (\x -> x /= '@' && x /= ';')) >> return Nothing
@@ -52,6 +71,9 @@ interestingThing =
     <|> interface_decl
     <|> empty_decl
     <|> type_declaration
+    <|> (reserved objc "CF_EXTERN_C_BEGIN" >> return [])
+    <|> (reserved objc "CF_EXTERN_C_END" >> return [])
+    <|> inline_function
     <|> extern_decl
     <|> (semi objc >> return [])
 
@@ -225,12 +247,6 @@ declarator emptyDeclaratorPossible thing = do
                         (_, tf) <- declarator True (optional $ identifier objc)
                         return $ Just $ tf t
      
-    
-testdecl :: String -> IO ()
-testdecl s = case parse (declarator True (return ()){- (identifier objc)-}) "" s of
-                Right (n, t) -> print $ t (CTSimple "void")
-                Left e -> print e
-
 ctype = do
     simple <- type_no_pointers
     (_, f) <- declarator True (return ())
@@ -290,7 +306,8 @@ const_int_expr env = expr
         basic = suffixedInteger 
             <|> multiCharConstant
             <|> (do name <- identifier objc
-                    Map.lookup name env)
+--                    Map.lookup name env <?> (name ++ " undefined"))
+                    Map.lookup name env <|> (parseWarning (name ++ " undefined") >> fail ""))
             <|> parens objc expr
         optable = [ [Infix shiftLeft AssocLeft],
                     [Infix bitwiseOr AssocLeft] ]
@@ -322,6 +339,7 @@ enum_type =
                                     >> option [] (enum_body env' (Just val))
                     return $ (id, GivenValue val) : xs
                 Nothing -> do 
+                    parseWarning $ "Couldn't handle enum value for " ++ id
                     xs <- option [] $ comma objc
                                     >> option [] (enum_body env Nothing)
                     return $ (id, TooComplicatedValue "") : xs
@@ -335,7 +353,7 @@ struct_type =
         return $ key id body
     where
         struct_union_body = try (many member)
-            <|> (skipBlockContents >> return [])
+            <|> (skipBlockContents >> parseWarning "problem parsing struct" >> return [])
         member = do 
             typ <- type_no_pointers
             things <- commaSep objc $ do
@@ -343,6 +361,7 @@ struct_type =
                 bitfield <- option Nothing
                     (symbol objc ":" >> integer objc >>= return . Just)
                 return (name, typeModifiers)
+            availability
             semi objc
             return [ (modifier typ, name) | (name, modifier) <- things ]
         
@@ -381,7 +400,7 @@ type_declaration = typedef <|> ctypeDecl
 
 extern_decl =
     do
-        extern_keyword
+        optional extern_keyword
         t <- type_no_pointers
         vars <- commaSep objc (one_var t)
         availability
@@ -395,7 +414,8 @@ extern_decl =
                     -> ExternFun (Selector n retval args varargs)
                 otherType
                     -> ExternVar otherType n
-        
+       
+availability :: Parser ()
 availability = optional $
     do reserved objc "__attribute__"
        parens objc (skipParens)
@@ -410,7 +430,9 @@ extern_keyword =
     <|> reserved objc "FOUNDATION_EXPORT" -- N.B. "Export" vs. "Extern".
     <|> reserved objc "APPKIT_EXTERN"
     <|> reserved objc "GS_EXPORT"
-
+    <|> reserved objc "CA_EXTERN"
+    <|> reserved objc "CF_EXPORT"
+    
 skipParens = parens objc (skipMany (
     (satisfy (\x -> x /= '(' && x /= ')') >> return ())
     <|> skipParens
@@ -423,3 +445,12 @@ skipBlockContents = (skipMany (
 skipBlock = braces objc skipBlockContents
 
 skipEnumValue = skipMany1 (satisfy (\x -> x /= '}' && x /= ','))
+
+inline_function =
+    do
+        reserved objc "inline" <|> reserved objc "NS_INLINE" 
+                               <|> reserved objc "CF_INLINE"
+        t <- type_no_pointers
+        (n, tf) <- id_declarator
+        skipBlock
+        return []

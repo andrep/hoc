@@ -13,6 +13,7 @@ import SyntaxTree(
         Selector(..)
     )
 import qualified Parser(selector)
+import Parser(Parser)
 
 import Control.Monad(when)
 import qualified Data.Map as Map
@@ -20,9 +21,10 @@ import Data.Set(Set)
 import qualified Data.Set as Set hiding (Set)
 import Data.List(intersperse)
 
-import Text.ParserCombinators.Parsec.Language(haskellStyle)
-import Text.ParserCombinators.Parsec.Token
-import Text.ParserCombinators.Parsec
+import Text.Parsec.Token
+import Text.Parsec
+
+import Messages
 
 data BindingScript = BindingScript {
         bsHiddenFromPrelude :: Set String,
@@ -80,10 +82,23 @@ getSelectorOptions bindingScript clsName =
     where
         top = bsTopLevelOptions bindingScript
 
-tokenParser :: TokenParser ()
-tokenParser = makeTokenParser $ haskellStyle { identStart = letter <|> char '_' }
+tokenParser :: GenTokenParser String () Messages
+tokenParser = makeTokenParser $ 
+        LanguageDef
+                { commentStart   = "{-"
+                , commentEnd     = "-}"
+                , commentLine    = "--"
+                , nestedComments = True
+                , identStart     = letter <|> char '_' 
+                , identLetter    = alphaNum <|> oneOf "_'"
+                , opStart        = oneOf ":!#$%&*+./<=>?@\\^|-~"
+                , opLetter       = oneOf ":!#$%&*+./<=>?@\\^|-~"
+                , reservedOpNames= []
+                , reservedNames  = []
+                , caseSensitive  = True
+                }
 
-selector, qualified :: TokenParser () -> Parser String
+selector, qualified :: GenTokenParser String () Messages -> Parser String
 selector tp = lexeme tp $ do
                 c <- letter <|> char '_'
                 s <- many (alphaNum <|> oneOf "_:")
@@ -181,7 +196,8 @@ bindingScript = do
 readBindingScript :: String -> IO BindingScript
 
 readBindingScript fn = do
-    either <- parseFromFile bindingScript fn
+    f <- readFile fn
+    let (either, messages) = runMessages (runParserT bindingScript () fn f)
     case either of
         Left err -> error (show err)
         Right result -> return result
