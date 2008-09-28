@@ -26,20 +26,6 @@ type ModuleName = ByteString
 data HeaderInfo = HeaderInfo ModuleName [ModuleName] [Declaration]
     deriving(Show)
 
-stripPreprocessor = unlines . stripPP . lines
-    where
-        stripPP (('#':'e':'l':'s':'e':_) : xs) = "" : dropElseHack xs
-        stripPP (x@('#':_) : xs) = dropPreprocessorLine x xs
-        stripPP (x : xs) = x : stripPP xs
-        stripPP [] = []
-        dropPreprocessorLine x xs
-            | last x == '\\' = "" : dropPreprocessorLine (head xs) (tail xs)
-            | otherwise = "" : stripPP xs
-
-        dropElseHack (('#':'e':'n':'d':'i':'f':_) : xs) = "" : stripPP xs
-        dropElseHack (x : xs) = "" : dropElseHack xs
-        dropElseHack [] = []
-
 findImports = mapMaybe checkImport . lines
     where
         checkImport line
@@ -70,7 +56,7 @@ loadHeaders (dumpPreprocessed, dumpParsed) progress headers =
                 contents <- readFile $ headerPathName
                 evaluate (length contents)
                 let imports = findImports contents
-                    preprocessed = preprocess headerFileName {- stripPreprocessor -} contents
+                    preprocessed = preprocess headerFileName contents
                 when dumpPreprocessed $ writeFile ("preprocessed-" ++ headerFileName) $ preprocessed
                 
                 let (parseResult, parseMessages) = runMessages (runParserT header () headerFileName preprocessed)

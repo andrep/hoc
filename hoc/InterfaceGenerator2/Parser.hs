@@ -22,6 +22,9 @@ import qualified Text.PrettyPrint.HughesPJ as PP
 
 type Parser a = ParsecT String () Messages a
 
+-- type Parser a = forall b. ParsecT String b Messages a
+
+
 objcDef = LanguageDef
     { commentStart   = "/*"
     , commentEnd     = "*/"
@@ -66,144 +69,126 @@ uninterestingThing :: Parser (Maybe Declaration)
 uninterestingThing = skipMany1 (satisfy (\x -> x /= '@' && x /= ';')) >> return Nothing
 
 interestingThing =
-        class_decl
+        ignoredToplevelThing
+    <|> class_decl
     <|> (try protocol_decl)
     <|> interface_decl
     <|> empty_decl
     <|> type_declaration
-    <|> (reserved objc "CF_EXTERN_C_BEGIN" >> return [])
-    <|> (reserved objc "CF_EXTERN_C_END" >> return [])
     <|> inline_function
     <|> extern_decl
     <|> (semi objc >> return [])
 
+ignoredToplevelThing
+    = (foldl1 (<|>) . map (reserved objc))
+      ["CA_EXTERN_C_BEGIN", "CA_EXTERN_C_END",
+       "CF_EXTERN_C_BEGIN", "CF_EXTERN_C_END"]
+      >> return []
+--
+
+skipParens = parens objc (skipMany (
+    (satisfy (\x -> x /= '(' && x /= ')') >> return ())
+    <|> skipParens
+    ))
+
+skipBlockContents = (skipMany (
+    (satisfy (\x -> x /= '{' && x /= '}') >> return ())
+    <|> skipBlock
+    ))
+skipBlock = braces objc skipBlockContents
+
+skipEnumValue = skipMany1 (satisfy (\x -> x /= '}' && x /= ','))
+
+-- Plain C
+
+empty_decl :: Parser [a]
 empty_decl = semi objc >> return []
 
-class_decl = do
-    reserved objc "@class"
-    classes <- commaSep1 objc (identifier objc)
-    semi objc
-    return [ForwardClass classes]
 
-protocol_decl = do
-    reserved objc "@protocol"
-    protos <- commaSep1 objc (identifier objc)
-    semi objc
-    return [ForwardProtocol protos]
+const_int_expr :: Map.Map String Integer -> Parser Integer
+const_int_expr env = expr
+    where
+        expr = buildExpressionParser optable basic
 
-interface_decl = do
-    proto <- (reserved objc "@interface" >> return False)
-            <|> (reserved objc "@protocol" >> return True)
-    class_name <- identifier objc
-    what <- if proto
-        then do
-            protos <- protocol_spec
-            return $ Protocol class_name protos 
-        else (do
-            cat_name <- category_spec
-            protos <- protocol_spec
-            return $ Category class_name cat_name protos
-        ) <|> (do
-            super <- superclass_spec
-            protos <- protocol_spec
-            return $ Interface class_name super protos
-        )
-    instance_variables
-    selectors <- fmap concat $ many selectorListItem
-    reserved objc "@end"
-    return [SelectorList what selectors]
-    
-category_spec = parens objc (identifier objc)
-    
-superclass_spec = (do
-        colon objc
-        superclass <- identifier objc
-        return $ Just superclass
-    ) <|> return Nothing
-    
-protocol_spec = 
-    angles objc (commaSep1 objc (identifier objc))
-    <|> return []
-    
-instance_variables = skipBlock <|> return ()
+        basic = suffixedInteger 
+            <|> multiCharConstant
+            <|> definedConstant
+            <|> parens objc expr
 
-selectorListItem
-    =   fmap singleton selector 
-    <|> fmap (map LocalDecl) type_declaration
-    <|> fmap (map LocalDecl) extern_decl
-    <|> property_declaration
-    <|> fmap singleton requiredOrOptional
-    <|> (semi objc >> return [])
-
-requiredOrOptional
-    =   (reserved objc "@required" >> return (Required True))
-    <|> (reserved objc "@optional" >> return (Required False))
-
-selector = do
-    classOrInstanceMethod <-
-            (symbol objc "-" >> return InstanceMethod)
-        <|> (symbol objc "+" >> return ClassMethod)
-    -- str <- many (satisfy (\c -> c /= ';' && c /= '@'))
-    rettype <- type_spec
-    (name,types,vararg) <- (
+        optable = [ [Infix (op "<<" (cast2nd shiftL))   AssocLeft],
+                    [Infix (op "|" (.|.))               AssocLeft] ]
+            where        
+                op str f = reservedOp objc str >> return f
+                cast2nd f x y = f x (fromIntegral y)
+                
+        suffixedInteger =
             do
-                manythings <- many1 (try $ do
-                        namePart <- identifier objc <|> return ""
-                        colon objc
-                        argType <- type_spec
-                        argName <- identifier objc
-                        return (namePart, argType)
-                    )
-                vararg <- (symbol objc "," >> symbol objc "..." >> return True) <|> return False
-                let (nameParts,types) = unzip manythings
-                return (concat $ map (++":") nameParts , types, vararg)
-        ) <|> (
+                val <- integer objc
+                optional (reserved objc "U" <|> reserved objc "L"
+                            <|> reserved objc "UL") -- ### TODO: no space allowed before 'U'
+                return val
+
+        multiCharConstant =
+                lexeme objc (between (char '\'') (char '\'') multiChars)
+            where
+                multiChars = do
+                    chars <- many1 (satisfy (/= '\''))
+                    return $ sum $ zipWith (*)  
+                        (map (fromIntegral.ord) $ reverse chars)
+                        (iterate (*256) 1)
+                
+        definedConstant =
             do
                 name <- identifier objc
-                return (name,[],False)
-        )
-    availability
-    semi objc
-    return (classOrInstanceMethod $ Selector name rettype types vararg)
+                Map.lookup name env <|> (parseWarning (name ++ " undefined") >> fail "")
 
-property_declaration
-    = do
-        reserved objc "@property"
-        properties <- option [] (parens objc (commaSep objc $ property_attribute))
-        basetype <- type_no_pointers
-        things <- commaSep objc id_declarator
-        availability
-        semi objc
-        return $ map (\ (name, typeModifiers) -> PropertyDecl $
-                        Property (typeModifiers $ basetype)
-                                 name properties ) things
+-- A ctype is a complete C type, as you'd write it in a cast expression.
+-- Examples include "int", "const char*", and "void (*)(int, float[3])"
+ctype = do
+    simple <- simple_type
+    (_, f) <- declarator True (return ())
+    return (f simple)
 
-property_attribute = 
-        (do reserved objc "getter"
-            symbol objc "="
-            name <- identifier objc
-            return $ Getter name)
-    <|> (do reserved objc "setter"
-            symbol objc "="
-            name <- identifier objc
-            symbol objc ":"
-            return $ Setter (name ++ ":"))
-    <|> (reserved objc "readonly" >> return ReadOnly)
-    <|> (reserved objc "readwrite" >> return ReadWrite)
-    <|> (reserved objc "assign" >> return Assign)
-    <|> (reserved objc "retain" >> return Retain)
-    <|> (reserved objc "copy" >> return Copy)
+-- A simple_type is a C type without any pointers, arrays or functions.
+-- (but including struct, enum and union declarations).
+-- If you declare multiple variables in one C declaration, the simple_type
+-- is what they have in common.
+-- Examples include "int", "const char", "char const", "struct {int *x;}",
+-- but NOT "const char*".
 
-
---type_spec = try (parens objc ctype) <|> (skipParens >> return CTUnknown) <|> return (CTIDType [])
-type_spec = parens objc ctype <|> return (CTIDType [])
-
-type_no_pointers = do  -- "const char" in "const char *foo[32]"
+simple_type = do  -- "const char" in "const char *foo[32]"
     many ignored_type_qualifier   -- ignore
-    t <- simple_type
+    t <-    id_type
+        <|> enum_type
+        <|> struct_type
+        <|> try builtin_type
+        <|> do n <- identifier objc
+               protos <- protocol_spec     -- TOOD: use these protocols
+               return $ CTSimple n
     many ignored_type_qualifier
     return t
 
+ignored_type_qualifier = 
+        reserved objc "const"
+    <|> reserved objc "volatile"
+    <|> reserved objc "in"
+    <|> reserved objc "out"
+    <|> reserved objc "inout"
+    <|> reserved objc "bycopy"
+    <|> reserved objc "byref"
+    <|> reserved objc "oneway"
+    <|> reserved objc "__strong"
+
+-- An id_declarator is an identifier surrounded by things like "*", "[]" and
+-- function arguments.
+-- In a declaration of a single C variable or function, everything except the
+-- simple_type is part of the id_declarator.
+-- In the declaration "const char *x[32]", "*x[32]" is the id_declarator.
+-- The parser returns the identifier and a function that transforms the
+-- simple_type ("const char" in the example) to the type of the identifier
+-- ("const char * [32]" in the example).
+
+id_declarator :: Parser (String, CType -> CType)
 id_declarator = declarator False (identifier objc)
 
 declarator :: Bool -> Parser a -> Parser (a, CType -> CType)
@@ -243,20 +228,11 @@ declarator emptyDeclaratorPossible thing = do
                 argument = 
                     (symbol objc "..." >> return Nothing)
                     <|> do
-                        t <- type_no_pointers
+                        t <- simple_type
                         (_, tf) <- declarator True (optional $ identifier objc)
                         return $ Just $ tf t
-     
-ctype = do
-    simple <- type_no_pointers
-    (_, f) <- declarator True (return ())
-    return (f simple)
     
-simple_type = id_type <|> enum_type <|> struct_type <|> try builtin_type
-    <|> do
-        n <- identifier objc
-        protos <- protocol_spec     -- TOOD: use these protocols
-        return $ CTSimple n
+
 
 builtin_type = do
     signedness <- (reserved objc "signed" >> return (Just True))
@@ -283,39 +259,6 @@ id_type = do
     return $ CTIDType protos
         
 
-multiCharConstant =
-        lexeme objc (between (char '\'') (char '\'') multiChars)
-    where
-        multiChars = do
-            chars <- many1 (satisfy (/= '\''))
-            return $ sum $ zipWith (*)  
-                (map (fromIntegral.ord) $ reverse chars)
-                (iterate (*256) 1)
-
-
-suffixedInteger =
-    do
-        val <- integer objc
-        optional (reserved objc "U" <|> reserved objc "L"
-                    <|> reserved objc "UL") -- ### TODO: no space allowed before 'U'
-        return val
-
-const_int_expr env = expr
-    where
-        expr = buildExpressionParser optable basic
-        basic = suffixedInteger 
-            <|> multiCharConstant
-            <|> (do name <- identifier objc
---                    Map.lookup name env <?> (name ++ " undefined"))
-                    Map.lookup name env <|> (parseWarning (name ++ " undefined") >> fail ""))
-            <|> parens objc expr
-        optable = [ [Infix shiftLeft AssocLeft],
-                    [Infix bitwiseOr AssocLeft] ]
-        
-        shiftLeft = op "<<" (flip $ flip shiftL . fromIntegral)
-        bitwiseOr = op "|" (.|.)
-        
-        op str f = reservedOp objc str >> return f
         
 enum_type =
     do
@@ -355,7 +298,7 @@ struct_type =
         struct_union_body = try (many member)
             <|> (skipBlockContents >> parseWarning "problem parsing struct" >> return [])
         member = do 
-            typ <- type_no_pointers
+            typ <- simple_type
             things <- commaSep objc $ do
                 (name, typeModifiers) <- id_declarator
                 bitfield <- option Nothing
@@ -364,25 +307,11 @@ struct_type =
             availability
             semi objc
             return [ (modifier typ, name) | (name, modifier) <- things ]
-        
-type_operator = 
-    (symbol objc "*" >> return CTPointer)
-    <|> (ignored_type_qualifier >> return id)
             
-ignored_type_qualifier = 
-        reserved objc "const"
-    <|> reserved objc "volatile"
-    <|> reserved objc "in"
-    <|> reserved objc "out"
-    <|> reserved objc "inout"
-    <|> reserved objc "bycopy"
-    <|> reserved objc "byref"
-    <|> reserved objc "oneway"
-    <|> reserved objc "__strong"
             
 typedef = do
     reserved objc "typedef"
-    baseType <- type_no_pointers
+    baseType <- simple_type
     
     newTypes <- commaSep objc id_declarator
     availability
@@ -401,7 +330,7 @@ type_declaration = typedef <|> ctypeDecl
 extern_decl =
     do
         optional extern_keyword
-        t <- type_no_pointers
+        t <- simple_type
         vars <- commaSep objc (one_var t)
         availability
         semi objc
@@ -414,17 +343,7 @@ extern_decl =
                     -> ExternFun (Selector n retval args varargs)
                 otherType
                     -> ExternVar otherType n
-       
-availability :: Parser ()
-availability = optional $
-    do reserved objc "__attribute__"
-       parens objc (skipParens)
-       return ()
-    <|>
-    do x <- identifier objc
-       guard $ all (\c -> isUpper c || isDigit c || c == '_') x
-       -- guard (any (`isPrefixOf` x) ["AVAILABLE_MAC_", "DEPRECATED_IN_"])
-    
+           
 extern_keyword =
         reserved objc "extern"
     <|> reserved objc "FOUNDATION_EXPORT" -- N.B. "Export" vs. "Extern".
@@ -432,25 +351,147 @@ extern_keyword =
     <|> reserved objc "GS_EXPORT"
     <|> reserved objc "CA_EXTERN"
     <|> reserved objc "CF_EXPORT"
+    <|> reserved objc "COREDATA_EXTERN"
     
-skipParens = parens objc (skipMany (
-    (satisfy (\x -> x /= '(' && x /= ')') >> return ())
-    <|> skipParens
-    ))
-
-skipBlockContents = (skipMany (
-    (satisfy (\x -> x /= '{' && x /= '}') >> return ())
-    <|> skipBlock
-    ))
-skipBlock = braces objc skipBlockContents
-
-skipEnumValue = skipMany1 (satisfy (\x -> x /= '}' && x /= ','))
-
 inline_function =
     do
         reserved objc "inline" <|> reserved objc "NS_INLINE" 
                                <|> reserved objc "CF_INLINE"
-        t <- type_no_pointers
+        t <- simple_type
         (n, tf) <- id_declarator
         skipBlock
         return []
+
+
+-- Ignore __attribute__((...)) and Apple's countless different availability macros,
+-- which all expand to some __attribute__. My favourite example is
+-- "AVAILABLE_MAC_OS_X_VERSION_10_1_AND_LATER_BUT_DEPRECATED_IN_MAC_OS_X_VERSION_10_3"
+
+availability :: Parser ()
+availability = fmap (const ()) $ many $
+    do reserved objc "__attribute__"
+       parens objc (skipParens)
+       return ()
+    <|>
+    do x <- identifier objc
+       guard $ all (\c -> isUpper c || isDigit c || c == '_') x
+       -- guard (any (`isPrefixOf` x) ["AVAILABLE_MAC_", "DEPRECATED_IN_"])
+
+
+-- Objective C
+
+class_decl = do
+    reserved objc "@class"
+    classes <- commaSep1 objc (identifier objc)
+    semi objc
+    return [ForwardClass classes]
+
+protocol_decl = do
+    reserved objc "@protocol"
+    protos <- commaSep1 objc (identifier objc)
+    semi objc
+    return [ForwardProtocol protos]
+
+interface_decl = do
+        proto <- (reserved objc "@interface" >> return False)
+                <|> (reserved objc "@protocol" >> return True)
+        class_name <- identifier objc
+        what <- if proto
+            then do
+                protos <- protocol_spec
+                return $ Protocol class_name protos 
+            else (do
+                cat_name <- category_spec
+                protos <- protocol_spec
+                return $ Category class_name cat_name protos
+            ) <|> (do
+                super <- superclass_spec
+                protos <- protocol_spec
+                return $ Interface class_name super protos
+            )
+        instance_variables
+        selectors <- fmap concat $ many selectorListItem
+        reserved objc "@end"
+        return [SelectorList what selectors]
+    where    
+        category_spec = parens objc (identifier objc)
+            
+        superclass_spec = (do
+                colon objc
+                superclass <- identifier objc
+                return $ Just superclass
+            ) <|> return Nothing
+    
+protocol_spec = 
+    angles objc (commaSep1 objc (identifier objc))
+    <|> return []
+    
+instance_variables = skipBlock <|> return ()
+
+selectorListItem
+    =   fmap singleton selector 
+    <|> fmap (map LocalDecl) type_declaration
+    <|> fmap (map LocalDecl) extern_decl
+    <|> property_declaration
+    <|> fmap singleton requiredOrOptional
+    <|> (semi objc >> return [])
+
+requiredOrOptional
+    =   (reserved objc "@required" >> return (Required True))
+    <|> (reserved objc "@optional" >> return (Required False))
+
+selector = do
+    classOrInstanceMethod <-
+            (symbol objc "-" >> return InstanceMethod)
+        <|> (symbol objc "+" >> return ClassMethod)
+    -- str <- many (satisfy (\c -> c /= ';' && c /= '@'))
+    rettype <- option (CTIDType []) (parens objc ctype)
+    (name,types,vararg) <- (
+            do
+                manythings <- many1 (try $ do
+                        namePart <- identifier objc <|> return ""
+                        colon objc
+                        argType <- option (CTIDType []) (parens objc ctype)
+                        argName <- identifier objc
+                        return (namePart, argType)
+                    )
+                vararg <- (symbol objc "," >> symbol objc "..." >> return True) <|> return False
+                let (nameParts,types) = unzip manythings
+                return (concat $ map (++":") nameParts , types, vararg)
+        ) <|> (
+            do
+                name <- identifier objc
+                return (name,[],False)
+        )
+    availability
+    semi objc
+    return (classOrInstanceMethod $ Selector name rettype types vararg)
+
+property_declaration
+    = do
+        reserved objc "@property"
+        properties <- option [] (parens objc (commaSep objc $ property_attribute))
+        basetype <- simple_type
+        things <- commaSep objc id_declarator
+        availability
+        semi objc
+        return $ map (\ (name, typeModifiers) -> PropertyDecl $
+                        Property (typeModifiers $ basetype)
+                                 name properties ) things
+    where
+        property_attribute = 
+                (do reserved objc "getter"
+                    symbol objc "="
+                    name <- identifier objc
+                    return $ Getter name)
+            <|> (do reserved objc "setter"
+                    symbol objc "="
+                    name <- identifier objc
+                    symbol objc ":"
+                    return $ Setter (name ++ ":"))
+            <|> (reserved objc "readonly" >> return ReadOnly)
+            <|> (reserved objc "readwrite" >> return ReadWrite)
+            <|> (reserved objc "assign" >> return Assign)
+            <|> (reserved objc "retain" >> return Retain)
+            <|> (reserved objc "copy" >> return Copy)
+
