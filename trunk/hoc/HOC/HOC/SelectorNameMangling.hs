@@ -29,12 +29,10 @@ mangleSelectorName = concat . intersperse "_" .
 
 -}
 
-{-
 -- addObject:forKey: -> addObject_forKey_
 -- close: -> close_
 
-mangleSelectorName = forceLowercase . uncolon
+mangleSelectorNameWithUnderscores = forceLowercase . uncolon
     where
         uncolon = map f where f ':' = '_' ; f x = x
         forceLowercase xs = map toLower (takeWhile isUpper xs) ++ dropWhile isUpper xs
--}
