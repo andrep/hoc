@@ -23,7 +23,7 @@ data SelectorListItem =
         InstanceMethod Selector
     |   ClassMethod Selector
     |   LocalDecl Declaration
-    |   PropertyDecl
+    |   PropertyDecl Property
     |   Required Bool
     deriving (Show,Eq,Ord)
 
@@ -36,12 +36,27 @@ data Selector =
         }
     deriving (Read,Show,Eq,Ord,Typeable,Data)
     
+data Property = Property CType String [PropertyAttribute]
+    deriving (Show, Eq, Ord)
+
+data PropertyAttribute =
+        Getter String
+    |   Setter String
+    |   ReadOnly
+    |   ReadWrite
+    |   Assign
+    |   Retain
+    |   Copy
+    deriving (Show, Eq, Ord)
+                       
+    
 data EnumValue = NextValue | GivenValue Integer | TooComplicatedValue String
     deriving (Read, Show, Eq, Ord,Typeable,Data)
     
 data CType = CTIDType [String {- protocols -}]
            | CTSimple String
            | CTPointer CType
+           | CTFunction CType [CType] Bool
            | CTUnknown
            | CTEnum String [(String, EnumValue)]
            | CTStruct String [(CType, String)]
