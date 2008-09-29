@@ -73,20 +73,6 @@ loadHeaders (dumpPreprocessed, dumpParsed) progress headers =
     where
         nHeaders = length headers
 
-orderModules :: [HeaderInfo] -> [HeaderInfo]
-
-orderModules [] = []
-orderModules mods = if null ok
-                    then (head notOK) : orderModules (tail notOK)
-                    else ok ++ orderModules notOK
-    where
-        (notOK, ok) = partition (\(HeaderInfo name imports decls) ->
-                                  any (`elem` names) imports) mods
-        names = map (\(HeaderInfo name imports decls) -> name) mods
-        -- names | any ("Foundation." `isPrefixOf`) names' = "Foundation.Foundation" : names'
-        --     | otherwise = names'
-
-
 haskellizeModuleName = firstUpper . concatMap translateChar
     where firstUpper [] = []
           firstUpper (x:xs) = toUpper x : upperAfterDot xs

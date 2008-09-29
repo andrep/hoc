@@ -197,7 +197,7 @@ readBindingScript :: String -> IO BindingScript
 
 readBindingScript fn = do
     f <- readFile fn
-    let (either, messages) = runMessages (runParserT bindingScript () fn f)
+    let (either, _messages) = runMessages (runParserT bindingScript () fn f)
     case either of
         Left err -> error (show err)
         Right result -> return result
