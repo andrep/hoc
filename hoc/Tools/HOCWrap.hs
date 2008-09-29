@@ -1,24 +1,37 @@
 module Main where
 
 import Prelude                  hiding ( init )
+import qualified Prelude
 
 import Control.Exception        ( handle, throw, handleJust, userErrors )
 import Control.Monad            ( when )
 import Data.List                ( isSuffixOf )
 import System.Console.GetOpt
 import System.Environment       ( getArgs, getProgName )
-import System.IO                ( hPutStrLn, hClose )
+import System.IO                ( hPutStrLn, hClose, hGetContents )
 import System.IO.Unsafe         ( unsafePerformIO )
 import System.Exit              ( exitWith, ExitCode(..) )
 import System.Posix             ( createPipe, dupTo, stdInput, closeFd,
                                   fdToHandle, forkProcess, executeFile,
                                   getProcessStatus )
+import System.Process           ( runInteractiveCommand, waitForProcess )
+import System.FilePath          ( (</>), takeFileName, takeBaseName )
 
 import HOC
 import Foundation.NSFileManager
 import Foundation.NSString      hiding ( length )
 import Foundation.NSDictionary
 import Foundation.NSObject
+
+backquote :: String -> IO String
+
+backquote cmd = do
+    (inp,out,err,pid) <- runInteractiveCommand cmd
+    hClose inp
+    text <- hGetContents out
+    waitForProcess pid
+    hClose err
+    return text
 
 data Option = OutputApp String
             | Contents String
@@ -78,7 +91,7 @@ main = handleJust userErrors (\err -> putStrLn err) $ do
                                
                 appName def = forceDotApp $
                               head $ [ s | OutputApp s <- opts ]
-                                  ++ [def]
+                                  ++ [takeBaseName def]
 
                 forceDotApp x | ".app" `isSuffixOf` x = x
                               | otherwise = x ++ ".app"
@@ -147,9 +160,8 @@ runApp ghciArgs appName contents runNow = withAutoreleasePool $ do
 
     let executableInApp = take (length appName - length ".app") appName
          
-    
-    let ghcLib = "/usr/local/lib/ghc-6.4"
-        ghcExecutable = ghcLib ++ "/ghc-6.4"
+    ghcLib <- fmap Prelude.init $ backquote "ghc --print-libdir"
+    let ghcExecutable =  ghcLib </> takeFileName ghcLib
     
     wrapApp' True False ghcExecutable appName contents
 
