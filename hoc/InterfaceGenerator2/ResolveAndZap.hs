@@ -77,7 +77,7 @@ resolveTypes entityPile
                     ClassEntity _ -> Just ClassTypeName
                     _ -> Nothing
 
-zapAndReportWith :: ((EntityID, Entity) -> Messages (EntityID, Entity))
+zapAndReportWith :: ((EntityID, Entity) -> StateT Bool Messages (EntityID, Entity))
                  -> ProgressReporter
                  -> EntityPile -> Messages EntityPile
 zapAndReportWith worker progress entityPile
@@ -88,16 +88,35 @@ zapAndReportWith worker progress entityPile
                fmap (Map.fromList . catMaybes) $
                flip mapM (map (monitor1 progress 0) $ Map.toList $ localEntities entityPile) $
             \(entityID, entity) ->
-                case runMessages $ worker (entityID, entity) of
-                    (x, [])
+                case runMessages $ runStateT (worker (entityID, entity)) False of
+                    ( (x, False), _)
                         -> return $ Just x
-                    (_, messages)
+                    ( (x, True), messages)
                         -> do
-                            message (pprSourcePos (eSrcPos entity)
-                                        <> text ": Skipping"
-                                        <+> (text.show) entityID
-                                        <+> parens (text $ show $ eName entity)
-                                        $+$ nest 4 (vcat messages))
+                            case eInfo entity of
+                                ReexportEntity _ -> return ()
+                                MethodEntity -> return ()
+                                ProtocolAdoptionEntity -> return ()
+                                _ ->
+                                    let kind = text $ case eInfo entity of
+                                            ClassEntity _ -> "class"
+                                            TypeSynonymEntity _ -> "typedef"
+                                            EnumEntity _ _ -> "enum"
+                                            SelectorEntity _ -> "selector"
+                                            ProtocolEntity _ _ -> "protocol"
+                                            ExternVarEntity _ -> "variable/constant"
+                                            ExternFunEntity _ -> "function"
+                                            _ -> ""
+                                        name = text $ case eName entity of
+                                            CName s -> BS.unpack s
+                                            ProtocolName s -> BS.unpack s
+                                            SelectorName s -> BS.unpack s
+                                            _ -> "<anonymous>"
+                                    in message (pprSourcePos (eSrcPos entity)
+                                                <> text ": Skipping"
+                                                <+> kind <+> name
+                                                <+> (parens.text.show) entityID
+                                                $+$ nest 4 (vcat messages))
                             return Nothing
         let pile' = replaceLocalEntities entities' entityPile
         case messages of
@@ -114,7 +133,9 @@ zapAndReportFailedTypes progress entityPile
             >> return x
         
         reportUnconvertedType t@(UnconvertedType ctype)
-            = message $ text "Coudn't convert type" <+> text (show ctype)
+            = do
+                lift $ message $ text "Coudn't convert type." -- <+> text (show ctype)
+                put True
         reportUnconvertedType t
             = return ()
 
@@ -137,5 +158,6 @@ zapAndReportBrokenReferences progress entityPile
                 return (entityID, entity')
         
         reportBrokenRef eid
-            = unless (hasEntity eid entityPile) $
-                    message $ text (show eid) <+> text "has been deleted."
+            = unless (hasEntity eid entityPile) $ do
+                    lift $ message $ text (show eid) <+> text "has been deleted."
+                    put True
