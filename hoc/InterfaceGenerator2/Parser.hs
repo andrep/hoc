@@ -15,15 +15,8 @@ import SyntaxTree
 
 import qualified Data.Map as Map
 
-import Control.Monad.Trans( lift )
-import Messages
 
-import qualified Text.PrettyPrint.HughesPJ as PP
-
-type Parser a = ParsecT String () Messages a
-
--- type Parser a = forall b. ParsecT String b Messages a
-
+import ParserBase
 
 objcDef = LanguageDef
     { commentStart   = "/*"
@@ -42,16 +35,10 @@ objcDef = LanguageDef
     , caseSensitive  = True
     }
 
-objc :: GenTokenParser String () Messages
+objc :: HOCTokenParser
 objc = makeTokenParser objcDef
 
 singleton x = [x]
-
-parseWarning :: String -> Parser ()
-parseWarning msg
-    = do
-        pos <- getPosition
-        lift (message $ PP.text (show pos ++ ": " ++ msg))
 
 header :: Parser [Declaration]
     
@@ -105,8 +92,8 @@ empty_decl :: Parser [a]
 empty_decl = semi objc >> return []
 
 
-const_int_expr :: Map.Map String Integer -> Parser Integer
-const_int_expr env = expr
+const_int_expr :: Parser Integer
+const_int_expr = expr
     where
         expr = buildExpressionParser optable basic
 
@@ -140,7 +127,7 @@ const_int_expr env = expr
         definedConstant =
             do
                 name <- identifier objc
-                Map.lookup name env <|> (parseWarning (name ++ " undefined") >> fail "")
+                lookupIntegerConstant name <|> (parseWarning (name ++ " undefined") >> fail "")
 
 -- A ctype is a complete C type, as you'd write it in a cast expression.
 -- Examples include "int", "const char*", and "void (*)(int, float[3])"
@@ -264,27 +251,27 @@ enum_type =
     do
         key <- reserved objc "enum"
         id <- identifier objc <|> return ""
-        body <- braces objc (enum_body Map.empty (Just (-1))) <|> return []
+        body <- braces objc (enum_body (Just (-1))) <|> return []
         return $ CTEnum id body
     where
-        enum_body env lastVal = do
+        enum_body lastVal = do
             id <- identifier objc
             mbVal <- (do
                     symbol objc "="
-                    try (fmap Just $ const_int_expr env)
+                    try (fmap Just $ const_int_expr)
                         <|> (skipEnumValue >> return Nothing)
                 ) <|> return (lastVal >>= Just . (+1))
             
             case mbVal of
                 Just val -> do 
-                    let env' = Map.insert id val env
+                    defineIntegerConstant id val
                     xs <- option [] $ comma objc
-                                    >> option [] (enum_body env' (Just val))
+                                    >> option [] (enum_body (Just val))
                     return $ (id, GivenValue val) : xs
                 Nothing -> do 
                     parseWarning $ "Couldn't handle enum value for " ++ id
                     xs <- option [] $ comma objc
-                                    >> option [] (enum_body env Nothing)
+                                    >> option [] (enum_body Nothing)
                     return $ (id, TooComplicatedValue "") : xs
     
 struct_type =
@@ -475,8 +462,8 @@ property_declaration
         things <- commaSep objc id_declarator
         availability
         semi objc
-        return $ map (\ (name, typeModifiers) -> PropertyDecl $
-                        Property (typeModifiers $ basetype)
+        return $ map (\ (name, typeModifiers) ->
+                        PropertyDecl (typeModifiers $ basetype)
                                  name properties ) things
     where
         property_attribute = 

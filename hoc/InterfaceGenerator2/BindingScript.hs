@@ -13,7 +13,8 @@ import SyntaxTree(
         Selector(..)
     )
 import qualified Parser(selector)
-import Parser(Parser)
+import ParserBase
+
 
 import Control.Monad(when)
 import qualified Data.Map as Map
@@ -82,7 +83,7 @@ getSelectorOptions bindingScript clsName =
     where
         top = bsTopLevelOptions bindingScript
 
-tokenParser :: GenTokenParser String () Messages
+tokenParser :: HOCTokenParser
 tokenParser = makeTokenParser $ 
         LanguageDef
                 { commentStart   = "{-"
@@ -98,7 +99,7 @@ tokenParser = makeTokenParser $
                 , caseSensitive  = True
                 }
 
-selector, qualified :: GenTokenParser String () Messages -> Parser String
+selector, qualified :: GenTokenParser String ParseEnvironment Messages -> Parser String
 selector tp = lexeme tp $ do
                 c <- letter <|> char '_'
                 s <- many (alphaNum <|> oneOf "_:")
@@ -197,8 +198,7 @@ readBindingScript :: String -> IO BindingScript
 
 readBindingScript fn = do
     f <- readFile fn
-    let (either, _messages) = runMessages (runParserT bindingScript () fn f)
-    case either of
+    case runParserSimple bindingScript fn f of
         Left err -> error (show err)
         Right result -> return result
 

@@ -23,7 +23,7 @@ data SelectorListItem =
         InstanceMethod Selector
     |   ClassMethod Selector
     |   LocalDecl Declaration
-    |   PropertyDecl Property
+    |   PropertyDecl CType String [PropertyAttribute]
     |   Required Bool
     deriving (Show,Eq,Ord)
 
@@ -36,9 +36,6 @@ data Selector =
         }
     deriving (Read,Show,Eq,Ord,Typeable,Data)
     
-data Property = Property CType String [PropertyAttribute]
-    deriving (Show, Eq, Ord)
-
 data PropertyAttribute =
         Getter String
     |   Setter String
