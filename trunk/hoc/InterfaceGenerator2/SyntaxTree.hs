@@ -1,17 +1,22 @@
-{-# OPTIONS -fglasgow-exts #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module SyntaxTree where
 
 import Data.Generics
+import SrcPos
+
+type ParsedHeader = [ DeclarationAndPos ]
 
 data Declaration =
         ForwardClass [String]
     |   ForwardProtocol [String]
-    |   SelectorList SelectorListHeader [SelectorListItem]
+    |   SelectorList SelectorListHeader [(SrcPos, SelectorListItem)]
     |   Typedef CType String
     |   CTypeDecl CType
     |   ExternVar CType String
     |   ExternFun Selector
     deriving (Show,Eq,Ord)
+
+type DeclarationAndPos = (SrcPos, Declaration)
 
 data SelectorListHeader = 
         Interface String (Maybe String) [String]

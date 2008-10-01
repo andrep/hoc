@@ -4,6 +4,7 @@ import Entities
 import Traversals
 import CTypeToHaskell
 import Messages
+import SrcPos
 import Progress
 
 import Control.Monad.State
@@ -92,7 +93,8 @@ zapAndReportWith worker progress entityPile
                         -> return $ Just x
                     (_, messages)
                         -> do
-                            message (text "Skipping"
+                            message (pprSourcePos (eSrcPos entity)
+                                        <> text ": Skipping"
                                         <+> (text.show) entityID
                                         <+> parens (text $ show $ eName entity)
                                         $+$ nest 4 (vcat messages))

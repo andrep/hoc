@@ -6,7 +6,7 @@ import Text.Parsec.Token
 import Control.Monad.Trans( lift )
 import Messages
 import qualified Text.PrettyPrint.HughesPJ as PP
-
+import SrcPos
 
 type ParseEnvironment = Map.Map String Integer
 
@@ -30,5 +30,6 @@ parseWarning :: String -> Parser ()
 parseWarning msg
     = do
         pos <- getPosition
-        lift (message $ PP.text (show pos ++ ": " ++ msg))
+        lift (message $ pprSourcePos (parsecPosToSrcPos pos) 
+                     PP.<> PP.text (": " ++ msg))
 

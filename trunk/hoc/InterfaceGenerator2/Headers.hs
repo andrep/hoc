@@ -6,12 +6,12 @@ module Headers( ModuleName,
 
 import Parser(header)
 import ParserBase(emptyParseEnvironment)
-import SyntaxTree(Declaration)
+import SyntaxTree(ParsedHeader)
 
 import Control.Exception(evaluate)
 import Control.Monad(when)
 import Data.Char(isAlphaNum, toUpper)
-import Data.List(isPrefixOf,isSuffixOf,partition)
+import Data.List(isPrefixOf,isSuffixOf)
 import Data.Maybe(mapMaybe)
 import System.Directory(getDirectoryContents)
 import System.Info(os)
@@ -27,7 +27,7 @@ import Text.Parsec( getState )
 import qualified Data.Map as Map
 
 type ModuleName = ByteString
-data HeaderInfo = HeaderInfo ModuleName [ModuleName] [Declaration]
+data HeaderInfo = HeaderInfo ModuleName [ModuleName] ParsedHeader
     deriving(Show)
 
 findImports = mapMaybe checkImport . lines
