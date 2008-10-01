@@ -1,22 +1,20 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Parser( Parser, header, selector ) where
 
-import Data.Maybe(catMaybes, isJust, fromJust)
-import Data.Char(ord, isUpper, isDigit)
-import Data.Bits(shiftL, (.|.))
-import Control.Monad(guard)
+import Data.Maybe               ( isJust, fromJust )
+import Data.Char                ( ord, isUpper, isDigit )
+import Data.Bits                ( shiftL, (.|.) )
+import Control.Monad            ( guard )
 
 import Text.Parsec
 import Text.Parsec.Token
-import Text.Parsec.Language(emptyDef)
 import Text.Parsec.Expr
 
 import SyntaxTree
-
-import qualified Data.Map as Map
-
+import SrcPos
 
 import ParserBase
+
 
 objcDef = LanguageDef
     { commentStart   = "/*"
@@ -40,15 +38,16 @@ objc = makeTokenParser objcDef
 
 singleton x = [x]
 
-header :: Parser [Declaration]
+header :: Parser ParsedHeader
     
 header = do
     optional (whiteSpace objc)
     things <- fmap concat $ many $ do
+        pos <- getPosition
         -- thing <- try interestingThing <|> uninterestingThing -- lenient parsing
-        thing <- interestingThing   -- strict parsing
+        things <- interestingThing   -- strict parsing
         optional (whiteSpace objc)
-        return thing
+        return $ map (\thing -> (parsecPosToSrcPos pos, thing)) things
     eof
     return things
 
@@ -397,7 +396,10 @@ interface_decl = do
                 return $ Interface class_name super protos
             )
         instance_variables
-        selectors <- fmap concat $ many selectorListItem
+        selectors <- fmap concat $ many $ do
+                pos <- getPosition
+                items <- selectorListItem
+                return $ map (\item -> (parsecPosToSrcPos pos, item)) items
         reserved objc "@end"
         return [SelectorList what selectors]
     where    

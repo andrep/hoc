@@ -1,4 +1,4 @@
-{-# OPTIONS -fglasgow-exts #-}
+{-# LANGUAGE DeriveDataTypeable, FlexibleContexts #-}
 module Entities where
 
 import Control.Monad.State
@@ -10,6 +10,7 @@ import Headers  ( ModuleName )
 import CTypeToHaskell
 import SyntaxTree ( CType, Selector )
 import Progress
+import SrcPos( SrcPos )
 
 import Data.ByteString.Char8(ByteString)
 import qualified Data.ByteString.Char8 as BS
@@ -77,7 +78,8 @@ data Entity = Entity {
         eHaskellName :: ByteString,
         eAlternateHaskellNames :: [ByteString],
         eInfo :: EntityInfo,
-        eModule :: Module
+        eModule :: Module,
+	    eSrcPos :: SrcPos
     }
     deriving ( Read, Show, Typeable, Data )
 

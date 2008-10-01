@@ -39,7 +39,8 @@ expandProtocolRequirements = execState $
                                 eHaskellName = BS.empty,
                                 eAlternateHaskellNames = [],
                                 eInfo = MethodEntity,
-                                eModule = eModule entity
+                                eModule = eModule entity,
+                                eSrcPos = eSrcPos entity
                             }
 
                         addProto proto
@@ -48,7 +49,8 @@ expandProtocolRequirements = execState $
                                 eHaskellName = BS.empty,
                                 eAlternateHaskellNames = [],
                                 eInfo = ProtocolAdoptionEntity,
-                                eModule = eModule entity
+                                eModule = eModule entity,
+                                eSrcPos = eSrcPos entity                                
                             }
                 _ -> return ()
 
