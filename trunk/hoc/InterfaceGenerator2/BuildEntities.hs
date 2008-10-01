@@ -15,7 +15,7 @@ import HOC.NameCaseChange
 import HOC.SelectorNameMangling
 
 import Control.Monad.State
-import Data.Char        ( isUpper, isLower, isAlphaNum )
+import Data.Char        ( isUpper, isLower, isAlphaNum, toUpper )
 import Data.List        ( groupBy, isPrefixOf )
 import Data.Maybe       ( fromMaybe, catMaybes )
 import System.Directory ( doesFileExist )
@@ -89,7 +89,7 @@ makeEntities bindingScript headers importedEntities
             
         makeSelectorEntity factory modName _clsID clsName sel
             = if hidden
-                then return Nothing
+                then return []
                 else do
                     entity <- newEntity $ Entity {
                             eName = SelectorName $ BS.pack name,
@@ -98,7 +98,7 @@ makeEntities bindingScript headers importedEntities
                             eInfo = SelectorEntity (UnconvertedType (kind, sel')),
                             eModule = LocalModule modName
                         }
-                    return $ Just (entity, factory)
+                    return $ [(entity, factory)]
             where
                 selectorOptions = getSelectorOptions bindingScript clsName
         
@@ -134,14 +134,24 @@ makeEntities bindingScript headers importedEntities
         makeEntitiesForSelectorListItem modName clsID clsName (ClassMethod sel)
             = makeSelectorEntity True modName clsID clsName sel
         makeEntitiesForSelectorListItem modName _clsID _clsName (LocalDecl decl)
-            = makeEntity modName decl >> return Nothing
-        makeEntitiesForSelectorListItem _modName _clsID _clsName (PropertyDecl _)
-            = return Nothing
+            = makeEntity modName decl >> return []
+        makeEntitiesForSelectorListItem modName clsID clsName (PropertyDecl typ name attr)
+            = do
+                getter <- makeSelectorEntity False modName clsID clsName getterSel
+                setter <- makeSelectorEntity False modName clsID clsName setterSel
+                return (getter ++ setter)
+            where
+                getterName = head $ [ n | Getter n <- attr ] ++ [ name ]
+                setterName = head $ [ n | Setter n <- attr ] ++
+                                    [ "set" ++ toUpper (head name) : tail name ++ ":" ]
+                getterSel = Selector getterName typ [] False
+                setterSel = Selector setterName
+                                     (CTSimple "void") [typ] False
         makeEntitiesForSelectorListItem _modName _clsID _clsName (Required _)
-            = return Nothing
+            = return []
         
         makeSelectorEntities modName clsID clsName items
-            = fmap catMaybes $
+            = fmap concat $
               mapM (makeEntitiesForSelectorListItem modName clsID clsName) items
                 
         makeSelectorInstance modName classEntity (selectorEntity, factory)
