@@ -68,25 +68,25 @@ eliminateSubclassInstances pr entityPile
     where
         keepEntity entity
             = case isInstance entity of
-                Just (classID, adoptedID)
-                    | any (\s -> adoptedID `Set.member` instances s)
+                Just (classID, adopted)
+                    | any (\s -> adopted `Set.member` instances s)
                           (clsTree Map.! classID)
                     -> False
                 _   -> True
 
         isInstance (Entity { eName = ProtocolAdoptionName classID protoID })
-            = Just (classID, protoID)
+            = Just (classID, (protoID, False))
         isInstance (Entity { eName = SelectorInstanceName classID selID isFactory })
-            = Just (classID, selID)
+            = Just (classID, (selID, isFactory))
         isInstance _ = Nothing
 
-        instances :: EntityID -> Set.Set EntityID
+        instances :: EntityID -> Set.Set (EntityID, Bool)
         instances = fromMaybe Set.empty . flip Map.lookup instancesMap
                           
         instancesMap =
             Map.fromListWith Set.union
-            [ (classID, Set.singleton adoptedID)
-            | Just (classID, adoptedID)
+            [ (classID, Set.singleton adopted)
+            | Just (classID, adopted)
                 <- map isInstance $ map snd $
                    entityPileToList entityPile ]
 
