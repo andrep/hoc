@@ -38,6 +38,8 @@ idsForEntity e
             where
                 lowercaseNames = map (BS.pack . nameToLowercase . BS.unpack . fst) values
                 
+        StructEntity _ _ -> [eHaskellName e `BS.append` BS.pack "(..)"]
+
         AdditionalCodeEntity _ exp _ _ -> exp
                 
         _ -> case eName e of
@@ -213,6 +215,23 @@ pprHsModule entityPile modGraph modName idsAndEntities
                     Anonymous   -> text "declareAnonymousCEnum"
                 pprAssoc (n, v)
                     = parens (doubleQuotes (textBS n) <> comma <+> integer v)
+
+        pprEntity e@(Entity { eInfo = StructEntity mbTag fields })
+            = char '$' <> parens (
+                    declare <+> brackets (
+                        hcat $ punctuate comma $ map pprType fields
+                    )
+                )
+            where
+                declare = case eName e of
+                    CName cname -> text "declareCStructWithTag"
+                                    <+> doubleQuotes (textBS cname)
+                                    <+> tag
+                tag = case mbTag of Nothing -> text "Prelude.Nothing"
+                                    Just t -> parens (text "Prelude.Just" <+> doubleQuotes (text t))
+                
+                pprType t = text "[t|" <+> pprVariableType ht <+> text "|]"
+                    where ConvertedType ht _ = t
 
         pprEntity e@(Entity { eInfo = AdditionalCodeEntity _ _ _ txt })
             = textBS txt

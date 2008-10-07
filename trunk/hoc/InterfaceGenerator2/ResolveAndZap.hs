@@ -74,6 +74,7 @@ resolveTypes entityPile
                     TypeSynonymEntity _ -> Just PlainTypeName
                     AdditionalTypeEntity -> Just PlainTypeName
                     EnumEntity _ _ -> Just PlainTypeName
+                    StructEntity _ _ -> Just PlainTypeName
                     ClassEntity _ -> Just ClassTypeName
                     _ -> Nothing
 

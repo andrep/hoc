@@ -57,6 +57,8 @@ data EntityInfo
                            ByteString {- import statements -}
                            ByteString {- text -}
 
+    | StructEntity (Maybe String) [HaskellValueType]
+
     deriving ( Read, Show, Eq, Ord, Typeable, Data )
     
 data Name
