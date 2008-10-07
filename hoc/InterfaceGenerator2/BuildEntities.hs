@@ -223,8 +223,19 @@ makeEntities bindingScript headers importedEntities
                         eSrcPos = pos
                     }               
               ) >> return ()
-        makeEntity _modName (pos, Typedef (CTStruct _n2 _fields) _name)
-            = return ()
+        makeEntity modName (pos, Typedef (CTStruct n2 fields) name)
+            = do
+                newEntity $ Entity {
+                        eName = CName $ BS.pack name,
+                        eHaskellName = getName name (nameToUppercase name),
+                        eAlternateHaskellNames = [],
+                        eInfo = StructEntity mbTag $ map (UnconvertedType . fst) fields,
+                        eModule = LocalModule modName,
+                        eSrcPos = pos
+                    }
+                return ()
+            where
+                mbTag = if n2 == "" then Nothing else Just n2
         makeEntity _modName (pos, Typedef (CTUnion _n2 _fields) _name)
             = return ()
         makeEntity modName (pos, Typedef (CTEnum _n2 vals) name)
