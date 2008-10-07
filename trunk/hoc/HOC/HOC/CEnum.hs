@@ -30,8 +30,9 @@ class CEnum a where
 --  name1 = Name1
 --  name2 = Name2
 --  ...
---where all the names are more or less transformed by mkName . nameToUppercase
---I don't know why there is both the constructors and the literal names.
+-- where all the names are more or less transformed by mkName . nameToUppercase
+-- Constants (with lowercase names) are also provided for people who want to
+-- hide the difference between "proper" enums and anonymous enums (see below).
 
 declareCEnum name assocs
     = sequence $ [
