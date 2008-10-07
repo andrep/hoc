@@ -44,7 +44,8 @@ Library
         HOC.TH,
         HOC.Unicode,
         HOC.Utilities,
-        HOC.THDebug
+        HOC.THDebug,
+        HOC.CStruct
 
     hs-source-dirs: HOC
     extensions: MagicHash, TemplateHaskell,

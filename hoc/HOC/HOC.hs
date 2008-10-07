@@ -55,6 +55,9 @@ module HOC (
         
         WrappedNSException(..),
         
+        declareCStruct,
+        declareCStructWithTag,
+        
         -- debugging & statistics:
         
         objectMapStatistics
@@ -81,3 +84,4 @@ import HOC.ExternFunctions
 import HOC.Selectors
 import HOC.Exception
 import HOC.FFICallInterface
+import HOC.CStruct
