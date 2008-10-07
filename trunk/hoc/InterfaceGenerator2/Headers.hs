@@ -13,7 +13,7 @@ import Control.Monad(when)
 import Data.Char(isAlphaNum, toUpper)
 import Data.List(isPrefixOf,isSuffixOf)
 import Data.Maybe(mapMaybe)
-import System.Directory(getDirectoryContents)
+import System.Directory(getDirectoryContents, doesDirectoryExist)
 import System.Info(os)
 import Text.Parsec( runParserT )
 import Messages( runMessages )
@@ -43,9 +43,29 @@ headersIn dirName prefix = do
                                  prefix ++ "." ++ takeWhile (/= '.') fn)
            | fn <- files, ".h" `isSuffixOf` fn {- , fn /= (prefix ++ ".h") -} ]
 
+headersForFrameworkAt path framework
+    = do
+        haveHeaders <- doesDirectoryExist (path </> "Headers")
+        baseHeaders <- if haveHeaders then headersIn (path </> "Headers") framework
+                                      else return []
+        
+        haveFrameworks <- doesDirectoryExist (path </> "Frameworks")
+        
+        moreHeaders <- if not haveFrameworks then return [] else do
+            contents <- getDirectoryContents (path </> "Frameworks")
+            
+            fmap concat $ mapM (\fw ->
+                    headersForFrameworkAt (path </> "Frameworks" </> fw)
+                                          (framework ++ "." ++ takeWhile (/= '.') fw)
+                ) $ filter (".framework" `isSuffixOf`) contents
+        return $ baseHeaders ++ moreHeaders
+        
 headersForFramework prefix framework =
     if System.Info.os == "darwin"
-        then headersIn (prefix </> "System/Library/Frameworks" </> (framework ++ ".framework") </> "Headers") framework
+        then do
+            let fwPath = prefix </> "System/Library/Frameworks" 
+                                </> (framework ++ ".framework")
+            headersForFrameworkAt fwPath framework
         else headersIn ("/usr/lib/GNUstep/System/Library/Headers/" ++ framework ++ "/") framework
 
 translateObjCImport imp = haskellizeModuleName $
