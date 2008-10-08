@@ -3,8 +3,9 @@ module Parser( Parser, header, selector ) where
 
 import Data.Maybe               ( isJust, fromJust )
 import Data.Char                ( ord, isUpper, isDigit )
-import Data.Bits                ( shiftL, (.|.) )
-import Control.Monad            ( guard )
+import Data.Bits                ( shiftL, shiftR, (.|.) )
+import Data.List                ( isSuffixOf )
+import Control.Monad            ( guard, unless )
 
 import Text.Parsec
 import Text.Parsec.Token
@@ -52,7 +53,7 @@ header = do
     return things
 
 uninterestingThing :: Parser (Maybe Declaration)
-uninterestingThing = skipMany1 (satisfy (\x -> x /= '@' && x /= ';')) >> return Nothing
+uninterestingThing = skip1 (satisfy (\x -> x /= '@' && x /= ';')) >> return Nothing
 
 interestingThing =
         ignoredToplevelThing
@@ -61,29 +62,37 @@ interestingThing =
     <|> interface_decl
     <|> empty_decl
     <|> type_declaration
-    <|> inline_function
     <|> extern_decl
     <|> (semi objc >> return [])
 
+definedKeyword f = try (do x <- identifier objc
+                           unless (all (\c -> c == '_' || isUpper c) x && f x) $
+                                fail "")
+
 ignoredToplevelThing
-    = (foldl1 (<|>) . map (reserved objc))
-      ["CA_EXTERN_C_BEGIN", "CA_EXTERN_C_END",
-       "CF_EXTERN_C_BEGIN", "CF_EXTERN_C_END"]
-      >> return []
+    = definedKeyword (\x -> "EXTERN_C_BEGIN" `isSuffixOf` x
+                         || "EXTERN_C_END" `isSuffixOf` x)
+    >> return []
 --
 
-skipParens = parens objc (skipMany (
+skip p = do
+    whiteSpace objc
+    (p >> skip p) <|> return ()
+
+skip1 p = p >> skip p
+
+skipParens = parens objc (skip (
     (satisfy (\x -> x /= '(' && x /= ')') >> return ())
     <|> skipParens
     ))
 
-skipBlockContents = (skipMany (
+skipBlockContents = (skip (
     (satisfy (\x -> x /= '{' && x /= '}') >> return ())
     <|> skipBlock
     ))
 skipBlock = braces objc skipBlockContents
 
-skipEnumValue = skipMany1 (satisfy (\x -> x /= '}' && x /= ','))
+skipEnumValue = skip (satisfy (\x -> x /= '}' && x /= ','))
 
 -- Plain C
 
@@ -101,7 +110,12 @@ const_int_expr = expr
             <|> definedConstant
             <|> parens objc expr
 
-        optable = [ [Infix (op "<<" (cast2nd shiftL))   AssocLeft],
+        optable = [ [Infix (op "*" (*))                 AssocLeft,
+                     Infix (op "/" div)                 AssocLeft],
+                    [Infix (op "+" (+))                 AssocLeft,
+                     Infix (op "-" (-))                 AssocLeft],
+                    [Infix (op "<<" (cast2nd shiftL))   AssocLeft,
+                     Infix (op ">>" (cast2nd shiftR))   AssocLeft],
                     [Infix (op "|" (.|.))               AssocLeft] ]
             where        
                 op str f = reservedOp objc str >> return f
@@ -147,6 +161,7 @@ simple_type = do  -- "const char" in "const char *foo[32]"
     t <-    id_type
         <|> enum_type
         <|> struct_type
+        <|> (reserved objc "STACK_UPP_TYPE" >> parens objc simple_type)
         <|> try builtin_type
         <|> do n <- identifier objc
                protos <- protocol_spec     -- TOOD: use these protocols
@@ -197,10 +212,14 @@ declarator emptyDeclaratorPossible thing = do
 
         postfix_operator =
             brackets objc (optional (integer objc) >> return CTPointer)
-            <|> do
-                (args, vararg) <- parens objc arguments
-                return (\retval -> CTFunction retval args vararg)
-       
+            <|> function_call_declarator
+                
+
+function_call_declarator
+    = do
+        (args, vararg) <- parens objc arguments
+        return (\retval -> CTFunction retval args vararg)
+    where                
         arguments =
             do
                 args <- commaSep objc argument
@@ -294,16 +313,27 @@ struct_type =
             semi objc
             return [ (modifier typ, name) | (name, modifier) <- things ]
             
+typedef = reserved objc "typedef" >> (carbon_callback <|> real_typedef)
+    where    
+        carbon_callback = do
+            reserved objc "CALLBACK_API" <|> reserved objc "CALLBACK_API_C"
+            (t,i) <- parens objc ( do t <- simple_type 
+                                      comma objc
+                                      i <- identifier objc
+                                      return (t,i) )
+            f <- function_call_declarator
+            availability
+            semi objc
+            return $ [ Typedef (f t) i ]
             
-typedef = do
-    reserved objc "typedef"
-    baseType <- simple_type
-    
-    newTypes <- commaSep objc id_declarator
-    availability
-    semi objc
-    return $ [Typedef (typeFun baseType) name
-             | (name, typeFun) <- newTypes ]
+        real_typedef = do
+            baseType <- simple_type
+            
+            newTypes <- commaSep objc id_declarator
+            availability
+            semi objc
+            return $ [Typedef (typeFun baseType) name
+                     | (name, typeFun) <- newTypes ]
 
 ctypeDecl = do
     typ <- enum_type <|> struct_type
@@ -315,12 +345,26 @@ type_declaration = typedef <|> ctypeDecl
 
 extern_decl =
     do
-        optional extern_keyword
-        t <- simple_type
-        vars <- commaSep objc (one_var t)
-        availability
-        semi objc
-        return vars
+        t <- carbon_extern_api <|>
+             (many storage_class >> simple_type)
+        firstVar <- one_var t
+        
+        let single_declaration_end = do
+                availability
+                semi objc
+                return [firstVar]
+            multiple_declaration_end = do
+                comma objc
+                moreVars <- commaSep objc (one_var t)
+                availability
+                semi objc
+                return $ firstVar : moreVars
+            function_definition = do
+                availability
+                skipBlock
+                return []
+        
+        single_declaration_end <|> multiple_declaration_end <|> function_definition
     where
         one_var t = do
             (n, typeOperators) <- id_declarator
@@ -330,24 +374,17 @@ extern_decl =
                 otherType
                     -> ExternVar otherType n
            
+        carbon_extern_api = (reserved objc "EXTERN_API" <|> reserved objc "EXTERN_API_C")
+                            >> parens objc simple_type
+           
 extern_keyword =
         reserved objc "extern"
-    <|> reserved objc "FOUNDATION_EXPORT" -- N.B. "Export" vs. "Extern".
-    <|> reserved objc "APPKIT_EXTERN"
-    <|> reserved objc "GS_EXPORT"
-    <|> reserved objc "CA_EXTERN"
-    <|> reserved objc "CF_EXPORT"
-    <|> reserved objc "COREDATA_EXTERN"
-    
-inline_function =
-    do
-        reserved objc "inline" <|> reserved objc "NS_INLINE" 
-                               <|> reserved objc "CF_INLINE"
-        t <- simple_type
-        (n, tf) <- id_declarator
-        skipBlock
-        return []
+    <|> definedKeyword (\x -> "EXTERN" `isSuffixOf` x || "EXPORT" `isSuffixOf` x)
 
+inline_keyword =
+    reserved objc "inline" <|> definedKeyword ("_INLINE" `isSuffixOf`)
+
+storage_class = extern_keyword <|> inline_keyword <|> reserved objc "static"
 
 -- Ignore __attribute__((...)) and Apple's countless different availability macros,
 -- which all expand to some __attribute__. My favourite example is
@@ -433,7 +470,7 @@ selector = do
     classOrInstanceMethod <-
             (symbol objc "-" >> return InstanceMethod)
         <|> (symbol objc "+" >> return ClassMethod)
-    -- str <- many (satisfy (\c -> c /= ';' && c /= '@'))
+
     rettype <- option (CTIDType []) (parens objc ctype)
     (name,types,vararg) <- (
             do
