@@ -62,10 +62,10 @@ class NSScrollView {
     - (void) setContentView: (NSView*) view;
 }
 
-type NSPoint Foundation.NSGeometry;
-type NSSize Foundation.NSGeometry;
-type NSRect Foundation.NSGeometry;
-type NSRange Foundation.NSRange;
+-- type NSPoint Foundation.NSGeometry;
+-- type NSSize Foundation.NSGeometry;
+-- type NSRect Foundation.NSGeometry;
+-- type NSRange Foundation.NSRange;
 
 -- GNUstep specifics:
 {-
