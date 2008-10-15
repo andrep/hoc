@@ -1,23 +1,18 @@
--- above NSRange
--- CUT HERE
--- below NSRange
--- CUT HERE
--- above NSRange.Forward
---X NSRange(..)
 --X nsMaxRange
 --X nsLocationInRange
 
-import Foreign
-import Foreign.C.Types
+{-import Foreign
+import Foreign.C.Types-}
 import Prelude
 -- CUT HERE
 -- below NSRange.Forward
 
-data NSRange = NSRange CUInt CUInt  deriving(Read, Show, Eq)
+-- data NSRange = NSRange CUInt CUInt  deriving(Read, Show, Eq)
 
 nsMaxRange (NSRange loc len) = loc + len
 nsLocationInRange x (NSRange loc len) = x >= loc && x < loc+len
 
+{-
 instance Storable NSRange where
     alignment _ = alignment (undefined :: CUInt)
     sizeOf _ = 2 * sizeOf (undefined :: CUInt)
@@ -34,3 +29,4 @@ instance FFITypeable NSRange where
     isStructType _ = True
 
 $(declareStorableObjCArgument [t| NSRange |] "{_NSRange=II}")
+-}
