@@ -38,9 +38,9 @@ callWithRetval :: ObjCArgument b c
                -> IO b
 
 callWithRetval cif fun args = do
-    alloca $ \retptr ->
+    allocaRetval $ \retptr ->
         callWithException cif fun retptr args
-        >> peek retptr >>= importArgument
+        >> peekRetval retptr >>= importArgument
 
 
 setMarshalledRetval :: ObjCArgument a b => Bool -> Ptr () -> a -> IO ()
