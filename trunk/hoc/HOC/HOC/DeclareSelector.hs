@@ -246,8 +246,7 @@ declareRenamedSelector name haskellName typeSigQ =
                 sigD (mkName infoName) [t| SelectorInfo |],
                 
                 -- $(infoName) = ...
-                let e = [| undefined |] `sigE` (return $ simplifyType doctoredTypeSig)
-                    in valD (varP $ mkName $ infoName) (normalB
+                valD (varP $ mkName $ infoName) (normalB
                         [|
                         	let n = $(stringE name)
                         	in $(selInfoMaker) n
