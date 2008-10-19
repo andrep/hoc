@@ -1,6 +1,6 @@
 function build()
 {
-    pushd $1
+    pushd HOC-$1
     runhaskell Setup.hs configure $ARGUMENTS
     runhaskell Setup.hs build
     runhaskell Setup.hs install
