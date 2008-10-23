@@ -26,11 +26,9 @@ findDuplicateEntities entityPile
                 [ ((eHaskellName e, eName e, eInfo e), Set.singleton ei)
                 | (ei, e) <- Map.toList $ frameworkEntities entityPile,
                   interesting e ]
-    
-        interesting (Entity { eInfo = SelectorEntity _}) = True
-        interesting (Entity { eInfo = MethodEntity }) = True
-        interesting (Entity { eInfo = ProtocolAdoptionEntity }) = True
-        interesting _ = False
+
+        interesting (Entity { eName = Anonymous }) = False
+        interesting _ = True
 
 pickMasterEntity :: Map.Map Module Int -> EntityPile -> [EntityID] -> (EntityID, [EntityID])
 
