@@ -157,8 +157,9 @@ processFramework options -- bs frameworkName requiredFrameworks
                                            [initialProgress, resolveProgress,
                                             typeProgress, zapProgress,
                                             expandProgress, combineProgress,
-                                            eliminateProgress, outputProgress,
-                                            masterProgress, exportProgress]
+                                            renameProgress, eliminateProgress,
+                                            outputProgress, masterProgress,
+                                            exportProgress]
        
         headers <- fmap concat $ flip mapM (oHeaderDirectories options) $
                         \hd -> case hd of
