@@ -59,6 +59,9 @@ expression = try (buildExpressionParser optable basic) <|> return (return 0)
                    return (return i)
             <|> do reserved cpp "defined"
                    parens cpp definedMacroCondition
+            <|> do reserved cpp "OS_API_VERSION"
+                   parens cpp (identifier cpp >> comma cpp >> identifier cpp)
+                   return (return 1)
             <|> do reservedOp cpp "!"
                    x <- basic
                    return (x >>= return . (\xx -> if xx /= 0 then 0 else 1))
