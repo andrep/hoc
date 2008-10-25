@@ -35,6 +35,7 @@ import BuildEntities        -- [HeaderInfo] -> EntityPile
 import ResolveAndZap
 import ShuffleInstances
 import DuplicateEntities
+import RenameClashingIdentifiers
 
 import DependenceGraphs
 import Output
@@ -145,6 +146,8 @@ processFramework options -- bs frameworkName requiredFrameworks
         zapProgress       <- mkProgress "Zapping unconvertable entities"
         expandProgress    <- mkProgress "Filling in additional instance declarations"
         combineProgress   <- mkProgress "Combining duplicate entities"
+        renameProgress    <- mkProgress "Resolving name conflicts"
+
         eliminateProgress <- mkProgress "Eliminating redundant instances"
         outputProgress    <- mkProgress "Writing binding modules"
         masterProgress    <- mkProgress $ "Writing " ++ frameworkName ++ ".hs"
@@ -198,7 +201,8 @@ processFramework options -- bs frameworkName requiredFrameworks
             (zappedEntities, zapMessages) = runMessages $ zapAndReportFailedTypes zapProgress typedEntities
             expandedEntities = monitor expandProgress $ expandProtocolRequirements zappedEntities
             combinedEntities = monitor combineProgress $ combineDulicateEntities expandedEntities
-            finalEntities = eliminateSubclassInstances eliminateProgress combinedEntities
+            renamedEntities = monitor renameProgress $ renameClashingIdentifiers $ combinedEntities
+            finalEntities = eliminateSubclassInstances eliminateProgress renamedEntities
             
         do
             let packageName = "HOC-" ++ frameworkName
