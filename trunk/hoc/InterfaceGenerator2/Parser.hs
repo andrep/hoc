@@ -350,17 +350,14 @@ extern_decl =
         firstVar <- one_var t
         
         let single_declaration_end = do
-                availability
                 semi objc
                 return [firstVar]
             multiple_declaration_end = do
                 comma objc
                 moreVars <- commaSep objc (one_var t)
-                availability
                 semi objc
                 return $ firstVar : moreVars
             function_definition = do
-                availability
                 skipBlock
                 return []
         
@@ -368,6 +365,8 @@ extern_decl =
     where
         one_var t = do
             (n, typeOperators) <- id_declarator
+            availability
+            optional initializer
             return $ case typeOperators t of
                 CTFunction retval args varargs
                     -> ExternFun (Selector n retval args varargs)
@@ -377,12 +376,17 @@ extern_decl =
         carbon_extern_api = (reserved objc "EXTERN_API" <|> reserved objc "EXTERN_API_C")
                             >> parens objc simple_type
            
+initializer = do
+    symbol objc "="
+    (const_int_expr >> return ()) <|> (skipBlock >> return ())
+    return ()
+           
 extern_keyword =
         reserved objc "extern"
-    <|> definedKeyword (\x -> "EXTERN" `isSuffixOf` x || "EXPORT" `isSuffixOf` x)
+    <|> definedKeyword (\x -> "EXTERN" `isSuffixOf` x || "EXPORT" `isSuffixOf` x || "_SCOPE" `isSuffixOf` x)
 
 inline_keyword =
-    reserved objc "inline" <|> definedKeyword ("_INLINE" `isSuffixOf`)
+    reserved objc "inline" <|> definedKeyword ("INLINE" `isSuffixOf`)
 
 storage_class = extern_keyword <|> inline_keyword <|> reserved objc "static"
 
