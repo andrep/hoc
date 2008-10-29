@@ -256,7 +256,9 @@ simple_builtin = do
     typ <- identifier objc
     if typ `elem` ["char","short","int","float","double"]
         then return typ
-        else fail "not a built-in type"
+        else if typ == "CGFloat"
+          then return "float" -- NOTE: Assumes 32 bit...
+          else fail "not a built-in type"
         
 id_type = do
     reserved objc "id"
