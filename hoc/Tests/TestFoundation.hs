@@ -12,6 +12,10 @@ import Control.Monad        ( when )
 import Control.Exception    ( try, finally )
 import qualified System.Info( os )
 
+deriving instance Show NSRect
+deriving instance Show NSPoint
+deriving instance Show NSSize
+
       -- garbage collect and make really sure that finalizers have time to run
 performGCAndWait targetCount time maxRepeat = do
     performGC
