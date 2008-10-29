@@ -44,7 +44,7 @@ directive =
     <|> (reserved cpp "ifndef" >> definedMacroCondition >>= \e -> return $ If (negateExpr e))
     <|> (reserved cpp "endif" >> return Endif)
     <|> (reserved cpp "else" >> return Else)    
-    <|> (plainLine >>= \p -> return $ Text ("//# " ++ p))
+    <|> (plainLine >>= \p -> return $ Text ("//#" ++ p))
     
 definedMacroCondition = do
     macro <- identifier cpp
@@ -69,7 +69,11 @@ expression = try (buildExpressionParser optable basic) <|> return (return 0)
             <|> do x <- identifier cpp
                    return (get >>= return . maybe 0 id . Map.lookup x)
         
-        optable = [ [Infix (bop "<" (<)) AssocLeft,
+        optable = [ [Infix (op "*" (*)) AssocLeft,
+        			 Infix (op "/" div) AssocLeft],
+        			[Infix (op "+" (+)) AssocLeft,
+        			 Infix (op "-" (-)) AssocLeft],
+        			[Infix (bop "<" (<)) AssocLeft,
                      Infix (bop "<=" (<=)) AssocLeft,
                      Infix (bop "==" (==)) AssocLeft,
                      Infix (bop "!=" (/=)) AssocLeft,
@@ -157,29 +161,7 @@ handleBackslashes (l : ls)
                             (l2 : ls') -> (l ++ '\n' : l2) : ls'
                             ls' -> ls'
     | otherwise = l : handleBackslashes ls
-        
+
+preprocess :: String -> String -> String        
 preprocess fn f = execute fn $ parseDirectives f
 
-{-
-test = putStrLn $ execute "test" $ parseDirectives 
-   "#include <foo>\n\
-    \blah\n\
-    \foo bar\n\
-    \#if 1\n\
-    \baz\n\
-    \#else\n\
-    \quux\n\
-    \#endif\n"
-
-test2 fn = do
---    f <- readFile $ "/System/Library/Frameworks/Foundation.framework/Versions/C/Headers/" ++ fn
-    f <- readFile $ "/usr/lib/GNUstep/System/Library/Headers/" ++ fn
-    putStrLn $ execute fn $ parseDirectives f
-        
-
-test3 fn = do
-    f <- readFile $ "/System/Library/Frameworks/Foundation.framework/Versions/C/Headers/" ++ fn
-    -- putStrLn $ 
-    putStrLn fn
-    print $ length $ execute fn $ parseDirectives f
--}

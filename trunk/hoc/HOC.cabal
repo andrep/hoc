@@ -10,6 +10,10 @@ Flag BinaryInterfaces
     description: write HOC interface generator files in binary format
                  (requires binary package)
 
+Flag Tests
+    description: build test cases
+    default: False
+
 Library
     build-depends: base, template-haskell, unix
                    
@@ -73,3 +77,30 @@ Executable hoc-ifgen
     if flag(BinaryInterfaces)
         build-depends: binary >= 0.2
         cpp-options: -DBINARY_INTERFACES
+
+Executable hoc-test
+    main-is: Test.hs
+    hs-source-dirs: HOC, InterfaceGenerator2, Tests
+    
+    cpp-options: -DTEST
+
+    build-depends: HUnit
+
+    if !flag(Tests)
+        buildable: False
+    
+    extensions: MagicHash, TemplateHaskell,
+                ForeignFunctionInterface, GeneralizedNewtypeDeriving,
+                EmptyDataDecls, MultiParamTypeClasses, FunctionalDependencies,
+                ScopedTypeVariables, RecursiveDo, FlexibleContexts,
+                FlexibleInstances, TypeSynonymInstances, DeriveDataTypeable
+    
+    
+    extra-libraries: objc, ffi
+    if os(darwin)
+        frameworks: Foundation
+        cpp-options: -DMACOSX
+    else
+        extra-lib-dirs: /usr/lib/gcc/i486-linux-gnu/4.1.3/, /usr/lib/GNUstep/System/Library/Libraries
+        extra-libraries: gnustep-base
+        cpp-options: -DGNUSTEP

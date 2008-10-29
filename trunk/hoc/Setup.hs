@@ -62,6 +62,7 @@ customPreBuild args buildFlags = do
         _ -> fail "Failed in C compilation."
     
     -- system "cp dist/build/HOC_cbits.o dist/build/HOC_cbits.dyn_o"
+    system "cp dist/build/HOC_cbits.o dist/build/hoc-test/hoc-test-tmp/"
     
     let buildInfo = emptyBuildInfo {
             options = [ (GHC, ["dist/build/HOC_cbits.o" ]
@@ -71,6 +72,14 @@ customPreBuild args buildFlags = do
                               ++ extralibs) ],
             cSources = ["HOC_cbits.o"]
         }
+        buildInfo2 = emptyBuildInfo {
+            options = [ (GHC, ["dist/build/hoc-test/hoc-test-tmp/HOC_cbits.o" ]
+                              ++ paths ++
+                              ["-lobjc",
+                               "-lffi"]
+                              ++ extralibs) ]{-,
+            cSources = ["HOC_cbits.o"]-}
+        }
         
-    return (Just buildInfo, [])
+    return (Just buildInfo, [("hoc-test", buildInfo2)])
 
