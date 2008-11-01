@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module HOC.DeclareClass(declareClass) where
 
 import HOC.Base

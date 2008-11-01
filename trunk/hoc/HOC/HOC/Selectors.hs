@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module HOC.Selectors where
 
 import HOC.TH

@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell, RankNTypes #-}
 module HOC.CEnum(CEnum(fromCEnum, toCEnum), declareCEnum, declareAnonymousCEnum)
     where
 
