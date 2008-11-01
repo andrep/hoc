@@ -2,10 +2,14 @@ module Main where
 
 import qualified TestFFI
 import qualified TestPreprocessor
+import qualified TestFoundation
 
 import Test.HUnit
 
-main = runTestTT $ test [
+import HOC.Base( withAutoreleasePool )
+
+main = withAutoreleasePool $ runTestTT $ test [
         TestFFI.tests,
-        TestPreprocessor.tests
+        TestPreprocessor.tests,
+        TestFoundation.tests
     ]
