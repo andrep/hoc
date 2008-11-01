@@ -52,11 +52,6 @@ Library
         HOC.CStruct
 
     hs-source-dirs: HOC
-    extensions: MagicHash, TemplateHaskell,
-                ForeignFunctionInterface, GeneralizedNewtypeDeriving,
-                EmptyDataDecls, MultiParamTypeClasses, FunctionalDependencies,
-                ScopedTypeVariables, RecursiveDo, FlexibleContexts,
-                FlexibleInstances, TypeSynonymInstances, DeriveDataTypeable
                 
     extra-libraries: objc, ffi
     if os(darwin)
@@ -88,14 +83,7 @@ Executable hoc-test
 
     if !flag(Tests)
         buildable: False
-    
-    extensions: MagicHash, TemplateHaskell,
-                ForeignFunctionInterface, GeneralizedNewtypeDeriving,
-                EmptyDataDecls, MultiParamTypeClasses, FunctionalDependencies,
-                ScopedTypeVariables, RecursiveDo, FlexibleContexts,
-                FlexibleInstances, TypeSynonymInstances, DeriveDataTypeable
-    
-    
+  
     extra-libraries: objc, ffi
     if os(darwin)
         frameworks: Foundation
