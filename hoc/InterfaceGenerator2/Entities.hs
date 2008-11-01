@@ -81,7 +81,7 @@ data Entity = Entity {
         eAlternateHaskellNames :: [ByteString],
         eInfo :: EntityInfo,
         eModule :: Module,
-	    eSrcPos :: SrcPos
+        eSrcPos :: SrcPos
     }
     deriving ( Read, Show, Typeable, Data )
 
