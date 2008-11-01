@@ -69,15 +69,15 @@ enumExports (EnumType mbName constants)
       (map (nameToLowercase . fst) constants)
 
 pprEnumType (EnumType name constants) =
-	char '$' <> parens (
-			declare
-			<+> brackets (
-				hcat $ punctuate comma $ map pprAssoc constants
-			)
-		)
-	where
-		declare = case name of
-			Just cname -> text "declareCEnum" <+> doubleQuotes (text cname)
-			Nothing    -> text "declareAnonymousCEnum"
-		pprAssoc (n, v)
-			= parens (doubleQuotes (text n) <> comma <+> integer v)
+    char '$' <> parens (
+            declare
+            <+> brackets (
+                hcat $ punctuate comma $ map pprAssoc constants
+            )
+        )
+    where
+        declare = case name of
+            Just cname -> text "declareCEnum" <+> doubleQuotes (text cname)
+            Nothing    -> text "declareAnonymousCEnum"
+        pprAssoc (n, v)
+            = parens (doubleQuotes (text n) <> comma <+> integer v)

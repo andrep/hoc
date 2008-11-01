@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module HOC.ExternFunctions(declareExternFun) where
 
 import HOC.TH

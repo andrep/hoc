@@ -1,3 +1,4 @@
+{-# LANGUAGE ForeignFunctionInterface, DeriveDataTypeable #-}
 module HOC.Exception where
 
 import Data.Typeable

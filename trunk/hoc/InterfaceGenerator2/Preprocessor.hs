@@ -70,10 +70,10 @@ expression = try (buildExpressionParser optable basic) <|> return (return 0)
                    return (get >>= return . maybe 0 id . Map.lookup x)
         
         optable = [ [Infix (op "*" (*)) AssocLeft,
-        			 Infix (op "/" div) AssocLeft],
-        			[Infix (op "+" (+)) AssocLeft,
-        			 Infix (op "-" (-)) AssocLeft],
-        			[Infix (bop "<" (<)) AssocLeft,
+                     Infix (op "/" div) AssocLeft],
+                    [Infix (op "+" (+)) AssocLeft,
+                     Infix (op "-" (-)) AssocLeft],
+                    [Infix (bop "<" (<)) AssocLeft,
                      Infix (bop "<=" (<=)) AssocLeft,
                      Infix (bop "==" (==)) AssocLeft,
                      Infix (bop "!=" (/=)) AssocLeft,

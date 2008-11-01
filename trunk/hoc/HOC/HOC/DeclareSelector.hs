@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell, EmptyDataDecls #-}
 module HOC.DeclareSelector where
     
 import HOC.Base
@@ -248,8 +249,8 @@ declareRenamedSelector name haskellName typeSigQ =
                 -- $(infoName) = ...
                 valD (varP $ mkName $ infoName) (normalB
                         [|
-                        	let n = $(stringE name)
-                        	in $(selInfoMaker) n
+                            let n = $(stringE name)
+                            in $(selInfoMaker) n
                                                 $(if haskellName == name
                                                         then [|n|]
                                                         else stringE haskellName)
@@ -280,7 +281,7 @@ declareRenamedSelector name haskellName typeSigQ =
                     else valD (varP $ mkName haskellName) (normalB [|
                             $(varE $ 
                                     marshallerName nArgs isUnit `fromSameModuleAs_v`
-                                    	'marshallersUpTo
+                                        'marshallersUpTo
                                 )
                                 $(varE $ mkName infoName)
                         |]) []

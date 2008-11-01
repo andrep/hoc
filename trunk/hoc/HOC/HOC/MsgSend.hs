@@ -1,4 +1,4 @@
-{-# OPTIONS -cpp #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface #-}
 module HOC.MsgSend(
         objSendMessageWithRetval,
         objSendMessageWithoutRetval,
@@ -15,24 +15,24 @@ import Foreign
 import Control.Monad.Fix(mfix)
 
 objSendMessageWithRetval
-	:: ObjCArgument a b
+    :: ObjCArgument a b
     => FFICif
     -> Ptr (Ptr ())
     -> IO a
 
 objSendMessageWithoutRetval
-	:: FFICif
+    :: FFICif
     -> Ptr (Ptr ())
     -> IO ()
 
 superSendMessageWithRetval
-	:: ObjCArgument a b
+    :: ObjCArgument a b
     => FFICif
     -> Ptr (Ptr ())
     -> IO a
 
 superSendMessageWithoutRetval
-	:: FFICif
+    :: FFICif
     -> Ptr (Ptr ())
     -> IO ()
 
@@ -65,9 +65,9 @@ superSendMessageWithoutRetval = sndMsgSuperCommon callWithoutRetval
 
 #else
 
-	-- the type signatures are essentially bogus
-	-- the return value is not necessarily (), and might even be a struct.
-	-- we only call them via libffi, so we couldn't care less.
+    -- the type signatures are essentially bogus
+    -- the return value is not necessarily (), and might even be a struct.
+    -- we only call them via libffi, so we couldn't care less.
 foreign import ccall "MsgSend.h &objc_msgSend"
     objc_msgSendPtr :: FunPtr (Ptr ObjCObject -> SEL -> IO ())
 foreign import ccall "MsgSend.h &objc_msgSend_stret"
@@ -82,22 +82,22 @@ withMarshalledDummy :: ObjCArgument a b => (b -> IO a) -> IO a
 withMarshalledDummy action = action undefined
 
 objSendMessageWithRetval cif args =
-	withMarshalledDummy $ \dummy ->
-	cifIsStret cif >>= \isStret ->
-	callWithRetval cif (if isStret /= 0
+    withMarshalledDummy $ \dummy ->
+    cifIsStret cif >>= \isStret ->
+    callWithRetval cif (if isStret /= 0
                                 then objc_msgSend_stretPtr
-                                else objc_msgSendPtr) args    	 
+                                else objc_msgSendPtr) args       
 
 objSendMessageWithoutRetval cif args =
     callWithoutRetval cif objc_msgSendPtr args
 
 
 superSendMessageWithRetval cif args =
-	withMarshalledDummy $ \dummy ->
-	cifIsStret cif >>= \isStret ->
-	callWithRetval cif (if isStret /= 0
+    withMarshalledDummy $ \dummy ->
+    cifIsStret cif >>= \isStret ->
+    callWithRetval cif (if isStret /= 0
                                 then objc_msgSendSuper_stretPtr
-                                else objc_msgSendSuperPtr) args    	 
+                                else objc_msgSendSuperPtr) args      
 
 superSendMessageWithoutRetval cif args =
     callWithoutRetval cif objc_msgSendSuperPtr args

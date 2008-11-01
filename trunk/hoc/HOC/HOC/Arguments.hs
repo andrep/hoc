@@ -1,4 +1,6 @@
-{-# OPTIONS -fallow-undecidable-instances #-}
+{-# LANGUAGE TemplateHaskell, EmptyDataDecls,
+             MultiParamTypeClasses, FunctionalDependencies,
+             UndecidableInstances, ScopedTypeVariables #-}
 module HOC.Arguments where
 
 import HOC.Base

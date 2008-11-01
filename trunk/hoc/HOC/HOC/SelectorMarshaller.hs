@@ -1,3 +1,4 @@
+{-# LANGUAGE MagicHash, TemplateHaskell #-}
 module HOC.SelectorMarshaller(
         SelectorInfo(..),
         mkSelectorInfo,
@@ -19,7 +20,7 @@ import HOC.MessageTarget
 
 import Foreign                      ( withArray, Ptr, nullPtr )
 import System.IO.Unsafe             ( unsafePerformIO )
-import GHC.Base						( unpackCString# )
+import GHC.Base                     ( unpackCString# )
 
 import HOC.TH
 
@@ -33,38 +34,38 @@ data SelectorInfo = SelectorInfo {
 
 {-# NOINLINE mkSelectorInfo #-}
 mkSelectorInfo objCName hsName cif
-	= SelectorInfo objCName hsName cif (getSelectorForName objCName) False
+    = SelectorInfo objCName hsName cif (getSelectorForName objCName) False
 
 {-# NOINLINE mkSelectorInfo# #-}
 mkSelectorInfo# objCName# hsName# cif
-	-- NOTE: Don't call mkSelectorInfo here, the rule would apply!
-	= SelectorInfo objCName hsName cif (getSelectorForName objCName) False
-	where
-		objCName = unpackCString# objCName#
-		hsName   = unpackCString# hsName#
+    -- NOTE: Don't call mkSelectorInfo here, the rule would apply!
+    = SelectorInfo objCName hsName cif (getSelectorForName objCName) False
+    where
+        objCName = unpackCString# objCName#
+        hsName   = unpackCString# hsName#
 
 {-# RULES
 "litstr" forall s1 s2 cif.
-	mkSelectorInfo (unpackCString# s1) (unpackCString# s2) cif
-	= mkSelectorInfo# s1 s2 cif
+    mkSelectorInfo (unpackCString# s1) (unpackCString# s2) cif
+    = mkSelectorInfo# s1 s2 cif
   #-}
 
 {-# NOINLINE mkSelectorInfoRetained #-}
 mkSelectorInfoRetained objCName hsName cif
-	= SelectorInfo objCName hsName cif (getSelectorForName objCName) True
+    = SelectorInfo objCName hsName cif (getSelectorForName objCName) True
 
 {-# NOINLINE mkSelectorInfoRetained# #-}
 mkSelectorInfoRetained# objCName# hsName# cif
-	-- NOTE: Don't call mkSelectorInfo here, the rule would apply!
-	= SelectorInfo objCName hsName cif (getSelectorForName objCName) True
-	where
-		objCName = unpackCString# objCName#
-		hsName   = unpackCString# hsName#
+    -- NOTE: Don't call mkSelectorInfo here, the rule would apply!
+    = SelectorInfo objCName hsName cif (getSelectorForName objCName) True
+    where
+        objCName = unpackCString# objCName#
+        hsName   = unpackCString# hsName#
 
 {-# RULES
 "litstr" forall s1 s2 cif.
-	mkSelectorInfoRetained (unpackCString# s1) (unpackCString# s2) cif
-	= mkSelectorInfoRetained# s1 s2 cif
+    mkSelectorInfoRetained (unpackCString# s1) (unpackCString# s2) cif
+    = mkSelectorInfoRetained# s1 s2 cif
   #-}
 
 
@@ -105,13 +106,13 @@ makeMarshaller maybeInfoName haskellName nArgs isUnit isPure isRetained =
                                      $(lamE [varP $ mkName "args"] e) |]
 
         invoke | isUnit = [| sendMessageWithoutRetval $(targetVar)
-        										      (selectorInfoCif $(infoVar))
+                                                      (selectorInfoCif $(infoVar))
                                                       $(argsVar)|]
                | otherwise = [| sendMessageWithRetval $(targetVar)
-               										  (selectorInfoCif $(infoVar))
+                                                      (selectorInfoCif $(infoVar))
                                                       $(argsVar)|]
             where argsVar = varE $ mkName "args"
-            	  targetVar = varE $ mkName "target"
+                  targetVar = varE $ mkName "target"
 
         purify e | isPure = [| unsafePerformIO $(e) |]
                  | otherwise = e
