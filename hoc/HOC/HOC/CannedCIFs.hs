@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module HOC.CannedCIFs where
 
 import HOC.Base         ( SEL )

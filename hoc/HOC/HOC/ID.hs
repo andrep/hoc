@@ -1,3 +1,5 @@
+{-# LANGUAGE ForeignFunctionInterface, RecursiveDo,
+             MultiParamTypeClasses, FlexibleInstances #-}
 module HOC.ID where
 
 import HOC.Base

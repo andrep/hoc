@@ -1,4 +1,7 @@
-{-# OPTIONS -fallow-undecidable-instances #-}
+{-# LANGUAGE TemplateHaskell, ForeignFunctionInterface,
+             MultiParamTypeClasses, UndecidableInstances,
+             TypeSynonymInstances, FlexibleInstances,
+             ScopedTypeVariables #-}
 module HOC.StdArgumentTypes where
 
 import HOC.Base
@@ -83,6 +86,6 @@ instance ObjCArgument String (Ptr ObjCObject) where
         autoreleaseObject nsstr
         return nsstr
     importArgument arg = nsStringToUTF8 arg >>= peekArray0 0
-    					 >>= return . utf8ToUnicode
+                         >>= return . utf8ToUnicode
    
     objCTypeString _ = "*"

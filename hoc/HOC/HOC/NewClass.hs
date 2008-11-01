@@ -1,3 +1,4 @@
+{-# LANGUAGE ForeignFunctionInterface #-}
 module HOC.NewClass(
         IMP,
         MethodList,

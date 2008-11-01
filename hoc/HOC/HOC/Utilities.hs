@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module HOC.Utilities where
 
 import HOC.Base

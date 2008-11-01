@@ -1,3 +1,4 @@
+{-# LANGUAGE MagicHash #-}
 module HOC.Dyld(
         lookupSymbol,
         lookupSymbol#

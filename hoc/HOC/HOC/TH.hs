@@ -41,6 +41,6 @@ fromSameModuleAs_v = fromSameModule VarName
 fromSameModule :: NameSpace -> String -> Name -> Name
 fromSameModule ns s n
   = Name (mkOccName s) $
-  	case n of
-  		Name _ (NameG _ pkg mod) -> NameG ns pkg mod
-  		Name _ other -> other
+    case n of
+        Name _ (NameG _ pkg mod) -> NameG ns pkg mod
+        Name _ other -> other

@@ -1,4 +1,5 @@
-{-# OPTIONS -fallow-undecidable-instances #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies,
+             UndecidableInstances, FlexibleInstances #-}
 module HOC.Super(
         SuperClass, SuperTarget, Super(super), withExportedSuper
     ) where

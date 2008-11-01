@@ -1,3 +1,6 @@
+{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls,
+             MultiParamTypeClasses, FunctionalDependencies,
+             TypeSynonymInstances #-}
 module HOC.Class where
 
 import HOC.Base
@@ -18,13 +21,13 @@ unsafeGetClassObject :: String -> Class a
 
 
 foreign import ccall unsafe "Class.h getClassByName"
-	c_getClassByName :: CString -> IO (Ptr ObjCObject)
-	
+    c_getClassByName :: CString -> IO (Ptr ObjCObject)
+
 getClassByName name = withCString name c_getClassByName
-	
+
 {-# NOINLINE unsafeGetClassObject #-} -- called from generated code, save space
 unsafeGetClassObject name = unsafePerformIO $
-	getClassByName name >>= importImmortal
+    getClassByName name >>= importImmortal
 
 
 

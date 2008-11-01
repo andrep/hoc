@@ -1,3 +1,4 @@
+{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls, GeneralizedNewtypeDeriving #-}
 module HOC.Base where
 
 import Foreign
@@ -37,24 +38,3 @@ withAutoreleasePool action = bracket newAutoreleasePool releaseObject (const act
 --
 
 data ObjCObject
-
-{-
-newtype ID a = ID (ForeignPtr ObjCObject)
-
-{- moved to Arguments.hs
-class Object a where
-	toID :: a -> ID ()
-	
-instance Object (ID a) where
-	toID (ID a) = ID a
--}
-
-castObject (ID a) = ID a
-
-instance Eq (ID a) where
-    (ID a) == (ID b) = a == b
--}
-
---
-
-

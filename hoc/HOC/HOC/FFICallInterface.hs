@@ -1,11 +1,12 @@
+{-# LANGUAGE ForeignFunctionInterface, FlexibleContexts, GeneralizedNewtypeDeriving #-}
 module HOC.FFICallInterface(
-		FFICif,
-		FFIType,
-		FFITypeable(..),
-		ffiPrepCif,
-		makeStructType,
-		cifIsStret
-	) where
+        FFICif,
+        FFIType,
+        FFITypeable(..),
+        ffiPrepCif,
+        makeStructType,
+        cifIsStret
+    ) where
 
 import Foreign.C.Types
 import Foreign
@@ -73,11 +74,11 @@ makeStructType members = do
 foreign import ccall unsafe cifIsStret :: FFICif -> IO CInt
 
 promotedPeek p
-	= peek (castPtr p :: Ptr CLong) >>= return . fromIntegral
-	where
-		size = sizeOf (pointee p)
-		pointee :: Ptr p -> p
-		pointee = undefined
+    = peek (castPtr p :: Ptr CLong) >>= return . fromIntegral
+    where
+        size = sizeOf (pointee p)
+        pointee :: Ptr p -> p
+        pointee = undefined
 
 promotedAlloca f = alloca (\intPtr -> f $ castPtr (intPtr :: Ptr CLong))
 
@@ -104,7 +105,7 @@ instance FFITypeable Int16 where
 instance FFITypeable Int32 where
     makeFFIType _ = return ffi_type_sint32
 
-    peekRetval = promotedPeek		-- only takes effect on 64-bit
+    peekRetval = promotedPeek       -- only takes effect on 64-bit
     allocaRetval = promotedAlloca
 
 instance FFITypeable Int64 where
@@ -125,7 +126,7 @@ instance FFITypeable Word16 where
 instance FFITypeable Word32 where
     makeFFIType _ = return ffi_type_uint32
 
-    peekRetval = promotedPeek		-- only takes effect on 64-bit
+    peekRetval = promotedPeek       -- only takes effect on 64-bit
     allocaRetval = promotedAlloca
 
 instance FFITypeable Word64 where

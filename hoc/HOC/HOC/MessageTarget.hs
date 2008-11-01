@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module HOC.MessageTarget where
 
 import HOC.Base

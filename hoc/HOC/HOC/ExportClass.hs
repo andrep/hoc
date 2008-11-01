@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell, MultiParamTypeClasses, FunctionalDependencies #-}
 module HOC.ExportClass where
 
 import Foreign
@@ -60,11 +61,11 @@ getVarCif = getCifForSelector (undefined :: GetVarImpType (ID ()) (ID ()))
 
 exportClass :: String -- ^ Name of class you're exporting, e.g. "MyDocument"
             -> String -- ^ A prefix for function names which are methods 
-	              --   belonging to this class, e.g. "md_"
-	    -> [ClassMember] -- ^ A list of class members, such as outlets
-	                     --   and instance variables
-	    -> Q [Dec] -- ^ A Haskell declaration, which can be spliced in
-	               --   with Template Haskell's $(...) syntax
+                      --   belonging to this class, e.g. "md_"
+            -> [ClassMember] -- ^ A list of class members, such as outlets
+                             --   and instance variables
+            -> Q [Dec] -- ^ A Haskell declaration, which can be spliced in
+                       --   with Template Haskell's $(...) syntax
 exportClass name prefix members = sequence $ [
         sigD (mkName exportFunName) [t| IO () |],
         valD (varP $ mkName exportFunName)
