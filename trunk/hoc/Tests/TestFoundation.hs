@@ -1,20 +1,23 @@
 {-# OPTIONS -fth -fglasgow-exts #-}
-module Main where
+module TestFoundation where
+
+import HOC
 
 import Test.HUnit
 import Prelude hiding(init)
-import Foundation hiding(test)
-import Foundation.NSObject(init)
+-- import Foundation hiding(test)
+-- import Foundation.NSObject(init)
+
+import Foreign.C.Types
 
 import System.Mem           ( performGC )
 import Control.Concurrent   ( threadDelay )
 import Control.Monad        ( when )
-import Control.Exception    ( try, finally )
+import Control.Exception    ( try, finally, catchDyn )
 import qualified System.Info( os )
 
-deriving instance Show NSRect
-deriving instance Show NSPoint
-deriving instance Show NSSize
+
+import MiniFoundation
 
       -- garbage collect and make really sure that finalizers have time to run
 performGCAndWait targetCount time maxRepeat = do
@@ -35,6 +38,7 @@ assertLeaks leaks action = do
     return result
 
 assertNoLeaks action = assertLeaks 0 action
+
 
 $(declareClass "HaskellObjectWithOutlet" "NSObject")
 
@@ -151,7 +155,7 @@ tests = test [
                         actual @?= zhongwen
                     ),
                     "length" ~: (assertNoLeaks $ do
-                        actual <- nsString zhongwen >>= Foundation.length
+                        actual <- nsString zhongwen >>= nslength
                         actual @?= 2
                     ),
                     "nsString-haskellString-fermata" ~: (assertNoLeaks $ do
@@ -159,11 +163,17 @@ tests = test [
                         actual @?= fermata
                     ),
                     "length-fermata" ~: (assertNoLeaks $ do
-                        actual <- nsString fermata >>= Foundation.length
+                        actual <- nsString fermata >>= nslength
                         actual @?= 2 -- yes, 2. NSString uses UTF-16.
                     )
             ]
         ],
+        "initializeClasses" ~: do
+            initializeClass_HaskellObjectWithOutlet
+            initializeClass_HaskellObjectWithDescription
+            initializeClass_HaskellObjectWithIVar
+            initializeClass_ExceptionThrower,
+        
         "HaskellObjectWithOutlet" ~: test [
             "alloc-init" ~: (assertNoLeaks $ do
                 _HaskellObjectWithOutlet # alloc >>= init >> return ()
@@ -196,14 +206,14 @@ tests = test [
         ],
         "Memory" ~: test [
             "NSMutableArray-Circle" ~: (assertNoLeaks $ do
-                array1 <- _NSMutableArray # alloc >>= Foundation.NSObject.init
-                array2 <- _NSMutableArray # alloc >>= Foundation.NSObject.init
+                array1 <- _NSMutableArray # alloc >>= init
+                array2 <- _NSMutableArray # alloc >>= init
                 array1 # addObject array2
                 array2 # addObject array1
             ),
             "NSMutableArray-Circle-with-Haskell" ~: (assertLeaks 2 $ do
                 hobj <- _HaskellObjectWithOutlet # alloc >>= init
-                array <- _NSMutableArray # alloc >>= Foundation.NSObject.init
+                array <- _NSMutableArray # alloc >>= init
                 array # addObject hobj
                 hobj # setOtherObject array
             ),
@@ -283,11 +293,3 @@ tests = test [
         ]
     ]
 
-go = withAutoreleasePool $ runTestTT tests
-
-main = do
-    initializeClass_HaskellObjectWithOutlet
-    initializeClass_HaskellObjectWithDescription
-    initializeClass_HaskellObjectWithIVar
-    initializeClass_ExceptionThrower
-    go
