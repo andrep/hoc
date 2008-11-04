@@ -15,18 +15,31 @@ main = defaultMainWithHooks $ simpleUserHooks {
         confHook = customConfig,
         preBuild = customPreBuild
     }
-
-gnustepPaths :: IO (String, String)
-gnustepPaths = do
-    (inp,out,err,pid) <- runInteractiveCommand "gcc --print-libgcc-file-name"
+    
+backquote :: String -> IO String
+backquote cmd = do
+    (inp,out,err,pid) <- runInteractiveCommand cmd
     hClose inp
-    libgcc <- hGetContents out
+    text <- hGetContents out
     waitForProcess pid
     hClose err
-    let gcclibdir =  takeDirectory libgcc
-    sysroot <- getEnv "GNUSTEP_SYSTEM_ROOT"
+    return $ init text ++ let c = last text in if c == '\n' then [] else [c]
 
-    return (gcclibdir, sysroot)
+gnustepPaths :: IO (String, String, String)
+gnustepPaths = do
+    libgcc <- backquote "gcc --print-libgcc-file-name"
+    headersAndLibraries <- backquote
+            "opentool /bin/sh -c \
+            \'. $GNUSTEP_MAKEFILES/filesystem.sh \
+            \; echo $GNUSTEP_SYSTEM_HEADERS ; echo $GNUSTEP_SYSTEM_LIBRARIES'"
+
+    let gcclibdir =  takeDirectory libgcc
+
+    let system_headers : system_libs : _ = lines headersAndLibraries    
+    -- sysroot <- getEnv "GNUSTEP_SYSTEM_ROOT"
+    -- let system_headers = gnustepsysroot </> "Library/Headers"
+    --    system_libs = gnustepsysroot </> "Library/Libraries"
+    return (gcclibdir, system_libs, system_headers)
 
 customConfig :: (Either GenericPackageDescription PackageDescription, HookedBuildInfo) -> ConfigFlags -> IO LocalBuildInfo
 customConfig pdbi cf = do
@@ -34,8 +47,8 @@ customConfig pdbi cf = do
     if System.Info.os == "darwin"
         then return()
         else do
-            (gcclibdir, gnustepsysroot) <- gnustepPaths
-            writeFile "HOC.buildinfo" $ "extra-lib-dirs: " ++ gcclibdir ++ ", " ++ gnustepsysroot </> "Library/Headers" ++ "\n"
+            (gcclibdir, system_libs, system_headers) <- gnustepPaths
+            writeFile "HOC.buildinfo" $ "extra-lib-dirs: " ++ gcclibdir ++ ", " ++ system_libs ++ "\n"
 
     return lbi
 
@@ -49,11 +62,12 @@ customPreBuild args buildFlags = do
             then do
                 return ("-I/usr/include/ffi -DMACOSX", [], ["-framework Foundation"])
             else do
-                (gcclibdir, sysroot) <- gnustepPaths
-                return ("-I$GNUSTEP_SYSTEM_ROOT/Library/Headers -DGNUSTEP",
-                        ["-L" ++ gcclibdir, "-L" ++ sysroot </> "Library/Libraries"],
+                (gcclibdir, system_libs, system_headers) <- gnustepPaths
+                ffi_cflags <- backquote "pkg-config libffi --cflags"
+                return ("-I" ++ system_headers ++ " -DGNUSTEP" ++ " " ++ ffi_cflags,
+                        ["-L" ++ gcclibdir, "-L" ++ system_libs],
                         ["-lgnustep-base"])
-    
+
     exitCode <- system $ "gcc -r -nostdlib -I`ghc --print-libdir`/include "
                     ++ cflags ++ " HOC_cbits/*.m -o dist/build/HOC_cbits.o"
 

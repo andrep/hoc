@@ -58,7 +58,7 @@ Library
         frameworks: Foundation
         cpp-options: -DMACOSX
     else
-        extra-lib-dirs: /usr/lib/gcc/i486-linux-gnu/4.1.3/, /usr/lib/GNUstep/System/Library/Libraries
+        -- paths are inserted by Setup.hs
         extra-libraries: gnustep-base
         cpp-options: -DGNUSTEP
 
@@ -89,6 +89,5 @@ Executable hoc-test
         frameworks: Foundation
         cpp-options: -DMACOSX
     else
-        extra-lib-dirs: /usr/lib/gcc/i486-linux-gnu/4.1.3/, /usr/lib/GNUstep/System/Library/Libraries
         extra-libraries: gnustep-base
         cpp-options: -DGNUSTEP
