@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ForeignFunctionInterface, RankNTypes #-}
 module TestFFI where
 
 import HOC.FFICallInterface
