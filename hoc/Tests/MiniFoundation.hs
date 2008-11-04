@@ -1,4 +1,5 @@
-{-# LANGUAGE TemplateHaskell, StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell, StandaloneDeriving, MultiParamTypeClasses,
+             TypeSynonymInstances, FlexibleInstances, RankNTypes #-}
 module MiniFoundation where
 
 import HOC
