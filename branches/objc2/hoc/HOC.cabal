@@ -1,0 +1,93 @@
+name: HOC
+version: 1.0
+license: BSD4
+license-file: LICENSE
+cabal-version: >= 1.2
+build-type: Custom
+extra-tmp-files: HOC.buildinfo
+
+Flag BinaryInterfaces
+    description: write HOC interface generator files in binary format
+                 (requires binary package)
+
+Flag Tests
+    description: build test cases
+    default: False
+
+Library
+    build-depends: base, template-haskell, unix
+                   
+    exposed-modules:
+        HOC,
+        HOC.NameCaseChange,
+        HOC.Exception,
+        HOC.SelectorNameMangling
+    other-modules:
+        HOC.Arguments,
+        HOC.Base,
+        HOC.CEnum,
+        HOC.CannedCIFs,
+        HOC.Class,
+        HOC.DeclareClass,
+        HOC.DeclareSelector,
+        HOC.Dyld,
+        HOC.ExportClass,
+        HOC.ExternConstants,
+        HOC.ExternFunctions,
+        HOC.FFICallInterface,
+        HOC.ID,
+        HOC.MessageTarget,
+        HOC.Invocation,
+        HOC.MsgSend,
+        HOC.NewClass,
+        HOC.NewlyAllocated,
+        HOC.SelectorMarshaller,
+        HOC.Selectors,
+        HOC.StdArgumentTypes,
+        HOC.Super,
+        HOC.TH,
+        HOC.Unicode,
+        HOC.Utilities,
+        HOC.THDebug,
+        HOC.CStruct
+
+    hs-source-dirs: HOC
+                
+    extra-libraries: objc, ffi
+    if os(darwin)
+        frameworks: Foundation
+        cpp-options: -DMACOSX
+    else
+        -- paths are inserted by Setup.hs
+        extra-libraries: gnustep-base
+        cpp-options: -DGNUSTEP
+
+
+Executable hoc-ifgen
+    main-is: Main.hs
+    hs-source-dirs: HOC, InterfaceGenerator2
+
+    build-depends: containers, bytestring, mtl, pretty, parsec >= 3.0, fgl,
+                   old-time, directory, filepath
+    if flag(BinaryInterfaces)
+        build-depends: binary >= 0.2
+        cpp-options: -DBINARY_INTERFACES
+
+Executable hoc-test
+    main-is: Test.hs
+    hs-source-dirs: HOC, InterfaceGenerator2, Tests
+    
+    cpp-options: -DTEST
+
+    build-depends: HUnit
+
+    if !flag(Tests)
+        buildable: False
+  
+    extra-libraries: objc, ffi
+    if os(darwin)
+        frameworks: Foundation
+        cpp-options: -DMACOSX
+    else
+        extra-libraries: gnustep-base
+        cpp-options: -DGNUSTEP

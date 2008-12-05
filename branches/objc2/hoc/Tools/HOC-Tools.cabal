@@ -1,0 +1,10 @@
+name: HOC-Tools
+version: 1.0
+build-type: Simple
+
+-- containers, bytestring, mtl, pretty, parsec, fgl,
+ --              template-haskell, binary >= 0.2, old-time, directory
+
+executable: hoc-wrap
+main-is: HOCWrap.hs
+build-depends: base, unix, HOC, HOC-Foundation, process, filepath

@@ -1,0 +1,19 @@
+{
+    IBClasses = (
+        {
+            ACTIONS = {sideBarSelection = id; }; 
+            CLASS = BrowserController; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                selectorsDataSource = SimpleTVDataSource; 
+                selectorsTableView = NSTableView; 
+                sideBarDataSource = SimpleTVDataSource; 
+                sideBarTableView = NSTableView; 
+            }; 
+            SUPERCLASS = NSObject; 
+        }, 
+        {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }, 
+        {CLASS = SimpleTVDataSource; LANGUAGE = ObjC; SUPERCLASS = NSObject; }
+    ); 
+    IBVersion = 1; 
+}

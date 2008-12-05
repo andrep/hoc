@@ -1,0 +1,3 @@
+"16" = "This HOC package only works with Wolfgang Thaller's GHC 6.4 package.  Please download and install it from <http://www.haskell.org/ghc/dist/6.4/MacOSX/GHC-6.4.pkg.zip>.";
+"17" = "You appear to have installed Wolfgang Thaller's GHC 6.4 package, but the GHC version in /usr/local/bin/ is not version 6.4.  Please re-install the GHC 6.4 package from <http://www.haskell.org/ghc/dist/6.4/MacOSX/GHC-6.4.pkg.zip>.";
+

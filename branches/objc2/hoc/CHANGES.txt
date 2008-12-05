@@ -1,0 +1,24 @@
+The following are significant changes between HOC versions.  (This is not
+a full ChangeLog; see the CVS repository for that.)
+
+
+HOC 0.8
+=======
+
+* GHC 6.4 required to build
+* Binary installer available for Mac OS X
+* Removed experimental dylib support
+* Major code size reductions of HOC executables (~40% smaller)
+* Can send messages to super: [super foo]" in Objective-C is
+  "super self # foo" in Haskell
+* Objective-C BOOL values are now properly marshalled as signed chars, not ints
+* Struct return values now work
+* Enum marshalling support: see the documentation for details
+* Updated documentation
+
+
+HOC 0.7
+=======
+
+* Initial release with typed API
+
