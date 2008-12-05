@@ -12,10 +12,11 @@
 typedef void NSException;
 #endif
 
+struct hoc_ivar_list;
+
 void newClass(struct objc_class * super_class,
                 const char * name,                          /* never deallocate this */
-				int instance_size,
-				struct objc_ivar_list *ivars,               /* never deallocate this */
+				struct hoc_ivar_list *ivars,
 				struct objc_method_list *methods,           /* never deallocate this */
 				struct objc_method_list *class_methods);    /* never deallocate this */
 				
@@ -33,13 +34,4 @@ void setMethodInList(
         char *types,    /* never deallocate this */
         ffi_cif *cif,   /* never deallocate this */
         haskellIMP imp
-    );
-
-struct objc_ivar_list * makeIvarList(int n);
-void setIvarInList(
-        struct objc_ivar_list *list,
-        int i,
-        char *name,     /* never deallocate this */
-        char *type,     /* never deallocate this */
-        int offset
     );

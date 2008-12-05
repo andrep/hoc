@@ -1,9 +1,13 @@
 #include <objc/objc.h>
 #include "NewClass.h"
 #include "Class.h"
+#include "Ivars.h"
 #include "Selector.h"
 #include "Marshalling.h"
 #include "HsFFI.h"
+
+#define hsExceptionClassName "HOCHaskellException"
+#define hsExceptionIvarName "_haskellException"
 
 static BOOL excWrapperInited = NO;
 static int stablePtrOffset;
@@ -37,7 +41,8 @@ static void initExceptionWrapper()
     {
         struct objc_method_list *methods = makeMethodList(1);
         struct objc_method_list *class_methods = makeMethodList(0);
-        struct objc_ivar_list *ivars = makeIvarList(1);
+        struct hoc_ivar_list *ivars = makeIvarList(1);
+        struct objc_ivar *stablePtrIvar;
         
         selDealloc = getSelectorForName("dealloc");
         
@@ -49,16 +54,17 @@ static void initExceptionWrapper()
         methods->method_list[0].method_types = "v@:";
         methods->method_list[0].method_imp = (IMP) &exc_dealloc;
         
-        setIvarInList(ivars, 0, "_haskellExecption", "^v", 0);
+        setIvarInList(ivars, 0, hsExceptionIvarName, "^v", sizeof(void *), IVAR_PTR_ALIGN);
       
         newClass(getClassByName("NSException"),
-                "HOCHaskellException",
-                sizeof(void*),
+                hsExceptionClassName,
                 ivars, methods, class_methods);
         
         clsHOCHaskellException = getClassByName("HOCHaskellException");
         
-        stablePtrOffset = ivars->ivar_list[0].ivar_offset;
+        stablePtrIvar = class_getInstanceVariable(clsHOCHaskellException, hsExceptionIvarName);
+        #warning TODO - ivar_getOffset needs backport or workaround for fact that offsets are no longer in the list
+        stablePtrOffset = ivar_getOffset(stablePtrIvar);
         
         selExceptionWithNameReasonUserInfo = getSelectorForName("exceptionWithName:reason:userInfo:");
                 
