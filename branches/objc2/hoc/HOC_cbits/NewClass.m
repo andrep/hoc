@@ -2,6 +2,7 @@
 #include <Foundation/NSException.h>
 #include <assert.h>
 #include "Class.h"
+#include "Ivars.h"
 #include "NewClass.h"
 #include "Statistics.h"
 
@@ -26,8 +27,7 @@ static struct objc_class * getSuper(struct objc_class *class)
 
 void newClass(struct objc_class * super_class,
                 const char * name,
-				int instance_size,
-				struct objc_ivar_list *ivars,
+                struct hoc_ivar_list *ivars,
 				struct objc_method_list *methods,
 				struct objc_method_list *class_methods)
 {
@@ -53,12 +53,13 @@ void newClass(struct objc_class * super_class,
 	new_class->name = name;
 	meta_class->name = name;
 	
-	new_class->instance_size = super_class->instance_size + instance_size;
-	for(i=0; i<ivars->ivar_count; i++)
-		ivars->ivar_list[i].ivar_offset += super_class->instance_size;
-		
-	new_class->ivars = ivars;
-
+	new_class->ivars = buildIndexedIvarList(
+	                            ivars, 
+	                            super_class->instance_size, 
+                                &new_class->instance_size);
+    
+    new_class->instance_size += super_class->instance_size;
+    
 #ifdef GNUSTEP
 	new_class->super_class = (void*)(super_class->name);
     meta_class->super_class = (void*)(super_class->isa->name);
@@ -142,26 +143,4 @@ void setMethodInList(
 #endif
     list->method_list[i].method_types = types;
     list->method_list[i].method_imp = (IMP) newIMP(cif, imp);
-}
-
-struct objc_ivar_list * makeIvarList(int n)
-{
-    struct objc_ivar_list *list = 
-        calloc(1, sizeof(struct objc_ivar_list)
-                  + (n-1) * sizeof(struct objc_ivar));
-    list->ivar_count = n;
-    return list;
-}
-
-void setIvarInList(
-        struct objc_ivar_list *list,
-        int i,
-        char *name,
-        char *type,
-        int offset
-    )
-{
-    list->ivar_list[i].ivar_name = name;
-    list->ivar_list[i].ivar_type = type;
-    list->ivar_list[i].ivar_offset = offset;
 }
