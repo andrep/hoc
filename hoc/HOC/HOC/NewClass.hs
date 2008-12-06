@@ -28,27 +28,29 @@ import Foreign
 type IMP = FFICif -> Ptr () -> Ptr (Ptr ()) -> IO (Ptr ObjCObject)
 foreign import ccall "wrapper" wrapIMP :: IMP -> IO (FunPtr IMP)
 
-newtype MethodList = MethodList (Ptr MethodList)
+newtype MethodList = MethodList (ForeignPtr MethodList)
 newtype IvarList = IvarList (ForeignPtr IvarList)
 
 foreign import ccall "NewClass.h newClass"
     c_newClass :: Ptr ObjCObject -> CString
              -> Ptr IvarList
-             -> MethodList -> MethodList
+             -> Ptr MethodList -> Ptr MethodList
              -> IO ()
 
 newClass :: Ptr ObjCObject -> CString
              -> IvarList
              -> MethodList -> MethodList
              -> IO ()
-newClass sc name (IvarList ivars) ms cms = 
-    withForeignPtr ivars $ \ivars -> do
-        c_newClass sc name ivars ms cms
+newClass sc name (IvarList ivars) (MethodList ms) (MethodList cms) = 
+    withForeignPtr ivars $ \ivars -> 
+        withForeignPtr ms $ \ms ->
+            withForeignPtr cms $ \cms -> do
+                c_newClass sc name ivars ms cms
 
 foreign import ccall "NewClass.h makeMethodList"
-    makeMethodList :: Int -> IO MethodList
+    rawMakeMethodList :: Int -> IO (Ptr MethodList)
 foreign import ccall "NewClass.h setMethodInList"
-    rawSetMethodInList :: MethodList -> Int
+    rawSetMethodInList :: Ptr MethodList -> Int
                     -> SEL -> CString
                     -> FFICif -> FunPtr IMP
                     -> IO ()
@@ -72,10 +74,17 @@ setIvarInList (IvarList ivars) n name ty sz align =
     withForeignPtr ivars $ \ivars -> do
         c_setIvarInList ivars n name ty sz align
 
-setMethodInList methodList idx sel typ cif imp = do
-    typC <- newCString typ
-    thunk <- wrapIMP imp
-    rawSetMethodInList methodList idx sel typC cif thunk
+makeMethodList :: Int -> IO MethodList
+makeMethodList n = do
+    methods <- rawMakeMethodList n
+    methods <- newForeignPtr freePtr methods
+    return (MethodList methods)
+
+setMethodInList (MethodList methodList) idx sel typ cif imp = 
+    withForeignPtr methodList $ \methodList -> do
+        typC <- newCString typ
+        thunk <- wrapIMP imp
+        rawSetMethodInList methodList idx sel typC cif thunk
 
 makeDefaultIvarList = do
     list <- makeIvarList 1
@@ -98,33 +107,11 @@ getHaskellDataSelector = getSelectorForName "__getHaskellData__"
 getHaskellDataCif = getCifForSelector (undefined :: Class () -> ID () -> IO (ID ()))
                                                 -- actually  -> IO (Ptr ()) ...
 
-setHaskellRetainMethod methodList idx = do
-    typC <- newCString "@@:"
-    thunk <- wrapIMP haskellObject_retain_IMP
-    rawSetMethodInList methodList
-                       idx
-                       retainSelector
-                       typC
-                       retainCif
-                       thunk
+setHaskellRetainMethod methodList idx = 
+    setMethodInList methodList idx retainSelector "@@:" retainCif haskellObject_retain_IMP
     
-setHaskellReleaseMethod methodList idx = do
-    typC <- newCString "v@:"
-    thunk <- wrapIMP haskellObject_release_IMP
-    rawSetMethodInList methodList
-                       idx
-                       releaseSelector
-                       typC
-                       releaseCif
-                       thunk
+setHaskellReleaseMethod methodList idx = 
+    setMethodInList methodList idx releaseSelector "v@:" releaseCif haskellObject_release_IMP
 
-setHaskellDataMethod methodList idx super mbDat = do
-    typC <- newCString "^v@:#"
-    thunk <- wrapIMP (getHaskellData_IMP super mbDat)
-    rawSetMethodInList methodList
-                       idx
-                       getHaskellDataSelector
-                       typC
-                       getHaskellDataCif
-                       thunk
-
+setHaskellDataMethod methodList idx super mbDat = 
+    setMethodInList methodList idx getHaskellDataSelector "^v@:#" getHaskellDataCif (getHaskellData_IMP super mbDat)

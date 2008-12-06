@@ -40,20 +40,14 @@ static void initExceptionWrapper()
 {
     if(!excWrapperInited)
     {
-        struct objc_method_list *methods = makeMethodList(1);
-        struct objc_method_list *class_methods = makeMethodList(0);
+        struct hoc_method_list *methods = makeMethodList(1);
+        struct hoc_method_list *class_methods = makeMethodList(0);
         struct hoc_ivar_list *ivars = makeIvarList(1);
         struct objc_ivar *stablePtrIvar;
         
         selDealloc = getSelectorForName("dealloc");
         
-#ifdef GNUSTEP
-        methods->method_list[0].method_name = (SEL)"dealloc";
-#else
-        methods->method_list[0].method_name = selDealloc;
-#endif
-        methods->method_list[0].method_types = "v@:";
-        methods->method_list[0].method_imp = (IMP) &exc_dealloc;
+        setMethodInListWithIMP(methods, 0, selDealloc, "v@:", (IMP) &exc_dealloc);
         
         setIvarInList(ivars, 0, hsExceptionIvarName, "^v", sizeof(void *), IVAR_PTR_ALIGN);
       
