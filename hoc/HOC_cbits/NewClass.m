@@ -34,7 +34,7 @@ void newClass(struct objc_class * super_class,
 	struct objc_class * meta_class;
 	struct objc_class * new_class;
 	struct objc_class * root_class;
-	int i;
+    int instance_size;
 	
 	assert(objc_lookUpClass(name) == nil);
 	
@@ -56,9 +56,9 @@ void newClass(struct objc_class * super_class,
 	new_class->ivars = buildIndexedIvarList(
 	                            ivars, 
 	                            super_class->instance_size, 
-                                &new_class->instance_size);
+                                &instance_size);
     
-    new_class->instance_size += super_class->instance_size;
+    new_class->instance_size = super_class->instance_size + instance_size;
     
 #ifdef GNUSTEP
 	new_class->super_class = (void*)(super_class->name);
