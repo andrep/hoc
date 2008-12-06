@@ -9,7 +9,6 @@ module HOC.NewClass(
         setIvarInList,
         setMethodInList,
         makeDefaultIvarList,
-        defaultIvarSize,
         setHaskellRetainMethod,
         setHaskellReleaseMethod,
         setHaskellDataMethod
@@ -94,8 +93,6 @@ makeDefaultIvarList = do
         (fromIntegral $ sizeOf nullPtr)
         (fromIntegral $ alignment nullPtr)
     return list
-
-defaultIvarSize = 4 :: Int
 
 retainSelector = getSelectorForName "retain"
 retainCif = getCifForSelector (undefined :: ID () -> IO (ID ()))
