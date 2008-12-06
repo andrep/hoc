@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "Class.h"
 #include "Ivars.h"
+#include "Methods.h"
 #include "NewClass.h"
 
 #ifdef GNUSTEP
@@ -27,8 +28,8 @@ static struct objc_class * getSuper(struct objc_class *class)
 void newClass(struct objc_class * super_class,
                 const char * name,
                 struct hoc_ivar_list *ivars,
-				struct objc_method_list *methods,
-				struct objc_method_list *class_methods)
+                struct hoc_method_list *methods,
+                struct hoc_method_list *class_methods)
 {
 	struct objc_class * meta_class;
 	struct objc_class * new_class;
@@ -81,8 +82,8 @@ void newClass(struct objc_class * super_class,
         __objc_resolve_class_links();
     }
     
-    class_add_method_list(new_class, methods);
-    class_add_method_list(meta_class, class_methods);
+    class_add_method_list(new_class, convertMethodList(methods));
+    class_add_method_list(meta_class, convertMethodList(class_methods));
 #else
 	new_class->methodLists = calloc( 1, sizeof(struct objc_method_list *) );
 	meta_class->methodLists = calloc( 1, sizeof(struct objc_method_list *) );
@@ -95,8 +96,8 @@ void newClass(struct objc_class * super_class,
 	
 	objc_addClass( new_class );
 	
-	class_addMethods(new_class, methods);
-	class_addMethods(meta_class, class_methods);
+	class_addMethods(new_class, convertMethodList(methods));
+	class_addMethods(meta_class, convertMethodList(class_methods));
 #endif
 }
 

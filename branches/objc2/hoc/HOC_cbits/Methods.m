@@ -22,7 +22,42 @@ static ffi_closure *newIMP(ffi_cif *cif, haskellIMP imp)
     return closure;
 }
 
-struct objc_method_list * makeMethodList(int n)
+struct hoc_method_list * makeMethodList(int n)
+{
+    struct hoc_method_list *list = 
+        calloc(1, sizeof(struct hoc_method_list)
+                  + (n-1) * sizeof(struct objc_method));
+    list->method_count = n;
+    return list;
+}
+
+void setMethodInList(
+        struct hoc_method_list *list,
+        int i,
+        SEL sel,
+        char *types,
+        ffi_cif *cif,
+        haskellIMP imp
+    )
+{   
+    setMethodInListWithIMP(list, i, sel, types, (IMP) newIMP(cif, imp) );
+}
+
+void setMethodInListWithIMP(
+        struct hoc_method_list *list,
+        int i,
+        SEL sel,
+        char *types,
+        IMP imp
+    )
+{
+    list->method_list[i].method_name = sel;
+    list->method_list[i].method_types = types;
+    list->method_list[i].method_imp = imp;
+}
+
+/* Was previously makeMethodList */
+static struct objc_method_list * makeObjcMethodList(int n)
 {
     struct objc_method_list *list = 
         calloc(1, sizeof(struct objc_method_list)
@@ -31,13 +66,13 @@ struct objc_method_list * makeMethodList(int n)
     return list;
 }
 
-void setMethodInList(
+/* Was previously setMethodInList */
+static void setObjCMethodInList(
         struct objc_method_list *list,
         int i,
         SEL sel,
         char *types,
-        ffi_cif *cif,
-        haskellIMP imp
+        IMP imp
     )
 {
 #ifdef GNUSTEP
@@ -46,5 +81,20 @@ void setMethodInList(
     list->method_list[i].method_name = sel;
 #endif
     list->method_list[i].method_types = types;
-    list->method_list[i].method_imp = (IMP) newIMP(cif, imp);
+    list->method_list[i].method_imp = imp;
+}
+
+struct objc_method_list *
+convertMethodList(struct hoc_method_list * list) {
+    struct objc_method_list * newList = makeObjcMethodList(list->method_count);
+    int i;
+    
+    for(i = 0; i < list->method_count; i++)
+    {
+        struct hoc_method * method = &list->method_list[i];
+        
+        setObjCMethodInList(newList, i, method->method_name, method->method_types, method->method_imp);
+    }
+    
+    return newList;
 }
