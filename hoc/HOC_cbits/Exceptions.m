@@ -2,6 +2,7 @@
 #include "NewClass.h"
 #include "Class.h"
 #include "Ivars.h"
+#include "Methods.h"
 #include "Selector.h"
 #include "Marshalling.h"
 #include "HsFFI.h"
