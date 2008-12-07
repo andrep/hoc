@@ -31,7 +31,7 @@ newtype MethodList = MethodList (ForeignPtr MethodList)
 newtype IvarList = IvarList (ForeignPtr IvarList)
 
 foreign import ccall "NewClass.h newClass"
-    c_newClass :: Ptr ObjCObject -> CString
+    rawNewClass :: Ptr ObjCObject -> CString
              -> Ptr IvarList
              -> Ptr MethodList -> Ptr MethodList
              -> IO ()
@@ -44,7 +44,7 @@ newClass sc name (IvarList ivars) (MethodList ms) (MethodList cms) =
     withForeignPtr ivars $ \ivars -> 
         withForeignPtr ms $ \ms ->
             withForeignPtr cms $ \cms -> do
-                c_newClass sc name ivars ms cms
+                rawNewClass sc name ivars ms cms
 
 foreign import ccall "NewClass.h makeMethodList"
     rawMakeMethodList :: Int -> IO (Ptr MethodList)
@@ -56,14 +56,14 @@ foreign import ccall "NewClass.h setMethodInList"
 
                       
 foreign import ccall "NewClass.h makeIvarList"
-    c_makeIvarList :: Int -> IO (Ptr IvarList)
+    rawMakeIvarList :: Int -> IO (Ptr IvarList)
 foreign import ccall "NewClass.h setIvarInList"
-    c_setIvarInList :: Ptr IvarList -> Int
+    rawSetIvarInList :: Ptr IvarList -> Int
                   -> CString -> CString -> CSize -> Word8 -> IO ()
 
 makeIvarList :: Int -> IO IvarList
 makeIvarList n = do
-    ivars <- c_makeIvarList n
+    ivars <- rawMakeIvarList n
     ivars <- newForeignPtr freePtr ivars
     return (IvarList ivars)
 
@@ -71,7 +71,7 @@ setIvarInList:: IvarList -> Int
                   -> CString -> CString -> CSize -> Word8 -> IO ()
 setIvarInList (IvarList ivars) n name ty sz align = 
     withForeignPtr ivars $ \ivars -> do
-        c_setIvarInList ivars n name ty sz align
+        rawSetIvarInList ivars n name ty sz align
 
 makeMethodList :: Int -> IO MethodList
 makeMethodList n = do
