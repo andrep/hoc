@@ -28,8 +28,12 @@ void setIvarInList(
         uint8_t alignment
     );
 
+#ifndef __OBJC2__
+
 struct objc_ivar_list * buildIndexedIvarList(
         struct hoc_ivar_list *list,
         int start_offset,
         int *instance_size      /* out */
     );
+
+#endif

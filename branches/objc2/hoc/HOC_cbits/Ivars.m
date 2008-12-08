@@ -33,8 +33,10 @@ void setIvarInList(
     list->ivar_list[i].ivar_alignment = alignment;
 }
 
+#ifndef __OBJC2__
+
 /* Used to be makeIvarList in NewClass.m */
-struct objc_ivar_list * makeIndexedIvarList(int n)
+static struct objc_ivar_list * makeIndexedIvarList(int n)
 {
     struct objc_ivar_list *list = 
         calloc(1, sizeof(struct objc_ivar_list)
@@ -44,7 +46,7 @@ struct objc_ivar_list * makeIndexedIvarList(int n)
 }
 
 /* Used to be setIvarInList in NewClass.m */
-void setIvarInIndexedList(
+static void setIvarInIndexedList(
         struct objc_ivar_list *list,
         int i,
         char *name,
@@ -88,3 +90,4 @@ struct objc_ivar_list * buildIndexedIvarList(
     return outList;
 }
 
+#endif // ifndef __OBJC2__

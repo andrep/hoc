@@ -13,3 +13,14 @@ id getClassByName(const char* name)
 	return objc_getClass(name);
 #endif
 }
+
+Class getSuperClassForObject(id self)
+{
+#ifdef GNUSTEP
+    return self->class_pointer->super_class;
+#elif defined(__OBJC2__)
+    return class_getSuperclass(object_getClass(self));
+#else
+    return self->isa->super_class;
+#endif
+}

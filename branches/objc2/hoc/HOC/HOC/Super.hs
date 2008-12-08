@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies,
-             UndecidableInstances, FlexibleInstances #-}
+             UndecidableInstances, FlexibleInstances,
+             ForeignFunctionInterface #-}
 module HOC.Super(
         SuperClass, SuperTarget, Super(super), withExportedSuper
     ) where
@@ -54,8 +55,8 @@ instance (Object (ID sub), Object super, SuperClass (ID sub) super)
     => Super (ID sub) (SuperTarget super) where
     super obj = SuperTarget (fromID $ toID obj)
 
-getSuperClassForObject obj = do cls <- peekByteOff obj 0 :: IO (Ptr (Ptr ()))
-                                peekElemOff cls 1
+foreign import ccall "Class.h getSuperClassForObject"
+    getSuperClassForObject :: Ptr ObjCObject -> IO (Ptr ())
 
 instance MessageTarget a => MessageTarget (SuperTarget a) where
     isNil (SuperTarget x) = isNil x

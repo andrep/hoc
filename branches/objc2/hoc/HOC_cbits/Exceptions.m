@@ -26,12 +26,18 @@ static void exc_dealloc(id self, SEL sel)
     
 #if GNUSTEP
     super.self = self;
-    super.class = self->class_pointer->super_class;
+    super.class = getSuperClassForObject(self);
     
     (*objc_msg_lookup_super(&super, selDealloc))(self, selDealloc);
 #else
     super.receiver = self;
-    super.class = self->isa->super_class;
+    
+#   ifdef __OBJC2__
+        super.super_class = getSuperClassForObject(self);
+#   else
+        super.class = getSuperClassForObject(self);
+#   endif
+
     objc_msgSendSuper(&super, selDealloc);
 #endif
 }
