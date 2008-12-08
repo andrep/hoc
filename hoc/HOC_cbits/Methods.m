@@ -26,7 +26,7 @@ struct hoc_method_list * makeMethodList(int n)
 {
     struct hoc_method_list *list = 
         calloc(1, sizeof(struct hoc_method_list)
-                  + (n-1) * sizeof(struct objc_method));
+                  + (n-1) * sizeof(struct hoc_method));
     list->method_count = n;
     return list;
 }
@@ -55,6 +55,8 @@ void setMethodInListWithIMP(
     list->method_list[i].method_types = types;
     list->method_list[i].method_imp = imp;
 }
+
+#ifndef __OBJC2__
 
 /* Was previously makeMethodList */
 static struct objc_method_list * makeObjcMethodList(int n)
@@ -98,3 +100,5 @@ convertMethodList(struct hoc_method_list * list) {
     
     return newList;
 }
+
+#endif // ifndef __OBJC2__

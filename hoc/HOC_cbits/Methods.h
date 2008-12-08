@@ -50,4 +50,8 @@ void setMethodInList(
         haskellIMP imp
     );
 
+#ifndef __OBJC2__
+
 struct objc_method_list * convertMethodList(struct hoc_method_list * list);
+
+#endif
