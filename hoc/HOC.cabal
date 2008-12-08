@@ -58,6 +58,7 @@ Library
     hs-source-dirs: HOC
                 
     extra-libraries: objc, ffi
+    c-sources: HOC_cbits.o
     if os(darwin)
         include-dirs: /usr/include/ffi
         frameworks: Foundation
@@ -68,7 +69,7 @@ Library
         cpp-options: -DGNUSTEP
     
     if flag(ObjC2)
-        cpp-options: -D__OBJC2__
+        cpp-options: -D__OBJC2__=1
 
 
 Executable hoc-ifgen
