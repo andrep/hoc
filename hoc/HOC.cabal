@@ -14,6 +14,10 @@ Flag Tests
     description: build test cases
     default: False
 
+Flag ObjC2
+    description: build for Objective-C 2.0
+    default: False
+
 Library
     build-depends: base, template-haskell, unix
                    
@@ -55,12 +59,16 @@ Library
                 
     extra-libraries: objc, ffi
     if os(darwin)
+        include-dirs: /usr/include/ffi
         frameworks: Foundation
         cpp-options: -DMACOSX
     else
         -- paths are inserted by Setup.hs
         extra-libraries: gnustep-base
         cpp-options: -DGNUSTEP
+    
+    if flag(ObjC2)
+        cpp-options: -D__OBJC2__
 
 
 Executable hoc-ifgen
