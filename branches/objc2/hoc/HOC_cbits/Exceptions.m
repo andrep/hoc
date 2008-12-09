@@ -64,8 +64,11 @@ static void initExceptionWrapper()
         clsHOCHaskellException = getClassByName("HOCHaskellException");
         
         stablePtrIvar = class_getInstanceVariable(clsHOCHaskellException, hsExceptionIvarName);
-        #warning TODO - ivar_getOffset needs backport or workaround for fact that offsets are no longer in the list
+#ifdef __OBJC2__
         stablePtrOffset = ivar_getOffset(stablePtrIvar);
+#else
+        stablePtrOffset = stablePtrIvar->ivar_offset;
+#endif
         
         selExceptionWithNameReasonUserInfo = getSelectorForName("exceptionWithName:reason:userInfo:");
                 
