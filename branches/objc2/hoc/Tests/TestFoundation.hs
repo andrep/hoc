@@ -90,6 +90,30 @@ et_throwNSException self = _NSException # exceptionWithNameReasonUserInfo
                                         nil
                             >>= raise
 
+$(declareSelector "countInvocations:upto:" [t| Int -> Int -> IO Int |])
+
+$(declareClass "HaskellObjectCountingInvocations" "NSObject")
+$(exportClass "HaskellObjectCountingInvocations" "hoci_1_" [
+        InstanceMethod 'countInvocationsUpto
+    ])
+
+instance Has_countInvocationsUpto (HaskellObjectCountingInvocations a)
+
+hoci_1_countInvocationsUpto start limit self = return (start + 1)
+
+$(declareClass "HaskellObjectUsingSuper" "HaskellObjectCountingInvocations")
+$(exportClass "HaskellObjectUsingSuper" "hoci_2_" [
+        InstanceMethod 'countInvocationsUpto
+    ])
+
+hoci_2_countInvocationsUpto start limit self
+    | start >= limit    = return start
+    | otherwise         = super self # countInvocationsUpto (start + 1) limit
+
+$(declareClass "HaskellSubclassOfObjectUsingSuper" "HaskellObjectUsingSuper")
+
+$(exportClass "HaskellSubclassOfObjectUsingSuper" "noMembers_" [])
+
 tests = test [
         "NSNumber" ~: test [
             "alloc-initWithInt-intValue" ~: (assertNoLeaks $ do
@@ -172,7 +196,10 @@ tests = test [
             initializeClass_HaskellObjectWithOutlet
             initializeClass_HaskellObjectWithDescription
             initializeClass_HaskellObjectWithIVar
-            initializeClass_ExceptionThrower,
+            initializeClass_ExceptionThrower
+            initializeClass_HaskellObjectCountingInvocations
+            initializeClass_HaskellObjectUsingSuper
+            initializeClass_HaskellSubclassOfObjectUsingSuper,
         
         "HaskellObjectWithOutlet" ~: test [
             "alloc-init" ~: (assertNoLeaks $ do
@@ -235,11 +262,30 @@ tests = test [
                 result @?= expected
             )            
         ],
-        "Super" ~: (assertNoLeaks $ do
-            hobj <- _HaskellObjectWithDescription # alloc >>= init
-            str <- hobj # description
-            fromNSString str @?= "<HaskellObjectWithDescription: TEST>"
-        ),
+        "Super" ~: test [
+            "description" ~: (assertNoLeaks $ do
+                hobj <- _HaskellObjectWithDescription # alloc >>= init
+                str <- hobj # description
+                fromNSString str @?= "<HaskellObjectWithDescription: TEST>"
+            ),
+            "chaining" ~: test [
+                "base" ~: (assertNoLeaks $ do
+                    hobj <- _HaskellObjectCountingInvocations # alloc >>= init
+                    count <- hobj # countInvocationsUpto 0 100
+                    count @?= 1
+                ),
+                "subclass" ~: (assertNoLeaks $ do
+                    hobj <- _HaskellObjectUsingSuper # alloc >>= init
+                    count <- hobj # countInvocationsUpto 0 100
+                    count @?= 2
+                ),
+                "subsubclass" ~: (assertNoLeaks $ do
+                    hobj <- _HaskellSubclassOfObjectUsingSuper # alloc >>= init
+                    count <- hobj # countInvocationsUpto 0 100
+                    count @?= 2
+                )
+            ]
+        ],
         "structs" ~: test [
             "pointArg" ~: (do
                 let point = NSPoint 6.42 7.42

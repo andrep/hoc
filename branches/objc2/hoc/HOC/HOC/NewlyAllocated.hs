@@ -14,6 +14,8 @@ module HOC.NewlyAllocated where
 
 import HOC.Base         ( ObjCObject )
 import HOC.Arguments    ( ObjCArgument(..) )
+import HOC.Class
+import HOC.ID
 import HOC.MessageTarget( Object(..), MessageTarget(..) )
 import HOC.MsgSend
 import HOC.Super
@@ -24,15 +26,16 @@ import System.IO.Unsafe ( unsafePerformIO )
 
 data NewlyAllocated a
     = NewlyAllocated (Ptr ObjCObject)
-    | NewSuper (Ptr ObjCObject)
+    | NewSuper (Ptr ObjCObject) (Class ())
 
 instance ObjCArgument (NewlyAllocated a) (Ptr ObjCObject) where
     withExportedArgument (NewlyAllocated p) action = action p
-    withExportedArgument (NewSuper p) action =
-        withExportedSuper p action
+    withExportedArgument (NewSuper p cls) action =
+        withExportedArgument cls $ \cls ->
+        withExportedSuper p cls action
     
     exportArgument (NewlyAllocated p) = return p
-    exportArgument (NewSuper p) = fail "HOC.NewlyAllocated.NewSuper: exportArgument"
+    exportArgument (NewSuper p cls) = fail "HOC.NewlyAllocated.NewSuper: exportArgument"
     
     importArgument p = return (NewlyAllocated p)
 
@@ -45,13 +48,16 @@ instance ObjCArgument (NewlyAllocated a) (Ptr ObjCObject) where
     
 instance MessageTarget (NewlyAllocated a) where
     isNil (NewlyAllocated p) = p == nullPtr
-    isNil (NewSuper p) = p == nullPtr
+    isNil (NewSuper p cls) = (p == nullPtr) || isNil cls
 
     sendMessageWithRetval (NewlyAllocated _) = objSendMessageWithRetval
-    sendMessageWithRetval (NewSuper _) = superSendMessageWithRetval
+    sendMessageWithRetval (NewSuper _ _) = superSendMessageWithRetval
     sendMessageWithoutRetval (NewlyAllocated _) = objSendMessageWithoutRetval
-    sendMessageWithoutRetval (NewSuper _) = superSendMessageWithoutRetval
+    sendMessageWithoutRetval (NewSuper _ _) = superSendMessageWithoutRetval
 
-instance SuperClass sub super
-    => Super (NewlyAllocated sub) (NewlyAllocated super) where
-    super (NewlyAllocated x) = NewSuper x
+instance (SuperClass sub (ID super), StaticClassAndObject (Class super) (ID super))
+    => Super (NewlyAllocated sub) (NewlyAllocated (ID super)) where
+    super na@(NewlyAllocated x) = NewSuper x (castObject superClass)
+        where superClass = staticClassForObject (asSuper na)
+              asSuper :: SuperClass sub super => NewlyAllocated sub -> super
+              asSuper _ = error "staticClassForObject must not touch its parameter"
