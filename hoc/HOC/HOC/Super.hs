@@ -1,11 +1,14 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies,
-             UndecidableInstances, FlexibleInstances #-}
+             UndecidableInstances, FlexibleInstances,
+             FlexibleContexts #-}
 module HOC.Super(
-        SuperClass, SuperTarget, Super(super), withExportedSuper
+        SuperClass, SuperTarget, Super(super), withExportedSuper,
+        staticSuperclassForObject, castSuper
     ) where
 
 import HOC.Base
 import HOC.Arguments
+import HOC.Class
 import HOC.ID
 import HOC.MsgSend
 import HOC.MessageTarget
@@ -23,7 +26,7 @@ import Foreign
 -- super, which is sufficient to define a class hierarchy.
 class SuperClass sub super | sub -> super
 
-data SuperTarget a = SuperTarget a
+data SuperTarget a = SuperTarget a (Class ())
 
 class Super sub super | sub -> super where
     super :: sub -> super
@@ -33,32 +36,39 @@ class Super sub super | sub -> super where
 pokeSuper objcSuper obj cls
     = pokeByteOff objcSuper 0 obj >> pokeByteOff objcSuper (sizeOf obj) cls
 
-withExportedSuper p action = 
-    getSuperClassForObject p >>= \cls ->
+withExportedSuper p cls action = 
     allocaBytes (sizeOf p + sizeOf cls) $ \sptr ->
     pokeSuper sptr p cls >> action sptr
 
 instance MessageTarget a
         => ObjCArgument (SuperTarget a) (Ptr ObjCObject) where
 
-    withExportedArgument (SuperTarget obj) action =
+    withExportedArgument (SuperTarget obj cls) action =
+        withExportedArgument cls $ \cls ->
         withExportedArgument obj $ \p ->
-        withExportedSuper p action
+        withExportedSuper p cls action
         
     exportArgument _ = fail "HOC.Super: exportArgument"
     importArgument _ = fail "HOC.Super: importArgument"
 
     objCTypeString _ = "@"      -- well, close enough.
 
-instance (Object (ID sub), Object super, SuperClass (ID sub) super)
-    => Super (ID sub) (SuperTarget super) where
-    super obj = SuperTarget (fromID $ toID obj)
+castSuper :: SuperClass (ID sub) (ID super) => ID sub -> ID super
+castSuper = castObject
 
-getSuperClassForObject obj = do cls <- peekByteOff obj 0 :: IO (Ptr (Ptr ()))
-                                peekElemOff cls 1
+staticSuperclassForObject :: 
+    ( SuperClass (ID sub) (ID super)
+    , StaticClassAndObject (Class super) (ID super)
+    ) => ID sub -> Class super
+staticSuperclassForObject = staticClassForObject . castSuper
+
+instance (Object (ID sub), Object (ID super), SuperClass (ID sub) (ID super), 
+          StaticClassAndObject (Class super) (ID super))
+    => Super (ID sub) (SuperTarget (ID super)) where
+    super obj = SuperTarget (fromID $ toID obj) (castObject (staticSuperclassForObject obj))
 
 instance MessageTarget a => MessageTarget (SuperTarget a) where
-    isNil (SuperTarget x) = isNil x
+    isNil (SuperTarget x cls) = isNil x || isNil cls
     
     sendMessageWithRetval _ = superSendMessageWithRetval
     sendMessageWithoutRetval _ = superSendMessageWithoutRetval

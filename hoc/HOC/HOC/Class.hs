@@ -35,3 +35,14 @@ unsafeGetClassObject name = unsafePerformIO $
 class (Object a, Object b) => ClassAndObject a b | a -> b, b -> a
 
 instance ClassAndObject (Class a) (ID a)
+
+class ClassAndObject a b => StaticClassAndObject a b
+    where 
+        -- _staticClassForObject must not touch its parameter:
+        -- its value should only depend on the type of the parameter.
+        _staticClassForObject :: b -> a
+
+-- make an export-safe version; don't want people making new
+-- implementations, but they should be allowed to use the info.
+staticClassForObject :: StaticClassAndObject a b => b -> a
+staticClassForObject = _staticClassForObject
