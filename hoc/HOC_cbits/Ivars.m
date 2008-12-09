@@ -59,7 +59,6 @@ static void setIvarInIndexedList(
     list->ivar_list[i].ivar_offset = offset;
 }
 
-#warning TODO - proofread buildIndexedIvarList
 struct objc_ivar_list * buildIndexedIvarList(
         struct hoc_ivar_list *list,
         int start_offset,
