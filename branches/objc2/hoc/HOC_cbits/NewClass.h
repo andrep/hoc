@@ -7,7 +7,7 @@
 struct hoc_ivar_list;
 struct hoc_method_list;
 
-void newClass(struct objc_class * super_class,
+void newClass(Class super_class,
                 const char * name,                          /* never deallocate this */
 				struct hoc_ivar_list *ivars,
 				struct hoc_method_list *methods,
