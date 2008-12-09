@@ -45,7 +45,12 @@ declareClass name super = sequence $ [
         valD (return $ VarP (mkName superName)) (normalB $ stringE super) [],
         
         -- instance SuperClass (name ()) (super ())
-        instanceD (cxt []) (conT ''SuperClass `appT` clsType `appT` superType) []
+        instanceD (cxt []) (conT ''SuperClass `appT` clsType `appT` superType) [],
+        
+        -- instance StaticClassAndObject (name ())
+        --  where staticClassForObject _ = classObject
+        instanceD (cxt []) (conT ''StaticClassAndObject `appT` metaClsType `appT` clsType) 
+            [funD '_staticClassForObject [clause [wildP] (normalB $ varE (mkName classObjectName)) []]]
     ]
     where
         phantomName = name ++ "_"
@@ -56,5 +61,6 @@ declareClass name super = sequence $ [
         classObjectName = "_" ++ name
         superName = "super_" ++ name
 
+        metaClsType = conT (mkName metaClassName) `appT` [t| () |]
         clsType   = conT (mkName name)  `appT` [t| () |]
         superType = conT (mkName super) `appT` [t| () |]

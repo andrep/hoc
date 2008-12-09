@@ -5,6 +5,9 @@ module HOC (
         Object(..),
         Class,
         ClassAndObject,
+        StaticClassAndObject,
+        staticClassForObject,
+        staticSuperclassForObject,
         ( # ), ( #. ),
         withExportedArray,
         castObject,
@@ -36,6 +39,7 @@ module HOC (
         SuperClass,
         SuperTarget,
         super,
+        castSuper,
         
         CEnum(..),
         declareCEnum,
