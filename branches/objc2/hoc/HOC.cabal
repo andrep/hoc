@@ -16,7 +16,6 @@ Flag Tests
 
 Flag ObjC2
     description: build for Objective-C 2.0
-    default: False
 
 Library
     build-depends: base, template-haskell, unix
