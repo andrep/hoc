@@ -2,8 +2,7 @@
              UndecidableInstances, FlexibleInstances,
              FlexibleContexts #-}
 module HOC.Super(
-        SuperClass, SuperTarget, Super(super), withExportedSuper,
-        staticSuperclassForObject, castSuper
+        SuperClass, SuperTarget, Super(super), withExportedSuper, castSuper
     ) where
 
 import HOC.Base
@@ -58,14 +57,14 @@ castSuper = castObject
 
 staticSuperclassForObject :: 
     ( SuperClass (ID sub) (ID super)
-    , StaticClassAndObject (Class super) (ID super)
+    , ClassObject (Class super)
     ) => ID sub -> Class super
-staticSuperclassForObject = staticClassForObject . castSuper
+staticSuperclassForObject obj = classObject
 
 instance (Object (ID sub), Object (ID super), SuperClass (ID sub) (ID super), 
-          StaticClassAndObject (Class super) (ID super))
+          ClassObject (Class super))
     => Super (ID sub) (SuperTarget (ID super)) where
-    super obj = SuperTarget (fromID $ toID obj) (castObject (staticSuperclassForObject obj))
+    super obj = SuperTarget (castSuper obj) (castObject (staticSuperclassForObject obj))
 
 instance MessageTarget a => MessageTarget (SuperTarget a) where
     isNil (SuperTarget x cls) = isNil x || isNil cls

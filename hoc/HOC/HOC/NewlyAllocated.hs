@@ -1,4 +1,5 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, UndecidableInstances,
+    ScopedTypeVariables #-}
 module HOC.NewlyAllocated where
 
 {-
@@ -55,9 +56,6 @@ instance MessageTarget (NewlyAllocated a) where
     sendMessageWithoutRetval (NewlyAllocated _) = objSendMessageWithoutRetval
     sendMessageWithoutRetval (NewSuper _ _) = superSendMessageWithoutRetval
 
-instance (SuperClass sub (ID super), StaticClassAndObject (Class super) (ID super))
+instance (SuperClass sub (ID super), ClassObject (Class super))
     => Super (NewlyAllocated sub) (NewlyAllocated (ID super)) where
-    super na@(NewlyAllocated x) = NewSuper x (castObject superClass)
-        where superClass = staticClassForObject (asSuper na)
-              asSuper :: SuperClass sub super => NewlyAllocated sub -> super
-              asSuper _ = error "staticClassForObject must not touch its parameter"
+    super (NewlyAllocated x) = NewSuper x (castObject (classObject :: Class super))
