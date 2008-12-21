@@ -20,6 +20,10 @@ getSelectorForName str = unsafePerformIO $
 
 --
 
+foreign import ccall "stdlib.h &free"
+    freePtr :: FunPtr (Ptr a -> IO ())
+
+--
 
 foreign import ccall "MemoryManagement.h retainObject"
     retainObject :: Ptr ObjCObject -> IO ()

@@ -1,9 +1,14 @@
 #include <objc/objc.h>
 #include "NewClass.h"
 #include "Class.h"
+#include "Ivars.h"
+#include "Methods.h"
 #include "Selector.h"
 #include "Marshalling.h"
 #include "HsFFI.h"
+
+#define hsExceptionClassName "HOCHaskellException"
+#define hsExceptionIvarName "_haskellException"
 
 static BOOL excWrapperInited = NO;
 static int stablePtrOffset;
@@ -21,12 +26,18 @@ static void exc_dealloc(id self, SEL sel)
     
 #if GNUSTEP
     super.self = self;
-    super.class = self->class_pointer->super_class;
+    super.class = getSuperClassForObject(self);
     
     (*objc_msg_lookup_super(&super, selDealloc))(self, selDealloc);
 #else
     super.receiver = self;
-    super.class = self->isa->super_class;
+    
+#   ifdef __OBJC2__
+        super.super_class = getSuperClassForObject(self);
+#   else
+        super.class = getSuperClassForObject(self);
+#   endif
+
     objc_msgSendSuper(&super, selDealloc);
 #endif
 }
@@ -35,30 +46,29 @@ static void initExceptionWrapper()
 {
     if(!excWrapperInited)
     {
-        struct objc_method_list *methods = makeMethodList(1);
-        struct objc_method_list *class_methods = makeMethodList(0);
-        struct objc_ivar_list *ivars = makeIvarList(1);
+        struct hoc_method_list *methods = makeMethodList(1);
+        struct hoc_method_list *class_methods = makeMethodList(0);
+        struct hoc_ivar_list *ivars = makeIvarList(1);
+        struct objc_ivar *stablePtrIvar;
         
         selDealloc = getSelectorForName("dealloc");
         
-#ifdef GNUSTEP
-        methods->method_list[0].method_name = (SEL)"dealloc";
-#else
-        methods->method_list[0].method_name = selDealloc;
-#endif
-        methods->method_list[0].method_types = "v@:";
-        methods->method_list[0].method_imp = (IMP) &exc_dealloc;
+        setMethodInListWithIMP(methods, 0, selDealloc, "v@:", (IMP) &exc_dealloc);
         
-        setIvarInList(ivars, 0, "_haskellExecption", "^v", 0);
+        setIvarInList(ivars, 0, hsExceptionIvarName, "^v", sizeof(void *), IVAR_PTR_ALIGN);
       
         newClass(getClassByName("NSException"),
-                "HOCHaskellException",
-                sizeof(void*),
+                hsExceptionClassName,
                 ivars, methods, class_methods);
         
         clsHOCHaskellException = getClassByName("HOCHaskellException");
         
-        stablePtrOffset = ivars->ivar_list[0].ivar_offset;
+        stablePtrIvar = class_getInstanceVariable(clsHOCHaskellException, hsExceptionIvarName);
+#ifdef __OBJC2__
+        stablePtrOffset = ivar_getOffset(stablePtrIvar);
+#else
+        stablePtrOffset = stablePtrIvar->ivar_offset;
+#endif
         
         selExceptionWithNameReasonUserInfo = getSelectorForName("exceptionWithName:reason:userInfo:");
                 

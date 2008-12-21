@@ -1,6 +1,8 @@
 import Distribution.Simple
 import Distribution.PackageDescription
+import Distribution.Simple.Build
 import Distribution.Simple.Setup
+import Distribution.Simple.PreProcess
 import Distribution.Simple.Configure
 import Distribution.Simple.LocalBuildInfo
 import System.Cmd( system )
@@ -13,9 +15,46 @@ import qualified System.Info
 
 main = defaultMainWithHooks $ simpleUserHooks {
         confHook = customConfig,
-        preBuild = customPreBuild
+        buildHook = customBuild
     }
+
+-- You probably don't need to change this, but if you do beware that
+-- it will not be sanitized for the shell.
+cbitsObjectFile = "dist/build/HOC_cbits.o"
+
+needsCBitsWhileBuilding :: Executable -> Bool
+needsCBitsWhileBuilding e
+        | exeName e == "hoc-test"       = True
+        | otherwise                     = False
+
+objc2_flagName = FlagName "objc2"
+
+setObjC2Flag :: ConfigFlags -> IO ConfigFlags
+setObjC2Flag cf
+    -- if the flag is set on the command line, do nothing
+    | lookup (objc2_flagName) (configConfigurationsFlags cf) /= Nothing
+    = return cf
     
+    -- if we're not on darwin, assume false
+    | System.Info.os /= "darwin"
+    = return $ addFlag objc2_flagName False cf
+    
+    -- otherwise make an educated guess
+    | otherwise
+    = do
+        value <- objC2Available
+        return $ addFlag objc2_flagName value cf
+    
+    where addFlag flag value cf = cf { configConfigurationsFlags = 
+                (flag,value) : configConfigurationsFlags cf }
+
+objC2Available :: IO Bool
+objC2Available 
+    | System.Info.os /= "darwin"    = return False
+    | otherwise = do
+        result <- system "grep -qR /usr/include/objc -e objc_allocateClassPair"
+        return (result == ExitSuccess)
+
 backquote :: String -> IO String
 backquote cmd = do
     (inp,out,err,pid) <- runInteractiveCommand cmd
@@ -43,6 +82,8 @@ gnustepPaths = do
 
 customConfig :: (Either GenericPackageDescription PackageDescription, HookedBuildInfo) -> ConfigFlags -> IO LocalBuildInfo
 customConfig pdbi cf = do
+    cf <- setObjC2Flag cf
+    
     lbi <- configure pdbi cf
     if System.Info.os == "darwin"
         then return()
@@ -52,48 +93,56 @@ customConfig pdbi cf = do
 
     return lbi
 
-customPreBuild :: Args -> BuildFlags -> IO HookedBuildInfo
-customPreBuild args buildFlags = do
-    putStrLn "Compiling HOC_cbits..."
-    system "mkdir -p dist/build/"
+customBuild :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
+customBuild pd lbi hooks buildFlags = do
+    let Just libInfo = library pd
     
-    (cflags, paths, extralibs) <- 
-        if System.Info.os == "darwin"
-            then do
-                return ("-I/usr/include/ffi -DMACOSX", [], ["-framework Foundation"])
-            else do
-                (gcclibdir, system_libs, system_headers) <- gnustepPaths
-                ffi_cflags <- backquote "pkg-config libffi --cflags"
-                return ("-I" ++ system_headers ++ " -DGNUSTEP" ++ " " ++ ffi_cflags,
-                        ["-L" ++ gcclibdir, "-L" ++ system_libs],
-                        ["-lgnustep-base"])
+    extraFlags <- buildCBits (libBuildInfo libInfo)
+    
+    let hooked_pd = pd 
+                { library = Just $ libInfo
+                        { libBuildInfo = addCompilerFlags extraFlags
+                                                (libBuildInfo libInfo)
+                        }
+                , executables = alterExecutable needsCBitsWhileBuilding
+                        (\exe -> exe {buildInfo = addCompilerFlags extraFlags (buildInfo exe)})
+                        (executables pd)
+                }
+    
+    build hooked_pd lbi buildFlags knownSuffixHandlers
 
+-- |Build HOC_cbits.o using the flags specified in the configuration
+-- stage, and return a list of flags to add to support usage of 
+-- template-haskell while compiling (for both the library and the
+-- hoc-test executable)
+buildCBits :: BuildInfo -> IO [(CompilerFlavor, [String])]
+buildCBits buildInfo = do
+    putStrLn "Compiling HOC_cbits..."
+    system ("mkdir -p " ++ takeDirectory cbitsObjectFile)
+    
+    let cflags = cppOptions buildInfo ++ ccOptions buildInfo
+                ++ ["-I" ++ dir | dir <- includeDirs buildInfo]
+        extraGHCflags = [cbitsObjectFile]
+                ++ ["-l" ++ lib | lib <- extraLibs buildInfo]
+                ++ ["-framework " ++ fw | fw <- frameworks buildInfo]
+    
     exitCode <- system $ "gcc -r -nostdlib -I`ghc --print-libdir`/include "
-                    ++ cflags ++ " HOC_cbits/*.m -o dist/build/HOC_cbits.o"
-
+                    ++ unwords cflags
+                    ++ " HOC_cbits/*.m -o " ++ cbitsObjectFile
+    
     case exitCode of
         ExitSuccess -> return ()
         _ -> fail "Failed in C compilation."
     
-    -- system "cp dist/build/HOC_cbits.o dist/build/HOC_cbits.dyn_o"
-    system "cp dist/build/HOC_cbits.o dist/build/hoc-test/hoc-test-tmp/"
-    
-    let buildInfo = emptyBuildInfo {
-            options = [ (GHC, ["dist/build/HOC_cbits.o" ]
-                              ++ paths ++
-                              ["-lobjc",
-                               "-lffi"]
-                              ++ extralibs) ],
-            cSources = ["HOC_cbits.o"]
-        }
-        buildInfo2 = emptyBuildInfo {
-            options = [ (GHC, ["dist/build/hoc-test/hoc-test-tmp/HOC_cbits.o" ]
-                              ++ paths ++
-                              ["-lobjc",
-                               "-lffi"]
-                              ++ extralibs) ]{-,
-            cSources = ["HOC_cbits.o"]-}
-        }
-        
-    return (Just buildInfo, [("hoc-test", buildInfo2)])
+    return [(GHC, extraGHCflags)]
 
+-- TODO: check whether it's OK for the options field to have multiple
+-- entries for the same "compiler flavor"
+addCompilerFlags :: [(CompilerFlavor,[String])] -> BuildInfo -> BuildInfo
+addCompilerFlags flags buildInfo = buildInfo {
+        options = flags ++ options buildInfo
+    }
+
+alterExecutable :: (Executable -> Bool) -> (Executable -> Executable) 
+        -> [Executable] -> [Executable]
+alterExecutable p f exes = [if p exe then f exe else exe | exe <- exes]

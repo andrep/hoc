@@ -25,6 +25,7 @@ idsForEntity e
         ClassEntity _ ->
             [eHaskellName e, '_' `BS.cons` eHaskellName e,
              eHaskellName e `BS.append` BS.pack "Class",
+             eHaskellName e `BS.append` BS.pack "MetaClass",
              BS.pack "super_" `BS.append` eHaskellName e,
              eHaskellName e `BS.snoc` '_' ]
         EnumEntity complete values ->
@@ -56,11 +57,13 @@ pprSrcImportClass e
         LocalModule m
             -> text "import {-# SOURCE #-}" <+> textBS m
                 <+> parens (textBS (eHaskellName e) <> comma
-                            <+> textBS (eHaskellName e) <> text "Class")
+                            <+> textBS (eHaskellName e) <> text "Class" <> comma
+                            <+> textBS (eHaskellName e) <> text "MetaClass")
         FrameworkModule f m
             -> text "import" <+> textBS m
                 <+> parens (textBS (eHaskellName e) <> comma
-                            <+> textBS (eHaskellName e) <> text "Class")
+                            <+> textBS (eHaskellName e) <> text "Class" <> comma
+                            <+> textBS (eHaskellName e) <> text "MetaClass")
 
 pprHsBoot entityPile modName entities
     = text "module" <+> textBS modName <+> text "where" $+$
@@ -78,6 +81,9 @@ pprHsBoot entityPile modName entities
                         <+> parens (textBS name <> char '_' <+> char 'a') $+$
                     text "type" <+> textBS name <> text "Class" <+> char 'a' <+> equals
                         <+> text (maybe "Class" ( (++ "Class") . BS.unpack . eHaskellName ) mbSuper)
+                        <+> parens (textBS name <> char '_' <+> char 'a') $+$
+                    text "type" <+> textBS name <> text "MetaClass" <+> char 'a' <+> equals
+                        <+> text (maybe "MetaClass" ( (++ "MetaClass") . BS.unpack . eHaskellName ) mbSuper)
                         <+> parens (textBS name <> char '_' <+> char 'a')
                     
                   | (name, mbSuper) <- classes0 ]

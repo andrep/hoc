@@ -47,7 +47,13 @@ void *getNewHaskellDataForClass(id obj, Class isa)
 #endif
 
     if(m)
+    {
+#ifdef __OBJC2__
+        imp = method_getImplementation(m);
+#else
         imp = m->method_imp;
+#endif
+    }
     
     if(imp)
         return (*(getHaskellDataIMP)imp)(obj, selGetHaskellData);
