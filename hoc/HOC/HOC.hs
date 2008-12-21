@@ -4,6 +4,7 @@ module HOC (
         nil,
         Object(..),
         Class,
+        MetaClass,
         ClassAndObject,
         ClassObject,
         classObject,

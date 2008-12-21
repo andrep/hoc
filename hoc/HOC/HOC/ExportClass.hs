@@ -138,7 +138,7 @@ mkClassExportAction name prefix members =
                 $(fillMethodList False 3 [|imethods|] instanceMethods) 
                 $(fillMethodList True 0 [|cmethods|] classMethods)
                 clsname <- newCString name
-                newClass super clsname defaultIvarSize ivars imethods cmethods
+                newClass super clsname ivars imethods cmethods
         |]
     where
         typedInitIvars = [|initializeInstanceVariables|]

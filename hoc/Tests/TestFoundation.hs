@@ -94,16 +94,19 @@ $(declareSelector "countInvocations:upto:" [t| Int -> Int -> IO Int |])
 
 $(declareClass "HaskellObjectCountingInvocations" "NSObject")
 $(exportClass "HaskellObjectCountingInvocations" "hoci_1_" [
-        InstanceMethod 'countInvocationsUpto
+        InstanceMethod 'countInvocationsUpto,
+        ClassMethod 'countInvocationsUpto
     ])
 
 instance Has_countInvocationsUpto (HaskellObjectCountingInvocations a)
+instance Has_countInvocationsUpto (HaskellObjectCountingInvocationsClass a)
 
 hoci_1_countInvocationsUpto start limit self = return (start + 1)
 
 $(declareClass "HaskellObjectUsingSuper" "HaskellObjectCountingInvocations")
 $(exportClass "HaskellObjectUsingSuper" "hoci_2_" [
-        InstanceMethod 'countInvocationsUpto
+        InstanceMethod 'countInvocationsUpto,
+        ClassMethod 'countInvocationsUpto
     ])
 
 hoci_2_countInvocationsUpto start limit self
@@ -268,7 +271,7 @@ tests = test [
                 str <- hobj # description
                 fromNSString str @?= "<HaskellObjectWithDescription: TEST>"
             ),
-            "chaining" ~: test [
+            "instanceChaining" ~: test [
                 "base" ~: (assertNoLeaks $ do
                     hobj <- _HaskellObjectCountingInvocations # alloc >>= init
                     count <- hobj # countInvocationsUpto 0 100
@@ -284,6 +287,22 @@ tests = test [
                     count <- hobj # countInvocationsUpto 0 100
                     count @?= 2
                 )
+                
+            ],
+            "classChaining" ~: test [
+                "base" ~: (assertNoLeaks $ do
+                    count <- _HaskellObjectCountingInvocations # countInvocationsUpto 0 100
+                    count @?= 1
+                ),
+                "subclass" ~: (assertNoLeaks $ do
+                    count <- _HaskellObjectUsingSuper # countInvocationsUpto 0 100
+                    count @?= 2
+                ),
+                "subsubclass" ~: (assertNoLeaks $ do
+                    count <- _HaskellSubclassOfObjectUsingSuper # countInvocationsUpto 0 100
+                    count @?= 2
+                )
+                
             ]
         ],
         "structs" ~: test [

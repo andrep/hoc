@@ -9,7 +9,6 @@ module HOC.NewClass(
         setIvarInList,
         setMethodInList,
         makeDefaultIvarList,
-        defaultIvarSize,
         setHaskellRetainMethod,
         setHaskellReleaseMethod,
         setHaskellDataMethod
@@ -22,48 +21,78 @@ import HOC.Arguments
 import HOC.Class
 
 import Foreign.C.String
+import Foreign.C.Types
 import Foreign
 
 type IMP = FFICif -> Ptr () -> Ptr (Ptr ()) -> IO (Ptr ObjCObject)
 foreign import ccall "wrapper" wrapIMP :: IMP -> IO (FunPtr IMP)
 
-newtype MethodList = MethodList (Ptr MethodList)
-newtype IvarList = IvarList (Ptr IvarList)
+newtype MethodList = MethodList (ForeignPtr MethodList)
+newtype IvarList = IvarList (ForeignPtr IvarList)
 
 foreign import ccall "NewClass.h newClass"
-    newClass :: Ptr ObjCObject -> CString
-             -> Int -> IvarList
-             -> MethodList -> MethodList
+    rawNewClass :: Ptr ObjCObject -> CString
+             -> Ptr IvarList
+             -> Ptr MethodList -> Ptr MethodList
              -> IO ()
 
+newClass :: Ptr ObjCObject -> CString
+             -> IvarList
+             -> MethodList -> MethodList
+             -> IO ()
+newClass sc name (IvarList ivars) (MethodList ms) (MethodList cms) = 
+    withForeignPtr ivars $ \ivars -> 
+        withForeignPtr ms $ \ms ->
+            withForeignPtr cms $ \cms -> do
+                rawNewClass sc name ivars ms cms
+
 foreign import ccall "NewClass.h makeMethodList"
-    makeMethodList :: Int -> IO MethodList
+    rawMakeMethodList :: Int -> IO (Ptr MethodList)
 foreign import ccall "NewClass.h setMethodInList"
-    rawSetMethodInList :: MethodList -> Int
+    rawSetMethodInList :: Ptr MethodList -> Int
                     -> SEL -> CString
                     -> FFICif -> FunPtr IMP
                     -> IO ()
 
                       
 foreign import ccall "NewClass.h makeIvarList"
-    makeIvarList :: Int -> IO IvarList
+    rawMakeIvarList :: Int -> IO (Ptr IvarList)
 foreign import ccall "NewClass.h setIvarInList"
-    setIvarInList :: IvarList -> Int
-                  -> CString -> CString -> Int -> IO ()
+    rawSetIvarInList :: Ptr IvarList -> Int
+                  -> CString -> CString -> CSize -> Word8 -> IO ()
 
-setMethodInList methodList idx sel typ cif imp = do
-    typC <- newCString typ
-    thunk <- wrapIMP imp
-    rawSetMethodInList methodList idx sel typC cif thunk
+makeIvarList :: Int -> IO IvarList
+makeIvarList n = do
+    ivars <- rawMakeIvarList n
+    ivars <- newForeignPtr freePtr ivars
+    return (IvarList ivars)
+
+setIvarInList:: IvarList -> Int
+                  -> CString -> CString -> CSize -> Word8 -> IO ()
+setIvarInList (IvarList ivars) n name ty sz align = 
+    withForeignPtr ivars $ \ivars -> do
+        rawSetIvarInList ivars n name ty sz align
+
+makeMethodList :: Int -> IO MethodList
+makeMethodList n = do
+    methods <- rawMakeMethodList n
+    methods <- newForeignPtr freePtr methods
+    return (MethodList methods)
+
+setMethodInList (MethodList methodList) idx sel typ cif imp = 
+    withForeignPtr methodList $ \methodList -> do
+        typC <- newCString typ
+        thunk <- wrapIMP imp
+        rawSetMethodInList methodList idx sel typC cif thunk
 
 makeDefaultIvarList = do
     list <- makeIvarList 1
     name <- newCString "__retained_haskell_part__"
     typ <- newCString "^v"
-    setIvarInList list 0 name typ 0
+    setIvarInList list 0 name typ 
+        (fromIntegral $ sizeOf nullPtr)
+        (fromIntegral $ alignment nullPtr)
     return list
-
-defaultIvarSize = 4 :: Int
 
 retainSelector = getSelectorForName "retain"
 retainCif = getCifForSelector (undefined :: ID () -> IO (ID ()))
@@ -75,33 +104,11 @@ getHaskellDataSelector = getSelectorForName "__getHaskellData__"
 getHaskellDataCif = getCifForSelector (undefined :: Class () -> ID () -> IO (ID ()))
                                                 -- actually  -> IO (Ptr ()) ...
 
-setHaskellRetainMethod methodList idx = do
-    typC <- newCString "@@:"
-    thunk <- wrapIMP haskellObject_retain_IMP
-    rawSetMethodInList methodList
-                       idx
-                       retainSelector
-                       typC
-                       retainCif
-                       thunk
+setHaskellRetainMethod methodList idx = 
+    setMethodInList methodList idx retainSelector "@@:" retainCif haskellObject_retain_IMP
     
-setHaskellReleaseMethod methodList idx = do
-    typC <- newCString "v@:"
-    thunk <- wrapIMP haskellObject_release_IMP
-    rawSetMethodInList methodList
-                       idx
-                       releaseSelector
-                       typC
-                       releaseCif
-                       thunk
+setHaskellReleaseMethod methodList idx = 
+    setMethodInList methodList idx releaseSelector "v@:" releaseCif haskellObject_release_IMP
 
-setHaskellDataMethod methodList idx super mbDat = do
-    typC <- newCString "^v@:#"
-    thunk <- wrapIMP (getHaskellData_IMP super mbDat)
-    rawSetMethodInList methodList
-                       idx
-                       getHaskellDataSelector
-                       typC
-                       getHaskellDataCif
-                       thunk
-
+setHaskellDataMethod methodList idx super mbDat = 
+    setMethodInList methodList idx getHaskellDataSelector "^v@:#" getHaskellDataCif (getHaskellData_IMP super mbDat)
