@@ -57,6 +57,7 @@ Library
     hs-source-dirs: HOC
                 
     extra-libraries: objc, ffi
+    c-sources: HOC_cbits.o
     if os(darwin)
         include-dirs: /usr/include/ffi
         frameworks: Foundation
