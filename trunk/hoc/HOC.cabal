@@ -18,7 +18,7 @@ Flag ObjC2
     description: build for Objective-C 2.0
 
 Library
-    build-depends: base, template-haskell, unix
+    build-depends: base < 4, template-haskell, unix
                    
     exposed-modules:
         HOC,
@@ -57,7 +57,6 @@ Library
     hs-source-dirs: HOC
                 
     extra-libraries: objc, ffi
-    c-sources: HOC_cbits.o
     if os(darwin)
         include-dirs: /usr/include/ffi
         frameworks: Foundation
