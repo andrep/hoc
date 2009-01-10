@@ -130,8 +130,8 @@ mkClassExportAction name prefix members =
                 ivars <- makeDefaultIvarList
                 imethods <- makeMethodList (nIMethods+3)
                 cmethods <- makeMethodList nCMethods
-                setHaskellRetainMethod imethods 0
-                setHaskellReleaseMethod imethods 1
+                setHaskellRetainMethod  imethods 0 super
+                setHaskellReleaseMethod imethods 1 super
                 setHaskellDataMethod imethods 2 super (
                         Just ($(typedInitIvars) >>= return . toDyn)
                     )
