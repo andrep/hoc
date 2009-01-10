@@ -1,3 +1,11 @@
+#ifdef GNUSTEP
+#include <objc/objc-api.h>
+#else
+#include <objc/objc-runtime.h>
+#endif
+
+#include <stdlib.h>
+
 #include "MemoryManagement.h"
 
 #define DO_LOG 0
@@ -44,6 +52,7 @@ NSAutoreleasePool *newAutoreleasePool()
 
 static SEL selRetain = 0;
 static SEL selRelease = 0;
+static SEL selRetainCount = 0;
 static SEL selDealloc = 0;
 static SEL selAutorelease = 0;
 static SEL selAlloc = 0;
@@ -55,7 +64,7 @@ void retainObject(id obj)
     if(!selRetain)
         selRetain = getSelectorForName("retain");
 #if DO_LOG
-    printf("retain %p, %p\n",obj,obj->class_pointer);
+    printf("retain %p, %p\n",obj,obj->isa);
 #endif
     objc_msgSend(obj,selRetain);
 }
@@ -65,9 +74,59 @@ void releaseObject(id obj)
     if(!selRelease)
         selRelease = getSelectorForName("release");
 #if DO_LOG
-    printf("release %p, %p\n",obj,obj->class_pointer);
+    printf("release %p, %p\n",obj,obj->isa);
 #endif
     objc_msgSend(obj,selRelease);
+}
+
+void retainSuper(id obj, Class cls)
+{
+    if(!selRetain)
+        selRetain = getSelectorForName("retain");
+    
+#if DO_LOG
+    printf("retain super %p, %p\n",obj,cls);
+#endif
+
+    struct objc_super * super = calloc(1, sizeof(struct objc_super));
+    
+    super->receiver = obj;
+    super->super_class = cls;
+    
+    objc_msgSendSuper(super, selRetain);
+}
+
+void releaseSuper(id obj, Class cls)
+{
+    if(!selRelease)
+        selRelease = getSelectorForName("release");
+    
+#if DO_LOG
+    printf("release super %p, %p\n",obj,cls);
+#endif
+
+    struct objc_super * super = calloc(1, sizeof(struct objc_super));
+    
+    super->receiver = obj;
+    super->super_class = cls;
+    
+    objc_msgSendSuper(super, selRelease);
+}
+
+unsigned int retainCount(id obj) {
+    unsigned int rc;
+    
+#if DO_LOG
+    printf("retainCount %p = ",obj);
+#endif
+    if(!selRetainCount)
+        selRetainCount = getSelectorForName("retainCount");
+    
+    rc = (unsigned int) objc_msgSend(obj,selRetainCount);
+#if DO_LOG
+    printf("%d\n",rc);
+#endif
+    return rc;
 }
 
 void deallocObject(id obj)
