@@ -5,7 +5,7 @@ import Data.Typeable
 import Foreign
 import Foreign.C.String     ( CString, withCString )
 import Prelude              hiding ( catch )
-import Control.Exception    ( evaluate, throwIO, throwDyn, catchDyn, catch )
+import Control.Exception    ( Exception, evaluate, throwIO, throwDyn, catchDyn, catch )
 
 import HOC.Base
 import HOC.Arguments
@@ -15,8 +15,8 @@ data WrappedNSException = WrappedNSException (ID ())
     deriving Typeable
 
 
-foreign import ccall unsafe wrapHaskellException :: CString -> StablePtr a -> IO (Ptr ObjCObject)
-foreign import ccall unsafe unwrapHaskellException :: Ptr ObjCObject -> IO (StablePtr a)
+foreign import ccall unsafe wrapHaskellException :: CString -> StablePtr Exception -> IO (Ptr ObjCObject)
+foreign import ccall unsafe unwrapHaskellException :: Ptr ObjCObject -> IO (StablePtr Exception)
 
 exceptionObjCToHaskell :: Ptr ObjCObject -> IO a
 

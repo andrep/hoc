@@ -21,7 +21,13 @@ runParserSimple parser fileName text
     = fst $ runMessages $ runParserT parser emptyParseEnvironment fileName text
 
 lookupIntegerConstant :: String -> Parser Integer
-lookupIntegerConstant name = getState >>= Map.lookup name
+lookupIntegerConstant name = getState >>= mapLookup name
+    where
+        -- ghc 6.10's containers package no longer allows arbitrary
+        -- monads in its return types
+        mapLookup k v = case Map.lookup k v of
+            Nothing -> fail "Integer constant not found"
+            Just x  -> return x
 
 defineIntegerConstant :: String -> Integer -> Parser ()
 defineIntegerConstant name value = modifyState (Map.insert name value)
