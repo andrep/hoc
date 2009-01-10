@@ -88,4 +88,4 @@ instance ObjCArgument String (Ptr ObjCObject) where
     importArgument arg = nsStringToUTF8 arg >>= peekArray0 0
                          >>= return . utf8ToUnicode
    
-    objCTypeString _ = "*"
+    objCTypeString _ = "@"
