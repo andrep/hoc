@@ -12,7 +12,7 @@ import Control.Exception(evaluate)
 import Control.Monad(when)
 import Data.Char(isAlphaNum, toUpper)
 import Data.List(isPrefixOf,isSuffixOf)
-import Data.Maybe(mapMaybe)
+import Data.Maybe(mapMaybe, maybeToList)
 import System.Directory(getDirectoryContents, doesDirectoryExist)
 import System.Info(os)
 import Text.Parsec( runParserT )
@@ -89,9 +89,9 @@ loadHeaders (dumpPreprocessed, dumpParsed) progress headers = do
         graph :: Gr () ()
         graph = mkUGraph [ 0 .. length loaded - 1 ]
                          [ (to, from) | (_, name, includes, _) <- loaded,
-                                        from <- Map.lookup name namesToNums,
+                                        from <- maybeToList $ Map.lookup name namesToNums,
                                         include <- includes,
-                                        to <- Map.lookup include namesToNums ]
+                                        to <- maybeToList $ Map.lookup include namesToNums ]
         sorted = map (numsToHeaders Map.!) $ topsort graph
     
         process ( (headerFileName, moduleName, imports, contents) : moreHeaders ) env accum

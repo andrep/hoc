@@ -115,8 +115,10 @@ catchNS action handler
 -- NSMutableArray
 
 $(declareSelector "addObject:" [t| forall t1 . ID t1 -> IO () |])
+$(declareSelector "objectAtIndex:" [t| forall a. CUInt -> IO (ID a) |] )
 
 instance Has_addObject (NSMutableArray a)
+instance Has_objectAtIndex (NSMutableArray a)
 
 deriving instance Show NSRect
 deriving instance Show NSPoint

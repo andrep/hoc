@@ -78,6 +78,16 @@ foreign import ccall unsafe "Marshalling.h utf8ToNSString"
 
 withUTF8String str = withArray0 0 (unicodeToUtf8 str)
 
+instance ObjCArgument a (Ptr b) => ObjCArgument (Maybe a) (Ptr b) where
+    withExportedArgument Nothing  action = action nullPtr
+    withExportedArgument (Just x) action = withExportedArgument x action
+    exportArgument Nothing  = return nullPtr
+    exportArgument (Just x) = exportArgument x
+    importArgument p
+        | p == nullPtr  = return Nothing
+        | otherwise     = fmap Just (importArgument p)
+    objCTypeString _ = objCTypeString (undefined :: a)
+
 instance ObjCArgument String (Ptr ObjCObject) where
     withExportedArgument arg action =
         bracket (withUTF8String arg utf8ToNSString) releaseObject action
@@ -88,4 +98,4 @@ instance ObjCArgument String (Ptr ObjCObject) where
     importArgument arg = nsStringToUTF8 arg >>= peekArray0 0
                          >>= return . utf8ToUnicode
    
-    objCTypeString _ = "*"
+    objCTypeString _ = "@"
