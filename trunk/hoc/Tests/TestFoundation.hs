@@ -48,8 +48,15 @@ $(declareSelector "setOtherObject:" [t| forall a. ID a -> IO () |])
 instance Has_otherObject (HaskellObjectWithOutlet a)
 instance Has_setOtherObject (HaskellObjectWithOutlet a)
 
+$(declareSelector "maybeString" [t| IO (Maybe String) |])
+$(declareSelector "setMaybeString:" [t| Maybe String -> IO () |] )
+
+instance Has_maybeString (HaskellObjectWithOutlet a)
+instance Has_setMaybeString (HaskellObjectWithOutlet a)
+
 $(exportClass "HaskellObjectWithOutlet" "ho1_" [
-        Outlet "otherObject" [t| ID () |]
+        Outlet "otherObject" [t| ID () |],
+        Outlet "maybeString" [t| NSString () |]
     ])
 
 $(declareClass "HaskellObjectWithDescription" "NSObject")
@@ -214,6 +221,37 @@ tests = test [
                 hobj # setOtherObject num
                 num' <- hobj # otherObject >>= return . castObject
                 when (num /= num') $ assert "Different Object returned."
+            ),
+            "set-forget-reget" ~: (assertNoLeaks $ do
+                -- set an ivar, 'forget' the object (stash it outside haskell-space),
+                -- run the GC, 'remember' the object, and read the ivar.
+                
+                -- this catches a class of bug which helped me grok HSOs ;-)
+                
+                (num, array) <- assertLeaks 3 $ do
+                    num <- _NSNumber # alloc >>= initWithInt 42
+                    hobj <- _HaskellObjectWithOutlet # alloc >>= init
+                    hobj # setOtherObject num
+                    
+                    array <- _NSMutableArray # alloc >>= init
+                    array # addObject hobj
+                    
+                    return (num, array)
+                
+                assertLeaks (-3) $ do
+                    hobj <- array # objectAtIndex 0 :: IO (HaskellObjectWithOutlet ())
+                    
+                    num' <- hobj # otherObject >>= return . castObject
+                    when (num /= num') $ assert "Different Object returned."
+            ),
+            "set-get-maybeString" ~: (assertNoLeaks $ do
+                hobj <- _HaskellObjectWithOutlet # alloc >>= init
+                nothing <- hobj # maybeString
+                nothing @?= Nothing
+                
+                hobj # setMaybeString (Just "42")
+                just42 <- hobj # maybeString
+                just42 @?= Just "42"
             )
         ],
         "HaskellObjectWithIVar" ~: test [
