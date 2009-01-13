@@ -292,7 +292,7 @@ pprCabalFile frameworkName dependencies entities
       text "build-type: Simple" $+$
       text "build-depends:" <+>
         hsep (punctuate comma $ map text $
-                ["base", "HOC"] ++ map ("HOC-" ++) dependencies) $+$
+                ["base <4", "HOC"] ++ map ("HOC-" ++) dependencies) $+$
 --      text "" $+$
       text "exposed-modules:" <+> sep (punctuate comma $
                                         map textBS $ BS.pack frameworkName : modules) $+$
