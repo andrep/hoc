@@ -290,13 +290,21 @@ pprCabalFile frameworkName dependencies entities
     = text "name:" <+> text "HOC-" <> text frameworkName $+$
       text "version: 1.0" $+$
       text "build-type: Simple" $+$
-      text "build-depends:" <+>
-        hsep (punctuate comma $ map text $
-                ["base <4", "HOC"] ++ map ("HOC-" ++) dependencies) $+$
---      text "" $+$
-      text "exposed-modules:" <+> sep (punctuate comma $
-                                        map textBS $ BS.pack frameworkName : modules) $+$
-      text "frameworks:" <+> text frameworkName
+      text "Flag base" $+$
+      text "Library" $+$ nest 4 (              
+          text "if flag(base4)" $+$ nest 4 (
+              text "build-depends: base >= 4" $+$
+              text "cpp-options: -DBASE4" -- don't neeed the define yet, though
+          ) $+$ text "else" $+$ nest 4 (
+              text "build-depends: base < 4"
+          ) $+$
+          text "build-depends:" <+>
+              hsep (punctuate comma $ map text $
+                    ["HOC"] ++ map ("HOC-" ++) dependencies) $+$
+          text "exposed-modules:" <+> sep (punctuate comma $
+                                            map textBS $ BS.pack frameworkName : modules) $+$
+          text "frameworks:" <+> text frameworkName
+      )
     where
         modules = [ m | LocalModule m
                    <- Set.toList $ Set.fromList $
