@@ -20,6 +20,9 @@ import qualified System.Info( os )
 
 import MiniFoundation
 
+    -- (relative) path name of a text file that can be assumed to exist
+testTextFile = "HOC.cabal"
+
       -- garbage collect and make really sure that finalizers have time to run
 performGCAndWait targetCount time maxRepeat = do
     performGC
@@ -176,9 +179,9 @@ tests = test [
                 fromNSString (toNSString "Hello, world.") @?= "Hello, world."
             ),
             "initWithContentsOfFile" ~: (assertNoLeaks $ do
-                expected <- readFile "TestFoundation.hs"
+                expected <- readFile testTextFile
                 actual_ns <- _NSString # alloc >>= initWithContentsOfFile
-                                                    (toNSString "TestFoundation.hs")
+                                                    (toNSString testTextFile)
                 fromNSString actual_ns @?= expected
             ),
             "Unicode" ~:
