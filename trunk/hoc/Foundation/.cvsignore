@@ -1,9 +1,0 @@
-build
-exposed-modules.txt
-Foundation.conf-inplace
-ghcmake.build-stamp
-Makefile
-Foundation-macos.conf
-Foundation.conf
-register-inplace.build-stamp
-
