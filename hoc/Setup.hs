@@ -5,6 +5,7 @@ import Distribution.Simple.Setup
 import Distribution.Simple.PreProcess
 import Distribution.Simple.Configure
 import Distribution.Simple.LocalBuildInfo
+import Distribution.Simple.Program
 import System.Cmd( system )
 import System.Exit( ExitCode(..) )
 import System.Environment( getEnv )
@@ -99,6 +100,13 @@ customBuild pd lbi hooks buildFlags = do
     
     extraFlags <- buildCBits (libBuildInfo libInfo)
     
+    -- add compiler flags required by C parts of HOC;
+    -- 
+    -- HACK #1:
+    -- This passes the HOC_cbits.o object file on the
+    -- as a compiler flag so that template haskell can link
+    -- compile-time code.
+    
     let hooked_pd = pd 
                 { library = Just $ libInfo
                         { libBuildInfo = addCompilerFlags extraFlags
@@ -109,7 +117,42 @@ customBuild pd lbi hooks buildFlags = do
                         (executables pd)
                 }
     
-    build hooked_pd lbi buildFlags knownSuffixHandlers
+    -- HACK #2:
+    -- HOC_cbits.o (built by buildCBits below) is specified in c-sources
+    -- for the library. Cabal reacts to this by invoking ghc -c HOC_cbits.o,
+    -- which ghc doesn't like. So, instead of calling ghc directly, we call
+    -- a short auto-generated shell script that does nothing in this case,
+    -- and calls the real ghc in all other cases.
+    -- After having "compiled" HOC_cbits.o in this way, Cabal will link
+    -- HOC_cbits.o as part of the library, which is what we want.
+    
+    let Just pr = lookupKnownProgram "ghc" (withPrograms lbi)
+        Just conf = lookupProgram pr (withPrograms lbi)
+    
+        ghcLocation = programLocation conf
+        
+    let fakeGHC = "./dist/build/fake-ghc.sh"
+    
+    writeFile fakeGHC $ unlines [
+            "#!/bin/sh -e",
+            "case \"$*\" in",
+            "    *HOC_cbits.o) true;;",
+            "    *) \"" ++ locationPath ghcLocation ++ "\" \"$@\";;",
+            "esac"
+        ]
+    system $ "chmod +x " ++ fakeGHC
+    
+    let conf' = conf { programLocation = UserSpecified fakeGHC }
+        
+        progs' = updateProgram conf' (withPrograms lbi)
+    
+    let lbi' = lbi {
+                    withPrograms = progs'
+                }
+    
+    -- call the default with our modified package description and
+    -- local build info
+    build hooked_pd lbi' buildFlags knownSuffixHandlers
 
 -- |Build HOC_cbits.o using the flags specified in the configuration
 -- stage, and return a list of flags to add to support usage of 
