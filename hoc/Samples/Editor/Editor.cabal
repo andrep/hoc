@@ -1,0 +1,8 @@
+name: Editor
+Cabal-Version: >= 1.2
+version: 1.0
+build-type: Custom
+
+executable: Editor
+main-is: Main.hs
+build-depends: base, HOC, HOC-Cocoa, HOC-Foundation, HOC-AppKit, parsec >= 3.0

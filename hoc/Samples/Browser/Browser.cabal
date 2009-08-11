@@ -1,0 +1,9 @@
+name: Browser
+Cabal-Version: >= 1.2
+version: 1.0
+build-type: Custom
+
+executable: Browser
+main-is: Main.hs
+build-depends: base, array,
+               HOC, HOC-Cocoa, HOC-Foundation, HOC-AppKit, parsec >= 3.0

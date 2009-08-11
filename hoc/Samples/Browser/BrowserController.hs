@@ -1,3 +1,6 @@
+{-# LANGUAGE TemplateHaskell, TypeSynonymInstances,
+             FlexibleInstances, MultiParamTypeClasses,
+             DeriveDataTypeable, RankNTypes #-}
 module BrowserController where
 
 import Cocoa
@@ -42,8 +45,6 @@ mkArray xs = listArray (0, Prelude.length xs - 1) xs
 
 sideBarThings = mkArray $ "All" : frameworks
 
-obj #. var = obj # getIVar var
-
 bc_awakeFromNib self = do
     self #. _sideBarDataSource >>= setTVDataSourceData sideBarThings
     self #. _sideBarTableView >>= reloadData
@@ -75,7 +76,7 @@ bc_sideBarSelection sender self = do
     putStrLn $ "sidebar selection: " ++ show row
     
     let filteredSels | row == 0 = allSels
-                     | otherwise = filter (\si -> row == inFramework si)
+                     | otherwise = filter (\si -> fromIntegral row == inFramework si)
                                           allSels
     
     putStrLn $ show (Prelude.length filteredSels) ++ " selectors displayed"

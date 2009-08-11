@@ -1,0 +1,8 @@
+name: UniqSort
+Cabal-Version: >= 1.2
+version: 1.0
+build-type: Simple
+
+executable: UniqSort
+main-is: UniqSort.hs
+build-depends: base, HOC, HOC-Foundation

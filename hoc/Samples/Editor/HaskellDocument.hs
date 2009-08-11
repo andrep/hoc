@@ -1,9 +1,13 @@
+{-# LANGUAGE TemplateHaskell, TypeSynonymInstances,
+             FlexibleInstances, MultiParamTypeClasses,
+             DeriveDataTypeable #-}
 module HaskellDocument where
 
 import HOC
 
 import Cocoa
 import Foundation.NSAttributedString (string)
+import Foundation.NSString (setString)
 
 import Control.Monad (when)
 

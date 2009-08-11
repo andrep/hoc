@@ -1,6 +1,6 @@
 module Main where
 
-import Cocoa
+import Cocoa hiding (main)
 import TVUtilities
 import BrowserController
 
