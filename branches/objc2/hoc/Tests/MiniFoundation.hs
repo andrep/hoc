@@ -1,13 +1,14 @@
 {-# LANGUAGE TemplateHaskell, StandaloneDeriving, MultiParamTypeClasses,
-             TypeSynonymInstances, FlexibleInstances, RankNTypes #-}
+             TypeSynonymInstances, FlexibleInstances, RankNTypes, CPP #-}
 module MiniFoundation where
 
 import HOC
 import HOC.Exception        ( WrappedNSException(..) )
 
 import Foreign.C.Types
-import Control.Exception    ( catchDyn )
+import Control.Exception
 import System.IO.Unsafe     ( unsafePerformIO )
+import Prelude hiding ( catch )
 
 $(declareClass "NSObject" "ID")
 $(declareClass "NSString" "NSObject")
@@ -109,8 +110,13 @@ $(declareExternConst "NSParseErrorException" [t| NSString () |])
 
 catchNS :: IO a -> (NSException () -> IO a) -> IO a
 
+#ifdef BASE4
+catchNS action handler
+    = action `catch` \(WrappedNSException exc) -> handler (castObject exc)
+#else
 catchNS action handler
     = action `catchDyn` \(WrappedNSException exc) -> handler (castObject exc)
+#endif
 
 -- NSMutableArray
 

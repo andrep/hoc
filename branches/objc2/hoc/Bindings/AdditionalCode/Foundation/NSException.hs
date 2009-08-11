@@ -1,10 +1,9 @@
 --X catchNS
 
-import Control.Exception    ( catchDyn )
-import HOC.Exception        ( WrappedNSException(..) )
+import HOC.Exception        ( WrappedNSException(..), catchWrappedNSException )
 -- CUT HERE
 
 catchNS :: IO a -> (NSException () -> IO a) -> IO a
 
 catchNS action handler
-    = action `catchDyn` \(WrappedNSException exc) -> handler (castObject exc)
+    = action `catchWrappedNSException` \(WrappedNSException exc) -> handler (castObject exc)
