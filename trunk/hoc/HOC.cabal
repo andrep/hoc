@@ -64,7 +64,16 @@ Library
     hs-source-dirs: HOC
                 
     extra-libraries: objc, ffi
+
+        -- This is a hack.
+        -- Setup.hs contains code to build HOC_cbits.o from the
+        -- objective-c sources, as well as a matching hack to prevent
+        -- Cabal from invoking "ghc -c" on this file. Cabal will then
+        -- include HOC_cbits.o on the linker command line, which is the
+        -- whole point of this exercise.
     c-sources: HOC_cbits.o
+
+
     if os(darwin)
         include-dirs: /usr/include/ffi
         frameworks: Foundation
