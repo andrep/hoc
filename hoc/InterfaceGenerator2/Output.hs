@@ -290,7 +290,7 @@ pprCabalFile frameworkName dependencies entities
     = text "name:" <+> text "HOC-" <> text frameworkName $+$
       text "version: 1.0" $+$
       text "build-type: Simple" $+$
-      text "Flag base" $+$
+      text "Flag base4" $+$
       text "Library" $+$ nest 4 (              
           text "if flag(base4)" $+$ nest 4 (
               text "build-depends: base >= 4" $+$
