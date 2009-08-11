@@ -6,3 +6,6 @@ build-type: Simple
 executable: UniqSort
 main-is: UniqSort.hs
 build-depends: base, HOC, HOC-Foundation
+
+-- reduce executable size by *a lot*:
+ghc-options: -optl-Wl,-dead_strip

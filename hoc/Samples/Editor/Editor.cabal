@@ -6,3 +6,6 @@ build-type: Custom
 executable: Editor
 main-is: Main.hs
 build-depends: base, HOC, HOC-Cocoa, HOC-Foundation, HOC-AppKit, parsec >= 3.0
+
+-- reduce executable size by *a lot*:
+ghc-options: -optl-Wl,-dead_strip
