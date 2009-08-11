@@ -22,9 +22,9 @@ The Haskell interfaces produced by HOC are:
 You can use HOC to write full-blown GUI applications using Mac OS X's
 advanced Cocoa framework.
 
-For more information on HOC, see its homepage, at:
+For more information on HOC, see its google code project page, at:
 
-    http://hoc.sourceforge.net/
+    http://code.google.com/p/hoc
 
 
 Building HOC
@@ -35,35 +35,38 @@ not provided because of the dizzying number of configurations of GHC and
 target platforms (Mac OS X 10.2, 10.3, or various Linux & GNUstep
 platforms).  You'll thus have to build HOC from source code.
 
-(Note: If you have checked out HOC from CVS, see the BUILDING.CVS file for
-build instructions instead of this.)
+1. Build the HOC library and the interface generator:
 
-HOC uses GNU autoconf for its build system, so building HOC should be
-a simple matter of the standard autoconf build mantra:
+  cabal configure
+  cabal build
+  cabal install
 
-  ./configure
-  make
-  make install
+To run the unit tests, use:
 
-If you have a problem building HOC, please check the "Requirements"
-section in the docs/HOC.html file to make sure that you have all the Good
-Stuff required for HOC to build properly.  If you've got everything you
-need and HOC still doesn't work, this is a _bug_ -- please see the support
-page at http://hoc.sourceforge.net/support.html, and contact one of the
-HOC developers to help you out.  Chances are that a few other people have
-run into the same problems as you!
+  cabal configure -fTests
+  cabal build
+  ./dist/build/hoc-test/hoc-test
+  cabal install
 
-HOC should automatically locate where GHC is on your system, but if you
-want to specify what command it should use to run GHC, HOC's ./configure
-script takes a few extra flags you'll be interested in:
+2. Create the bindings:
+  
+  cd Bindings
+  sh make-bindings-macos.sh
+  cd ..
+  
+3. Build the hoc-wrap tool:
+  
+  cd Tools
+  cabal configure
+  cabal build
+  cabal install
+  cd ..  
 
-  --with-ghc=...          command to run ghc (e.g. $HOME/bin/ghc-6.4)
-  --with-ghc-pkg=...      command to run ghc-pkg (e.g. $HOME/bin/ghc-pkg-6.4)
 
-Note that HOC will install itself to GHC's library directory (which you
-can find out yourself with `ghc --print-libdir`), so you'll need the
-appropriate permissions to write to there during the 'make install'.
-
+Depending on your setup, you will need to add "sudo" in front of the
+"cabal install" commands and in front of the make-bindings command.
+You can also add additional Cabal configure options after "cabal configure"
+and after "sh make-bindings-macos.sh".
 
 Authors
 =======
