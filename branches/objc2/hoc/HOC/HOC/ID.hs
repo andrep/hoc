@@ -171,37 +171,41 @@ importImmortal = importArgument' True
 -- this is where the magic happens.
 importArgument' immortal p
     | p == nullPtr = return Nil
-    -- do what needs to be done in the lock, return what
-    -- needs to be done outside the lock (specifically,
-    -- the retain needs to be done outside the lock).  
-    | otherwise = join $ withObjectMapLock "importArgument'" $ do
-        sptr <- getHaskellPart p
-        mbHaskellObj <-
-            if castStablePtrToPtr sptr /= nullPtr
-                then do
-                    wptr <- deRefStablePtr sptr
-                    deRefWeak wptr
-                else
-                    return Nothing
-        case mbHaskellObj of
-            -- if the HSO already exists, we're done!
-            Just haskellObj -> return $ return $ ID haskellObj
-            -- notice that the finalizer definition requires new_sptr
-            Nothing -> mdo  {- it's much more pratical than fixM -}
-                haskellData <- makeNewHaskellData p
-                dPutWords ["got haskell data", show haskellData]
-                let haskellObj = HSO p (fromMaybe [] haskellData)
-                    finalizer | immortal = Nothing
-                              | otherwise = Just $ finalizeID p new_sptr
-                wptr <- mkWeakPtr haskellObj finalizer
-                new_sptr <- newStablePtr wptr
-                setHaskellPart p new_sptr (if immortal then 1 else 0)
-                
-                return $ do
-                    -- retain the object, but do it outside the
-                    -- lock because the retain IMP may need the lock.
-                    retainObject p
-                    return $ ID haskellObj
+    | otherwise = do
+        (haskellObj, retain) <- withObjectMapLock "importArgument'" $ do
+            mbHaskellObj <- lookupHSO p
+            case mbHaskellObj of
+                -- if the HSO already exists, we're done!
+                Just haskellObj -> return (haskellObj, False)
+                -- otherwise create one and (outside the lock) retain p
+                Nothing -> do
+                    haskellObj <- makeNewHSO immortal p
+                    return (haskellObj, True)
+        when retain (retainObject p)
+        return (ID haskellObj)
+
+lookupHSO p = do
+    sptr <- getHaskellPart p
+    if castStablePtrToPtr sptr /= nullPtr
+        then do
+            wptr <- deRefStablePtr sptr
+            deRefWeak wptr
+        else
+            return Nothing
+
+-- notice that wptr's finalizer definition requires new_sptr, which
+-- cannot be created till after the wptr;
+-- so we use 'mdo' (it's much more pratical than fixM)
+makeNewHSO immortal p = mdo
+    haskellData <- makeNewHaskellData p
+    dPutWords ["got haskell data", show haskellData]
+    let haskellObj = HSO p (fromMaybe [] haskellData)
+        finalizer | immortal = Nothing
+                  | otherwise = Just $ finalizeID p new_sptr
+    wptr <- mkWeakPtr haskellObj finalizer
+    new_sptr <- newStablePtr wptr
+    setHaskellPart p new_sptr (if immortal then 1 else 0)
+    return haskellObj
 
 finalizeID :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
 finalizeID cObj sptr = do
