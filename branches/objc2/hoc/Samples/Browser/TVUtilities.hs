@@ -1,5 +1,6 @@
-{-# OPTIONS_GHC -fglasgow-exts -fth #-}
-
+{-# LANGUAGE TemplateHaskell, TypeSynonymInstances,
+             FlexibleInstances, MultiParamTypeClasses,
+             DeriveDataTypeable, ExistentialQuantification #-}
 module TVUtilities(
         TVData(..),
         TVDataItem(..),
@@ -70,20 +71,21 @@ $(exportClass "SimpleTVDataSource" "sds_" [
         InstanceMethod 'tableViewObjectValueForTableColumnRow
     ])
 
-sds_init self = do
+sds_init uninitedSelf = do
+    self <- super uninitedSelf # init >>= return . castObject
     self # setIVar _theData (WrappedTVData ())
     return self
 
 sds_numberOfRowsInTableView tableView self = do
     WrappedTVData dat <- self # getIVar _theData
     let count = countItems dat
-    return count
+    return $ fromIntegral count
     
 sds_tableViewObjectValueForTableColumnRow tableView column row self = do
     WrappedTVData dat <- self # getIVar _theData
     ident <- column # identifier
     identStr <- if ident == nil then return ""
                     else haskellString $ (fromID ident :: NSString ())
-    objectValueForItem dat identStr row >>= return . toID
+    objectValueForItem dat identStr (fromIntegral row) >>= return . toID
 
 setTVDataSourceData dat self = self # setIVar _theData (WrappedTVData dat)

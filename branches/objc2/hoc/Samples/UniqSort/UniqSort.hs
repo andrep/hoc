@@ -1,6 +1,6 @@
 module Main where
 
-import Foundation
+import Foundation hiding (main)
 import Foundation.NSProcessInfo (arguments)
 import HOC
 

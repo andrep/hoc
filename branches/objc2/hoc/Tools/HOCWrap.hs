@@ -3,7 +3,7 @@ module Main where
 import Prelude                  hiding ( init )
 import qualified Prelude
 
-import Control.Exception        ( handle, throw, handleJust, userErrors )
+import Control.Exception        ( bracketOnError )
 import Control.Monad            ( when )
 import Data.List                ( isSuffixOf )
 import System.Console.GetOpt
@@ -60,7 +60,7 @@ usageHeader prog = unlines $ [
     ]
 
 
-main = handleJust userErrors (\err -> putStrLn err) $ do
+main = do
     prog <- getProgName
     args <- getArgs
     
@@ -113,42 +113,41 @@ wrapApp' justLink overwrite executable appName contents =
 
         let executableInApp = take (length appName - length ".app") appName
              
-        fm # createDirectoryAtPathAttributes nsAppName nil 
-            >>= failOnFalse "Couldn't create .app."
         
-        handle (\ex -> do
-                           fm # removeFileAtPathHandler (toNSString appName) nil
-                           throw ex
-               ) $ do
-            fm # copyPathToPathHandler (toNSString contents)
-                       {-toPath:-}     (toNSString $ appName ++ "/Contents")
-                       {-handler:-}    nil
-                >>= failOnFalse "Couldn't copy Contents folder."
+        bracketOnError
+            (fm # createDirectoryAtPathAttributes nsAppName nil 
+                >>= failOnFalse "Couldn't create .app.")
+            (\_ -> fm # removeFileAtPathHandler nsAppName nil >> return ())
+            $ \_ -> do 
+                fm # copyPathToPathHandler (toNSString contents)
+                           {-toPath:-}     (toNSString $ appName ++ "/Contents")
+                           {-handler:-}    nil
+                    >>= failOnFalse "Couldn't copy Contents folder."
+                    
+                let nsMacOSFolder = toNSString (appName ++ "/Contents/MacOS")
                 
-            let nsMacOSFolder = toNSString (appName ++ "/Contents/MacOS")
-            
-            exists <- fm # fileExistsAtPath nsMacOSFolder
-            when (not exists) $
-                fm # createDirectoryAtPathAttributes nsMacOSFolder nil
-                    >>= failOnFalse "Couldn't create Contents/MacOS"
-            
-            let copyMethod | justLink  = linkPathToPathHandler
-                           | otherwise = copyPathToPathHandler
-            
-            fm # copyMethod (toNSString executable)
-                            (toNSString $ appName ++ "/Contents/MacOS/"
-                                                  ++ executableInApp)
-                            nil
-                >>= failOnFalse "Couldn't copy executable."
-            
-            let nsPListName = toNSString $ appName ++ "/Contents/Info.plist"
-            
-            infoPList <- _NSMutableDictionary # alloc
-                     >>= initWithContentsOfFile nsPListName
-            infoPList # setObjectForKey (toNSString executableInApp)
-                                        (toNSString "CFBundleExecutable")
-            infoPList # writeToFileAtomically nsPListName False
-                >>= failOnFalse "Couldn't write plist."
+                exists <- fm # fileExistsAtPath nsMacOSFolder
+                when (not exists) $
+                    fm # createDirectoryAtPathAttributes nsMacOSFolder nil
+                        >>= failOnFalse "Couldn't create Contents/MacOS"
+                
+                let copyMethod | justLink  = linkPathToPathHandler
+                               | otherwise = copyPathToPathHandler
+                
+                fm # copyMethod (toNSString executable)
+                                (toNSString $ appName ++ "/Contents/MacOS/"
+                                                      ++ executableInApp)
+                                nil
+                    >>= failOnFalse "Couldn't copy executable."
+                
+                let nsPListName = toNSString $ appName ++ "/Contents/Info.plist"
+                
+                infoPList <- _NSMutableDictionary # alloc
+                         >>= initWithContentsOfFile nsPListName
+                infoPList # setObjectForKey (toNSString executableInApp)
+                                            (toNSString "CFBundleExecutable")
+                infoPList # writeToFileAtomically nsPListName False
+                    >>= failOnFalse "Couldn't write plist."
         return ()
 
             
