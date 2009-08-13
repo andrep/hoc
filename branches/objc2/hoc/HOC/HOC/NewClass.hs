@@ -95,13 +95,13 @@ makeDefaultIvarList = do
     return list
 
 retainSelector = getSelectorForName "retain"
-retainCif = getCifForSelector (undefined :: Class () -> ID () -> IO (ID ()))
+retainCif = getCifForSelector (undefined :: ID () -> IO (ID ()))
 
 releaseSelector = getSelectorForName "release"
-releaseCif = getCifForSelector (undefined :: Class () -> ID () -> IO ())
+releaseCif = getCifForSelector (undefined :: ID () -> IO ())
 
 getHaskellDataSelector = getSelectorForName "__getHaskellData__"
-getHaskellDataCif = getCifForSelector (undefined :: Class () -> ID () -> IO (ID ()))
+getHaskellDataCif = getCifForSelector (undefined :: ID () -> IO (ID ()))
                                                 -- actually  -> IO (Ptr ()) ...
 
 setHaskellRetainMethod methodList idx super = 
