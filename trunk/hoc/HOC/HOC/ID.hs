@@ -8,7 +8,7 @@ import HOC.FFICallInterface(FFICif)
 
 import Control.Concurrent.MVar
 import Control.Exception(evaluate,assert)
-import Control.Monad(when)
+import Control.Monad(when, join)
 import System.IO.Unsafe(unsafePerformIO)
 import System.Mem.Weak
 import Foreign.Ptr
@@ -20,6 +20,12 @@ import Data.Dynamic
 import Data.Maybe(fromMaybe, isJust)
 
 data ID a = ID HSO | Nil
+
+dPutStrLn = if {--} False --} True
+    then putStrLn
+    else const $ return ()
+
+dPutWords = dPutStrLn . unwords
 
 nil = Nil
 
@@ -59,6 +65,13 @@ data HSO = HSO (Ptr ObjCObject) [Dynamic]
 objectMapLock = unsafePerformIO $ newMVar ()
 {-# NOINLINE objectMapLock #-}
 
+withObjectMapLock taker action = do
+    dPutWords [">", "withObjectMapLock", taker]
+    res <- withMVar objectMapLock $ \_ -> action
+    dPutWords ["<", "withObjectMapLock", taker]
+    return res
+
+
 -- given a pointer to an ObjCObject, return a stablePtr to a Weak reference to 
 -- a HSO
 foreign import ccall unsafe "ObjectMap.h getHaskellPart"
@@ -91,13 +104,21 @@ foreign import ccall unsafe "RetainedHaskellPart.h getRetainedHaskellPart"
     getRetainedHaskellPart :: Ptr ObjCObject -> IO (StablePtr HSO)
 foreign import ccall unsafe "RetainedHaskellPart.h setRetainedHaskellPart"
     setRetainedHaskellPart :: Ptr ObjCObject -> StablePtr HSO -> IO ()
+replaceRetainedHaskellPart :: Ptr ObjCObject -> StablePtr HSO -> IO ()
+replaceRetainedHaskellPart self newHSO = do
+    dPutWords ["replaceRetainedHaskellPart", show self, show (castStablePtrToPtr newHSO)]
+    oldHSO <- getRetainedHaskellPart self
+    when (oldHSO /= newHSO) $ do
+        when (castStablePtrToPtr oldHSO /= nullPtr) $ do
+            freeStablePtr oldHSO
+        setRetainedHaskellPart self newHSO
 
-foreign import ccall unsafe "NSObjectReferenceCount.h NSIncrementExtraRefCount"
-    nsIncrementExtraRefCount :: Ptr ObjCObject -> IO ()
-foreign import ccall unsafe "NSObjectReferenceCount.h NSDecrementExtraRefCountWasZero"
-    nsDecrementExtraRefCountWasZero :: Ptr ObjCObject -> IO CChar{-BOOL-}
-foreign import ccall unsafe "NSObjectReferenceCount.h NSExtraRefCount"
-    nsExtraRefCount :: Ptr ObjCObject -> IO CUInt
+foreign import ccall "MemoryManagement.h retainSuper"
+    retainSuper :: Ptr ObjCObject -> Ptr ObjCObject -> IO ()
+foreign import ccall "MemoryManagement.h releaseSuper"
+    releaseSuper :: Ptr ObjCObject -> Ptr ObjCObject -> IO ()
+foreign import ccall unsafe "MemoryManagement.h retainCount"
+    retainCount :: Ptr ObjCObject -> IO CUInt
 
 -- Since finalizers are executed in arbitrary threads, we must
 -- ensure that we establish an autoreleasepool for the duration
@@ -147,54 +168,52 @@ instance ObjCArgument (ID a) (Ptr ObjCObject) where
 
 importImmortal = importArgument' True
 
--- this is where the mogic happens.
+-- this is where the magic happens.
 importArgument' immortal p
     | p == nullPtr = return Nil
-    -- objectMapLock is a global, thanks to unsafePerformIO
-    | otherwise = withMVar objectMapLock $ \_ -> do
-        sptr <- getHaskellPart p
-        mbHaskellObj <-
-            if castStablePtrToPtr sptr /= nullPtr
-                then do
-                    wptr <- deRefStablePtr sptr
-                    deRefWeak wptr
-                else
-                    return Nothing
-        case mbHaskellObj of
-            -- if the HSO already exists, we're done!
-            Just haskellObj -> return $ ID haskellObj
-            -- notice that the finalizer definition requires new_sptr
-            Nothing -> mdo  {- it's much more pratical than fixM -}
-                haskellData <- makeNewHaskellData p
-                let haskellObj = HSO p (fromMaybe [] haskellData)
-                    finalizer | isJust haskellData = Just $ finalizeHaskellID p new_sptr
-                              | immortal = Nothing
-                              | otherwise = Just $ finalizeID p new_sptr
-                wptr <- mkWeakPtr haskellObj finalizer
-                new_sptr <- newStablePtr wptr
-                setHaskellPart p new_sptr (if immortal then 1 else 0)
-                
-                case haskellData of
-                    Just _ -> haskellObject_retain p
-                    Nothing -> retainObject p
-                
-                return $ ID haskellObj
+    | otherwise = do
+        (haskellObj, retain) <- withObjectMapLock "importArgument'" $ do
+            mbHaskellObj <- lookupHSO p
+            case mbHaskellObj of
+                -- if the HSO already exists, we're done!
+                Just haskellObj -> return (haskellObj, False)
+                -- otherwise create one and (outside the lock) retain p
+                Nothing -> do
+                    haskellObj <- makeNewHSO immortal p
+                    return (haskellObj, True)
+        when retain (retainObject p)
+        return (ID haskellObj)
+
+lookupHSO p = do
+    sptr <- getHaskellPart p
+    if castStablePtrToPtr sptr /= nullPtr
+        then do
+            wptr <- deRefStablePtr sptr
+            deRefWeak wptr
+        else
+            return Nothing
+
+-- notice that wptr's finalizer definition requires new_sptr, which
+-- cannot be created till after the wptr;
+-- so we use 'mdo' (it's much more pratical than fixM)
+makeNewHSO immortal p = mdo
+    haskellData <- makeNewHaskellData p
+    dPutWords ["got haskell data", show haskellData]
+    let haskellObj = HSO p (fromMaybe [] haskellData)
+        finalizer | immortal = Nothing
+                  | otherwise = Just $ finalizeID p new_sptr
+    wptr <- mkWeakPtr haskellObj finalizer
+    new_sptr <- newStablePtr wptr
+    setHaskellPart p new_sptr (if immortal then 1 else 0)
+    return haskellObj
 
 finalizeID :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
 finalizeID cObj sptr = do
-    withMVar objectMapLock $ \_ -> removeHaskellPart cObj sptr
+    withObjectMapLock "finalizeID" $ removeHaskellPart cObj sptr
+    
     releaseObjectWithPool cObj
     freeStablePtr sptr
 
-finalizeHaskellID :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()
-finalizeHaskellID cObj sptr = do
-    withMVar objectMapLock $ \_ -> removeHaskellPart cObj sptr
-    extraRefs <- nsExtraRefCount cObj
-    -- putStrLn "destroy haskelll object"
-    assert (extraRefs == 0) (deallocObjectWithPool cObj)
-    freeStablePtr sptr
-
--- 
 makeNewHaskellData p = do
     stable <- getNewHaskellData p
     if (castStablePtrToPtr stable == nullPtr)
@@ -204,77 +223,74 @@ makeNewHaskellData p = do
             freeStablePtr stable
             return (Just dat)
 
-haskellObject_retain_IMP :: FFICif -> Ptr () -> Ptr (Ptr ()) -> IO (Ptr ObjCObject)
-haskellObject_retain_IMP cif ret args = do
+haskellObject_retain_IMP :: Ptr ObjCObject -> FFICif -> Ptr () -> Ptr (Ptr ()) -> IO (Ptr ObjCObject)
+haskellObject_retain_IMP super cif ret args = do
     selfPtr <- peekElemOff args 0
     self <- peek (castPtr selfPtr) :: IO (Ptr ObjCObject)
     poke (castPtr ret) self     -- retain returns self
-    -- putStrLn "retain haskell object_IMP"
-    withMVar objectMapLock $ \_ -> haskellObject_retain self
+    dPutWords ["haskellObject_retain_IMP", show super, "<FFICif>", show ret, show args]
+    haskellObject_retain self super
     return nullPtr  -- no exception
     
-haskellObject_retain self = do
-    -- putStrLn "retain haskell object"
-    nsIncrementExtraRefCount self
+haskellObject_retain self super = do
+    dPutWords ["haskellObject_retain", show self, show super]
+    retainSuper self super
+    dPutStrLn "retained super"
     
-    stablePtrToHaskellSelf <- getRetainedHaskellPart self
-    when (castStablePtrToPtr stablePtrToHaskellSelf == nullPtr) $ do
-        stableWeakPtrToHaskellSelf <- getHaskellPart self
-        when (castStablePtrToPtr stableWeakPtrToHaskellSelf /= nullPtr) $ do
-            weakPtrToHaskellSelf <- deRefStablePtr stableWeakPtrToHaskellSelf
-            mbHaskellSelf <- deRefWeak weakPtrToHaskellSelf
-            case mbHaskellSelf of
-                Just haskellSelf -> do
-                    stablePtrToHaskellSelf <- newStablePtr haskellSelf
-                    setRetainedHaskellPart self stablePtrToHaskellSelf
-                Nothing ->
-                    -- The weak pointer will only be dealloced when there are
-                    -- no known references from ObjC and no references from Haskell.
-                    -- So if we get here, it's not my bug (hopefully).
-                    -- When an object is exported (returned or passed as a parameter)
-                    -- from Haskell, it is retained and autoreleased, so passing an
-                    -- object from Haskell to Objective C and immediately forgetting
-                    -- the reference (before ObjC has a chance to retain it) is safe.
-                    
-                    error "Error: Retaining Haskell Object that has already been released"
+    withObjectMapLock "haskellObject_retain" $ do
+        stablePtrToHaskellSelf <- getRetainedHaskellPart self
+        when (castStablePtrToPtr stablePtrToHaskellSelf == nullPtr) $ do
+            stableWeakPtrToHaskellSelf <- getHaskellPart self
+            when (castStablePtrToPtr stableWeakPtrToHaskellSelf /= nullPtr) $ do
+                weakPtrToHaskellSelf <- deRefStablePtr stableWeakPtrToHaskellSelf
+                mbHaskellSelf <- deRefWeak weakPtrToHaskellSelf
+                case mbHaskellSelf of
+                    Just haskellSelf -> do
+                        stablePtrToHaskellSelf <- newStablePtr haskellSelf
+                        setRetainedHaskellPart self stablePtrToHaskellSelf
+                    Nothing ->
+                        -- The weak pointer will only be dealloced when there are
+                        -- no known references from ObjC and no references from Haskell.
+                        -- So if we get here, it's not my bug (hopefully).
+                        -- When an object is exported (returned or passed as a parameter)
+                        -- from Haskell, it is retained and autoreleased, so passing an
+                        -- object from Haskell to Objective C and immediately forgetting
+                        -- the reference (before ObjC has a chance to retain it) is safe.
+                
+                        error "Error: Retaining Haskell Object that has already been released"
 
 
-haskellObject_release_IMP :: FFICif -> Ptr () -> Ptr (Ptr ()) -> IO (Ptr ObjCObject)
-haskellObject_release_IMP cif ret args = do
+haskellObject_release_IMP :: Ptr ObjCObject -> FFICif -> Ptr () -> Ptr (Ptr ()) -> IO (Ptr ObjCObject)
+haskellObject_release_IMP super cif ret args = do
     selfPtr <- peekElemOff args 0
     self <- peek (castPtr selfPtr) :: IO (Ptr ObjCObject)
-    -- putStrLn "release haskell object_IMP"
-    withMVar objectMapLock $ \_ -> haskellObject_release self
+    dPutWords ["haskellObject_release_IMP", show super, "<FFICif>", show ret, show args]
+    haskellObject_release super self
     return nullPtr  -- no exception
 
-haskellObject_release self = do
-    -- putStrLn "release haskell object"
-    wasZero <- nsDecrementExtraRefCountWasZero self
-        -- nobody else should call NSDecrementExtraRefCountWasZero anyway,
-        -- and we're protected from ourselves by the objectMapLock
-        -- ==> no race condition here
-    refCount <- nsExtraRefCount self
+haskellObject_release super self = do
+    dPutWords ["haskellObject_release", show super, show self]
+    retainCount+1 <- retainCount self
+        -- retainCount+1 because we want to know the retainCount after we
+        -- release; if it's about to become zero, then we won't be
+        -- able to call retainCount on self after the call to releaseSuper.
+    releaseSuper self super
+        -- retainCount should now contain the current retain count.
     
-    when (refCount == 0) $ do
+    when (retainCount == 1) $ withObjectMapLock "haskellObject_release" $ do
         -- no extra references 
         -- Only the reference from the Haskell part remains,
         -- which means we do no longer want to have a stable pointer
         -- (if we have one, that is)
-        stablePtrToHaskellSelf <- getRetainedHaskellPart self
-        when (castStablePtrToPtr stablePtrToHaskellSelf /= nullPtr) $ do
-            freeStablePtr stablePtrToHaskellSelf
-            setRetainedHaskellPart self (castPtrToStablePtr nullPtr)
-    
-    when (wasZero /= 0) $ do
-        deallocObject self
+        replaceRetainedHaskellPart self (castPtrToStablePtr nullPtr)
 
 -- this is the implementation of the __getHaskellData__ selector.
 getHaskellData_IMP :: Ptr ObjCObject -> Maybe (IO Dynamic)
                     -> FFICif -> Ptr () -> Ptr (Ptr ()) -> IO (Ptr ObjCObject)
 getHaskellData_IMP super mbDat cif ret args = do
-    -- putStrLn "__getHaskellData__"
     selfPtr <- peekElemOff args 0
     self <- peek (castPtr selfPtr) :: IO (Ptr ObjCObject)
+    dPutWords ["__getHaskellData__", show self, show super]
     superDataStable <- getNewHaskellDataForClass self super
     superData <- if castStablePtrToPtr superDataStable == nullPtr
         then do

@@ -101,14 +101,14 @@ releaseSelector = getSelectorForName "release"
 releaseCif = getCifForSelector (undefined :: ID () -> IO ())
 
 getHaskellDataSelector = getSelectorForName "__getHaskellData__"
-getHaskellDataCif = getCifForSelector (undefined :: Class () -> ID () -> IO (ID ()))
+getHaskellDataCif = getCifForSelector (undefined :: ID () -> IO (ID ()))
                                                 -- actually  -> IO (Ptr ()) ...
 
-setHaskellRetainMethod methodList idx = 
-    setMethodInList methodList idx retainSelector "@@:" retainCif haskellObject_retain_IMP
+setHaskellRetainMethod methodList idx super = 
+    setMethodInList methodList idx retainSelector "@@:" retainCif (haskellObject_retain_IMP super)
     
-setHaskellReleaseMethod methodList idx = 
-    setMethodInList methodList idx releaseSelector "v@:" releaseCif haskellObject_release_IMP
+setHaskellReleaseMethod methodList idx super = 
+    setMethodInList methodList idx releaseSelector "v@:" releaseCif (haskellObject_release_IMP super)
 
 setHaskellDataMethod methodList idx super mbDat = 
     setMethodInList methodList idx getHaskellDataSelector "^v@:#" getHaskellDataCif (getHaskellData_IMP super mbDat)

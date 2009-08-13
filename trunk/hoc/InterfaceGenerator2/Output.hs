@@ -66,7 +66,8 @@ pprSrcImportClass e
                             <+> textBS (eHaskellName e) <> text "MetaClass")
 
 pprHsBoot entityPile modName entities
-    = text "module" <+> textBS modName <+> text "where" $+$
+    = text "{-# OPTIONS -fglasgow-exts #-}" $+$
+      text "module" <+> textBS modName <+> text "where" $+$
       text "import HOC" $+$
       vcat imports $+$
       vcat classes
@@ -84,7 +85,9 @@ pprHsBoot entityPile modName entities
                         <+> parens (textBS name <> char '_' <+> char 'a') $+$
                     text "type" <+> textBS name <> text "MetaClass" <+> char 'a' <+> equals
                         <+> text (maybe "MetaClass" ( (++ "MetaClass") . BS.unpack . eHaskellName ) mbSuper)
-                        <+> parens (textBS name <> char '_' <+> char 'a')
+                        <+> parens (textBS name <> char '_' <+> char 'a') $+$
+                    text "instance" <+> text "ClassObject" <+> parens (textBS name <> text "Class" <+> text "()") $+$
+                    text "_" <> textBS name <+> text "::" <+> textBS name <> text "Class" <+> text "()"
                     
                   | (name, mbSuper) <- classes0 ]
             
