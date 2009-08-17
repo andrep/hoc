@@ -1,17 +1,13 @@
 =head1 Tools
 
-=head2 F<hocwrap>
+=head2 F<hoc-wrap>
 
-The F<hocwrap> tool takes an executable and "wraps" it in a Mac OS
-X F<.app> application bundle.  You'll need to tell hocwrap where the
-bundle's F<Contents/> directory using the C<-c> command-line parameter.
-F<hocwrap> can also run the resulting application bundle using GHCi in an
-interactive fashion: more documentation about this will be coming in the
-future, but for now, check out the I<Browser> and I<Editor> applications'
-F<Makefile>s in HOC's F<Samples/> directory, for an idea of how to use the
-GHCi interaction feature.
+The F<hoc-wrap> tool takes an executable and "wraps" it in a Mac OS
+X F<.app> application bundle. It expects to find a F<Contents/> folder
+that already contains all the necessary ingredients for the bundle,
+except for the executable itself, in the current directory.
 
-See C<hocwrap --help> for the definitive reference on F<hocwrap>.
+See C<hoc-wrap --help> for the definitive reference on F<hocwrap>.
 
 =for comment Modeline for vi(m)
 vi:sw=2 tw=65
