@@ -14,7 +14,7 @@ import System.IO
 import System.Process
 import qualified System.Info
 
-main = defaultMainWithHooks $ simpleUserHooks {
+main = defaultMainWithHooks $ defaultUserHooks {
         confHook = customConfig,
         buildHook = customBuild
     }
@@ -90,14 +90,15 @@ customConfig pdbi cf = do
         then return()
         else do
             (gcclibdir, system_libs, system_headers) <- gnustepPaths
-            writeFile "HOC.buildinfo" $ "extra-lib-dirs: " ++ gcclibdir ++ ", " ++ system_libs ++ "\n"
+            writeFile "HOC.buildinfo" $ unlines [
+                "extra-lib-dirs: " ++ gcclibdir ++ ", " ++ system_libs,
+                "include-dirs: " ++ system_headers ]
 
     return lbi
 
 customBuild :: PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
 customBuild pd lbi hooks buildFlags = do
     let Just libInfo = library pd
-    
     extraFlags <- buildCBits (libBuildInfo libInfo)
     
     -- add compiler flags required by C parts of HOC;
@@ -126,7 +127,9 @@ customBuild pd lbi hooks buildFlags = do
     -- After having "compiled" HOC_cbits.o in this way, Cabal will link
     -- HOC_cbits.o as part of the library, which is what we want.
     
-    let Just pr = lookupKnownProgram "ghc" (withPrograms lbi)
+    --print ((\(ProgramConfiguration a b) -> (a,b)) $ withPrograms lbi)
+    let -- Just pr = lookupKnownProgram "ghc" (withPrograms lbi)
+        pr = simpleProgram "ghc"
         Just conf = lookupProgram pr (withPrograms lbi)
     
         ghcLocation = programLocation conf
@@ -161,18 +164,22 @@ customBuild pd lbi hooks buildFlags = do
 buildCBits :: BuildInfo -> IO [(CompilerFlavor, [String])]
 buildCBits buildInfo = do
     putStrLn "Compiling HOC_cbits..."
+
     system ("mkdir -p " ++ takeDirectory cbitsObjectFile)
     
     let cflags = cppOptions buildInfo ++ ccOptions buildInfo
-                ++ ["-I" ++ dir | dir <- includeDirs buildInfo]
+                ++ ["-I" ++ dir | dir <- includeDirs buildInfo] 
         extraGHCflags = [cbitsObjectFile]
+                ++ ["-L" ++ lib | lib <- extraLibDirs buildInfo]
                 ++ ["-l" ++ lib | lib <- extraLibs buildInfo]
                 ++ ["-framework " ++ fw | fw <- frameworks buildInfo]
     
-    exitCode <- system $ "gcc -r -nostdlib -I`ghc --print-libdir`/include "
+    let cmd = "gcc -r -nostdlib -I`ghc --print-libdir`/include "
                     ++ unwords cflags
                     ++ " HOC_cbits/*.m -o " ++ cbitsObjectFile
     
+    exitCode <- system cmd
+
     case exitCode of
         ExitSuccess -> return ()
         _ -> fail "Failed in C compilation."
