@@ -2,21 +2,8 @@
 
 =head2 Building HOC
 
-HOC is distributed as a standard UNIX tarball (F<.tar.bz2> file), and
-uses GNU I<autoconf> for its build system.  Building HOC should
-be a simple matter of the standard autoconf build mantra:
-
-  ./configure
-  make
-  make install
-
 See the F<README.txt> file in the HOC distribution for the most
 up-to-date build information.
-
-Building HOC from a CVS repository is only slightly more
-involved: see the F<BUILDING.CVS> file in your checked out CVS
-directory (which is not included in proper release tarball) for
-more information.
 
 =head2 Template Haskell in a Nutshell
 
