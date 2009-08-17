@@ -5,13 +5,11 @@ import HOC.Base         ( SEL )
 import HOC.Arguments    ( getCifForSelector )
 import HOC.ID           ( ID )
 import HOC.TH           ( fromSameModuleAs_v )
-import HOC.THDebug
-import Control.Monad    (when)
+-- import HOC.THDebug
 
 import Data.List        ( intersperse )
 import Data.Maybe       ( catMaybes, fromMaybe )
 import Data.Word        ( Word )
-import Data.Generics
 import Foreign          ( Ptr )
 import Foreign.C
 import Language.Haskell.TH

@@ -6,7 +6,6 @@ module HOC.Dyld(
 
 import GHC.Exts(Ptr(..), Addr#)
 import Foreign
-import Foreign.C.String
 import System.Posix.DynamicLinker
 
 lookupSymbol :: String -> IO (FunPtr a)

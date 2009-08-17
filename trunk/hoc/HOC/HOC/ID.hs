@@ -7,17 +7,17 @@ import HOC.Arguments
 import HOC.FFICallInterface(FFICif)
 
 import Control.Concurrent.MVar
-import Control.Exception(evaluate,assert)
-import Control.Monad(when, join)
+import Control.Exception(evaluate)
+import Control.Monad(when)
 import System.IO.Unsafe(unsafePerformIO)
 import System.Mem.Weak
 import Foreign.Ptr
 import Foreign.StablePtr
-import Foreign.C.Types(CInt,CUInt,CChar {- ObjC BOOL is typedefed to char -})
+import Foreign.C.Types(CInt,CUInt)
 import Foreign.Storable
 import Foreign.Marshal.Alloc(alloca)
 import Data.Dynamic
-import Data.Maybe(fromMaybe, isJust)
+import Data.Maybe(fromMaybe)
 
 data ID a = ID HSO | Nil
 

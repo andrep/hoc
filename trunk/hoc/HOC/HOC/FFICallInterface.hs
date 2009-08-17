@@ -75,10 +75,6 @@ foreign import ccall unsafe cifIsStret :: FFICif -> IO CInt
 
 promotedPeek p
     = peek (castPtr p :: Ptr CLong) >>= return . fromIntegral
-    where
-        size = sizeOf (pointee p)
-        pointee :: Ptr p -> p
-        pointee = undefined
 
 promotedAlloca f = alloca (\intPtr -> f $ castPtr (intPtr :: Ptr CLong))
 

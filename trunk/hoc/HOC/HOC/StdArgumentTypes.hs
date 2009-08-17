@@ -5,14 +5,12 @@
 module HOC.StdArgumentTypes where
 
 import HOC.Base
-import HOC.Invocation
 import HOC.Arguments
 import HOC.FFICallInterface
 
 import Control.Exception        ( bracket )
 import Foreign
 import Foreign.C.Types
-import Foreign.C.String
 
 import HOC.Unicode
 

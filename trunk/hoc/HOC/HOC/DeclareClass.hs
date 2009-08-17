@@ -1,14 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 module HOC.DeclareClass(declareClass) where
 
-import HOC.Base
-import HOC.Arguments
 import HOC.Class
 import HOC.Super
 
 import HOC.TH
-
-import Foreign.Ptr
 
 declareClass :: String -> String -> Q [Dec]
 

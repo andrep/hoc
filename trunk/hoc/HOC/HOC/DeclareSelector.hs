@@ -1,22 +1,17 @@
 {-# LANGUAGE TemplateHaskell, EmptyDataDecls #-}
 module HOC.DeclareSelector where
     
-import HOC.Base
 import HOC.Arguments
-import HOC.Class
 import HOC.Invocation
 import HOC.SelectorNameMangling
-import HOC.MsgSend
-import HOC.FFICallInterface
 import HOC.SelectorMarshaller
-import HOC.StdArgumentTypes
+import HOC.StdArgumentTypes     ()
 import HOC.ID
-import HOC.NewlyAllocated(NewlyAllocated)
+import HOC.NewlyAllocated       (NewlyAllocated)
 import HOC.Super
 import HOC.CannedCIFs
 import HOC.MessageTarget
 
-import Data.Char(isUpper, toLower, toUpper)
 import Data.Maybe(fromMaybe)
 import Control.Monad(MonadPlus(mplus))
 
@@ -29,6 +24,7 @@ data Inited
 data Retained a
 
 $(makeMarshallers 4)
+marshallersUpTo :: Int
 marshallersUpTo = 4
 
 {-# NOINLINE method0 #-} 
@@ -77,7 +73,7 @@ declareRenamedSelector name haskellName typeSigQ =
             className = "Has_" ++ haskellName
             imptypeName = "ImpType_" ++ haskellName
        
-            nArgs = countArgs typeSig
+            nArgs = countArgs typeSig :: Int
             
             -- isPure is a boolean that indicates if the resultType of our type
             -- signature is not in the IO mondad

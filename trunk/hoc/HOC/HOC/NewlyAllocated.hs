@@ -17,13 +17,11 @@ import HOC.Base         ( ObjCObject )
 import HOC.Arguments    ( ObjCArgument(..) )
 import HOC.Class
 import HOC.ID
-import HOC.MessageTarget( Object(..), MessageTarget(..) )
+import HOC.MessageTarget( MessageTarget(..) )
 import HOC.MsgSend
 import HOC.Super
 
 import Foreign.Ptr      ( Ptr, nullPtr )
-import System.IO.Unsafe ( unsafePerformIO )
-
 
 data NewlyAllocated a
     = NewlyAllocated (Ptr ObjCObject)

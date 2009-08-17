@@ -18,7 +18,6 @@ import HOC.Base
 import HOC.ID
 import HOC.FFICallInterface
 import HOC.Arguments
-import HOC.Class
 
 import Foreign.C.String
 import Foreign.C.Types

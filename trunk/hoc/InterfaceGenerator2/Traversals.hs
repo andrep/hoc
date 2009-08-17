@@ -1,4 +1,4 @@
-{-# OPTIONS -cpp -fth -fglasgow-exts #-}
+{-# LANGUAGE CPP, TemplateHaskell, RelaxedPolyRec #-}
 module Traversals where
 
 #define TEMPLATES 1

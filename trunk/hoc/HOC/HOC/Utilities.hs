@@ -3,7 +3,6 @@ module HOC.Utilities where
 
 import HOC.Base
 import HOC.Arguments
-import HOC.ID
 import HOC.TH
 import HOC.ExportClass
 import Foreign.Ptr

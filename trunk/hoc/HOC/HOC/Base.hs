@@ -3,7 +3,6 @@ module HOC.Base where
 
 import Foreign
 import Foreign.C.String
-import Control.Monad(when)
 import Control.Exception(bracket)
 
 -- The SEL Type

@@ -69,15 +69,12 @@ module HOC (
 
 import HOC.Base
 import HOC.Arguments
-import HOC.Invocation
 import HOC.ID
 import HOC.MessageTarget
 import HOC.Class
 import HOC.DeclareClass
 import HOC.ExportClass
-import HOC.SelectorMarshaller
 import HOC.DeclareSelector
-import HOC.StdArgumentTypes
 import HOC.ExportClass
 import HOC.Utilities
 import HOC.NewlyAllocated

@@ -3,11 +3,9 @@
              UndecidableInstances, ScopedTypeVariables #-}
 module HOC.Arguments where
 
-import HOC.Base
 import HOC.FFICallInterface
 
 import Foreign.Storable
-import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Marshal.Array
 import System.IO.Unsafe(unsafePerformIO)
@@ -67,8 +65,8 @@ declareStorableObjCArgument ty str = do
         `appT` ty `appT` ty)
             `whereQ` [d|
                 {- withExportedArgument = flip ($) -}
-                exportArgument = return
-                importArgument = return 
+                exportArgument x = return x
+                importArgument x = return x
                 objCTypeString _ = str
             |]
     return [argInst]

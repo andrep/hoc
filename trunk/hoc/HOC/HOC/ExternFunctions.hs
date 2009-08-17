@@ -52,7 +52,7 @@ declareExternFun name typeSigQ
                 -- ### FIXME: Code Duplication from DeclareSelector.hs
             countArgs (ForallT vars ctxt ty) = countArgs ty
             countArgs ((ArrowT `AppT` _) `AppT` rest) = 1 + countArgs rest
-            countArgs other = 0
+            countArgs other = 0 :: Int
     
             resultType (ForallT vars ctxt ty) = resultType ty
             resultType ((ArrowT `AppT` _) `AppT` rest) = resultType rest
