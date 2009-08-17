@@ -34,16 +34,18 @@ Class getRootClassForClass(Class super_class)
     Class root_class;
     
     for(root_class = super_class;
-    getSuperclassForClass(root_class) != nil;
-    root_class = getSuperclassForClass(root_class))
-    ;
+        getSuperclassForClass(root_class) != nil;
+        root_class = getSuperclassForClass(root_class))
+        ;
     
     return root_class;
 }
 
 Class getClassForObject(id object)
 {
-#ifdef __OBJC2__
+#ifdef GNUSTEP
+    return object->class_pointer;
+#elif defined(__OBJC2__)
     return object_getClass(object);
 #else
     return object->isa;

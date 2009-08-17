@@ -1,6 +1,17 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#ifdef GNUSTEP
+struct objc_ivar *
+class_getInstanceVariable(Class cls, const char *name);
+
+struct objc_ivar *
+object_getInstanceVariable(id obj, const char *name, void** out);
+
+struct objc_ivar *
+object_setInstanceVariable(id obj, const char *name, void* val);
+#endif
+
 struct hoc_ivar {
     char *ivar_name;
     char *ivar_types;

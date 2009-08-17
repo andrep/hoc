@@ -49,7 +49,7 @@ static void registerClassPair(Class new_class) {
     
     module->version = 8;	
     module->size = sizeof(Module);
-    module->name = strdup(name);
+    module->name = strdup(new_class->name);
     module->symtab = symtab;
     symtab->cls_def_cnt = 1;
     symtab->defs[0] = new_class;
