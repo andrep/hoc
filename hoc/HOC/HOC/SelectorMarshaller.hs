@@ -9,16 +9,12 @@ module HOC.SelectorMarshaller(
     ) where
 
 import HOC.Base
-import HOC.Arguments
 import HOC.ID
-import HOC.Class
 import HOC.Invocation
-import HOC.SelectorNameMangling
-import HOC.MsgSend
 import HOC.FFICallInterface
 import HOC.MessageTarget
 
-import Foreign                      ( withArray, Ptr, nullPtr )
+import Foreign                      ( withArray )
 import System.IO.Unsafe             ( unsafePerformIO )
 import GHC.Base                     ( unpackCString# )
 

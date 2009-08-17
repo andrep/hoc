@@ -1,6 +1,5 @@
 module HOC.SelectorNameMangling where
 
-import Data.List(intersperse)
 import Data.Char(isUpper, toUpper, toLower)
 
 -- addObject:forKey: -> addObjectForKey

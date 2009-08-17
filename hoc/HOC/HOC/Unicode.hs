@@ -53,7 +53,6 @@ module HOC.Unicode
     )
 where
 
-import Data.Char( toUpper )
 import Data.Word( Word8 )
 
 -- ------------------------------------------------------------
@@ -143,7 +142,7 @@ utf8ToUnicode []
 -- |
 -- conversion from Unicode strings (UString) to UTF8 encoded strings.
 
-unicodeToUtf8           :: String -> UTF8String
+unicodeToUtf8           :: UString -> UTF8String
 unicodeToUtf8           = concatMap unicodeCharToUtf8
 
 -- |

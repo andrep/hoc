@@ -58,8 +58,8 @@ declareCEnum name assocs
                 ],
             instanceD (cxt []) (conT ''ObjCArgument `appT` conT typ `appT` [t| CInt |])
                 `whereQ` [d|
-                    exportArgument = return . fromCEnum
-                    importArgument = return . toCEnum
+                    exportArgument x = return (fromCEnum x)
+                    importArgument x = return (toCEnum x)
                     objCTypeString _ = "i"
                 |]
         ] ++ [

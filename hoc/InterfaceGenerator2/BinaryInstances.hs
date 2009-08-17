@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternGuards, PatternSignatures, ExistentialQuantification #-}
+{-# LANGUAGE PatternGuards, ScopedTypeVariables, ExistentialQuantification #-}
 module BinaryInstances() where
 
 import Data.Binary

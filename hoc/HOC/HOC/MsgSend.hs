@@ -12,7 +12,6 @@ import HOC.Arguments
 import HOC.Invocation
 
 import Foreign
-import Control.Monad.Fix(mfix)
 
 objSendMessageWithRetval
     :: ObjCArgument a b

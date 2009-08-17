@@ -1,4 +1,4 @@
-{-# OPTIONS -fglasgow-exts -fth #-}
+{-# LANGUAGE TemplateHaskell #-}
 module HOC.CStruct( declareCStruct, declareCStructWithTag ) where
     
 import HOC.Arguments        ( ObjCArgument(..) )
@@ -7,7 +7,6 @@ import HOC.NameCaseChange   ( nameToUppercase )
 import HOC.FFICallInterface
 
 import Control.Monad.State
-import Data.Bits
 import Data.Maybe           ( fromMaybe )
 import Foreign
 

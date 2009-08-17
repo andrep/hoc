@@ -1,4 +1,4 @@
-{-# OPTIONS -fno-monomorphism-restriction #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module HOC.THDebug
     (

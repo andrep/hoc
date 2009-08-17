@@ -1,7 +1,6 @@
 {-# LANGUAGE TemplateHaskell, MultiParamTypeClasses, FunctionalDependencies #-}
 module HOC.ExportClass where
 
-import Foreign
 import Foreign.C.String
 import Control.Concurrent.MVar
 import Data.Dynamic
@@ -10,10 +9,10 @@ import Data.Maybe(mapMaybe)
 import Data.Char(toUpper)
 
 import HOC.Base
-import HOC.ID
 import HOC.MessageTarget
 import HOC.Arguments
 import HOC.Invocation
+import HOC.ID
 import HOC.SelectorMarshaller
 import HOC.Class
 import HOC.NewClass
