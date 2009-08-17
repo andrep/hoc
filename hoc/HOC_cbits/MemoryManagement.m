@@ -48,6 +48,7 @@ NSAutoreleasePool *newAutoreleasePool()
 
 #ifdef GNUSTEP
 #define objc_msgSend(self,sel) (*objc_msg_lookup(self,sel))(self,sel)
+#define objc_msgSendSuper(super,sel) (*objc_msg_lookup_super(super,sel))(super->self,sel)
 #endif
 
 static SEL selRetain = 0;
@@ -90,8 +91,13 @@ void retainSuper(id obj, Class cls)
 
     struct objc_super * super = calloc(1, sizeof(struct objc_super));
     
+#if GNUSTEP
+    super->self = obj;
+    super->class = cls;
+#else
     super->receiver = obj;
     super->super_class = cls;
+#endif
     
     objc_msgSendSuper(super, selRetain);
 }
@@ -107,8 +113,13 @@ void releaseSuper(id obj, Class cls)
 
     struct objc_super * super = calloc(1, sizeof(struct objc_super));
     
+#if GNUSTEP
+    super->self = obj;
+    super->class = cls;
+#else
     super->receiver = obj;
     super->super_class = cls;
+#endif
     
     objc_msgSendSuper(super, selRelease);
 }

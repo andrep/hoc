@@ -9,6 +9,49 @@
 
 #include "Ivars.h"
 
+#ifdef GNUSTEP
+struct objc_ivar *
+class_getInstanceVariable(Class cls, const char *name)
+{
+    struct objc_ivar *ivar = NULL;
+    
+    while(cls)
+    {
+        if(cls->ivars)
+        {
+            int i;
+            
+            for(i=0;i<cls->ivars->ivar_count;i++)
+            {
+                if(!strcmp(cls->ivars->ivar_list[i].ivar_name, name))
+                    return &cls->ivars->ivar_list[i];
+            }
+        }
+        cls = cls->super_class;
+    }
+    return NULL;
+}
+
+struct objc_ivar *
+object_getInstanceVariable(id obj, const char *name, void** out)
+{
+    struct objc_ivar *ivar = class_getInstanceVariable(obj->class_pointer,name);
+    if(ivar)
+        *out = *(void**) ((char*)obj + ivar->ivar_offset);
+    return ivar;
+}
+
+struct objc_ivar *
+object_setInstanceVariable(id obj, const char *name, void* val)
+{
+    struct objc_ivar *ivar = class_getInstanceVariable(obj->class_pointer,name);
+    if(ivar)
+        *(void**) ((char*)obj + ivar->ivar_offset) = val;
+    return ivar;
+}
+#endif
+
+
 struct hoc_ivar_list * makeIvarList(int n)
 {
     struct hoc_ivar_list *list = 
