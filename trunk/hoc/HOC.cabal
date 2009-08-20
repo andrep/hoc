@@ -73,7 +73,6 @@ Library
         -- whole point of this exercise.
     c-sources: HOC_cbits.o
 
-
     if os(darwin)
         include-dirs: /usr/include/ffi
         frameworks: Foundation
@@ -82,7 +81,9 @@ Library
         -- paths are inserted by Setup.hs
         extra-libraries: gnustep-base
         cpp-options: -DGNUSTEP
-    
+        cc-options: -fobjc-exceptions
+                    -D_NATIVE_OBJC_EXCEPTIONS=1
+
     if flag(ObjC2)
         cpp-options: -D__OBJC2__=1
 
