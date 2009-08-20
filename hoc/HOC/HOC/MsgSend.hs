@@ -10,7 +10,6 @@ import HOC.Base
 import HOC.FFICallInterface
 import HOC.Arguments
 import HOC.Invocation
-
 import Foreign
 
 objSendMessageWithRetval
@@ -42,7 +41,7 @@ foreign import ccall "objc/objc.h objc_msg_lookup"
 
 foreign import ccall "objc/objc.h objc_msg_lookup_super"
     objc_msg_lookup_super :: Ptr ObjCObject -> SEL -> IO (FunPtr ())
-     
+    
 sndMsgCommon call cif args = do
     target <- peekElemOff args 0 >>= peek . castPtr
     selector <- peekElemOff args 1 >>= peek . castPtr
@@ -50,10 +49,15 @@ sndMsgCommon call cif args = do
     call cif imp args
     
 sndMsgSuperCommon call cif args = do
-    super <- peekElemOff args 0 >>= peek . castPtr
-    peek (castPtr super) >>= pokeElemOff args 0
+    arg0Ptr <- peekElemOff args 0
+    super <- peek (castPtr arg0Ptr)
+    object <- peek (castPtr super)
+    poke (castPtr arg0Ptr) (object :: Ptr ObjCObject)
+
     selector <- peekElemOff args 1 >>= peek . castPtr
+
     imp <- objc_msg_lookup_super super selector
+
     call cif imp args
 
     
