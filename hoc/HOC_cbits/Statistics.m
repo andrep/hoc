@@ -37,7 +37,7 @@ void recordHOCEvent(int what, void ** args)
     obj = *(id*)  args[0];
     sel = *(SEL*) args[1];
     
-   // printf("recordHOCEvent %d\n", what);
+    //printf("recordHOCEvent %d %p %s\n", what, obj, sel_get_name(sel));
     
 #ifdef DO_TIMINGS
     static uint64_t saved;
