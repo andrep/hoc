@@ -25,7 +25,7 @@ import Foreign
 -- super, which is sufficient to define a class hierarchy.
 class SuperClass sub super | sub -> super
 
-data SuperTarget a = SuperTarget a (Class ())
+data SuperTarget a = SuperTarget a (Ptr ObjCObject)
 
 class Super sub super | sub -> super where
     super :: sub -> super
@@ -43,7 +43,6 @@ instance MessageTarget a
         => ObjCArgument (SuperTarget a) (Ptr ObjCObject) where
 
     withExportedArgument (SuperTarget obj cls) action =
-        withExportedArgument cls $ \cls ->
         withExportedArgument obj $ \p ->
         withExportedSuper p cls action
         
@@ -55,19 +54,14 @@ instance MessageTarget a
 castSuper :: SuperClass (ID sub) (ID super) => ID sub -> ID super
 castSuper = castObject
 
-staticSuperclassForObject :: 
-    ( SuperClass (ID sub) (ID super)
-    , ClassObject (Class super)
-    ) => ID sub -> Class super
-staticSuperclassForObject obj = classObject
-
 instance (Object (ID sub), Object (ID super), SuperClass (ID sub) (ID super), 
-          ClassObject (Class super))
+          RawStaticClass (ID super))
     => Super (ID sub) (SuperTarget (ID super)) where
-    super obj = SuperTarget (castSuper obj) (castObject (staticSuperclassForObject obj))
+    super obj = SuperTarget (castSuper obj)
+                    (rawStaticClassForObject (castSuper obj)) 
 
 instance MessageTarget a => MessageTarget (SuperTarget a) where
-    isNil (SuperTarget x cls) = isNil x || isNil cls
+    isNil (SuperTarget x cls) = isNil x || cls == nullPtr
     
     sendMessageWithRetval _ = superSendMessageWithRetval
     sendMessageWithoutRetval _ = superSendMessageWithoutRetval

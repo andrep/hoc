@@ -65,8 +65,9 @@ void retainObject(id obj)
     if(!selRetain)
         selRetain = getSelectorForName("retain");
 #if DO_LOG
-    printf("retain %p, %p\n",obj,obj->isa);
+    printf("retain %p, %p\n",obj,getClassForObject(obj));
 #endif
+
     objc_msgSend(obj,selRetain);
 }
 
@@ -75,8 +76,9 @@ void releaseObject(id obj)
     if(!selRelease)
         selRelease = getSelectorForName("release");
 #if DO_LOG
-    printf("release %p, %p\n",obj,obj->isa);
+    printf("release %p, %p\n",obj,getClassForObject(obj));
 #endif
+
     objc_msgSend(obj,selRelease);
 }
 

@@ -6,6 +6,12 @@ import HOC.Super
 
 import HOC.TH
 
+import Debug.Trace
+
+import HOC.Arguments
+import Foreign.Ptr
+import System.IO.Unsafe
+
 declareClass :: String -> String -> Q [Dec]
 
 declareClass name super = sequence $ [
@@ -41,10 +47,6 @@ declareClass name super = sequence $ [
         valD (return $ VarP (mkName classObjectName))
             (normalB [| unsafeGetClassObject $(stringE name) |]) [],         
 
-        -- $(metaClassObjectName) = unsafeGetMetaclassForClass $(classObjectName)
-        valD (return $ VarP (mkName metaClassObjectName))
-            (normalB [| unsafeGetMetaclassForClass $(varE (mkName classObjectName)) |]) [],         
-
         -- $(superName) :: String
         sigD (mkName superName) [t| String |],
 
@@ -61,12 +63,13 @@ declareClass name super = sequence $ [
         --  where classObject = classObject
         instanceD (cxt []) (conT ''ClassObject `appT` metaClsType)
             [funD 'classObject [clause [] (normalB $ varE (mkName classObjectName)) []]],
-        
-        -- instance ClassObject metaMetaCls
-        --  where classObject = unsafeGetMetaclassForClass classObject
-        --  {- metaclass object, to support super calls in class methods -}
-        instanceD (cxt []) (conT ''ClassObject `appT` metaMetaClsType)
-            [funD 'classObject [clause [] (normalB $ varE (mkName metaClassObjectName)) []]]
+
+        -- instance RawStaticClass (name ()) where
+        --  rawStaticClassForObject _ = unsafeGetRawClassObject "name"
+        instanceD (cxt []) (conT ''RawStaticClass `appT` clsType)
+            [funD 'rawStaticClassForObject [
+                clause [wildP] (normalB $ 
+                [| unsafeGetRawClassObject $(stringE name) |] ) []]]
     ]
     where
         phantomName = name ++ "_"
@@ -78,7 +81,7 @@ declareClass name super = sequence $ [
         superMetaMetaClassName | super == "ID" = "MetaClass"
                                | otherwise = super ++ "MetaClass"
         classObjectName = "_" ++ name
-        metaClassObjectName = "_" ++ metaClassName
+        
         superName = "super_" ++ name
 
         metaMetaClsType = conT (mkName metaMetaClassName) `appT` [t| () |]
