@@ -144,6 +144,7 @@ execute filename xs = unlines $ evalState (exec xs []) macros where
     
 unblockComments ('/' : '*' : xs) = "/*" ++ handleComment xs
     where handleComment ('*' : '/' : xs) = "*/" ++ unblockComments xs
+          handleComment ('\\': '\n' : xs) = "*/\\\n/*" ++ handleComment xs
           handleComment ('\n' : xs) = "*/\n/*" ++ handleComment xs
           handleComment (c : xs) = c : handleComment xs
           handleComment [] = []
@@ -153,14 +154,26 @@ unblockComments [] = "\n"
 parseDirectives = map (\l -> case parse line "" l of
                                 Left e -> Text $ l ++ "// " ++ show (show e)
                                 Right x -> x) . handleBackslashes . lines . unblockComments        
-        
-handleBackslashes [] = []
-handleBackslashes (l : ls)
-    | null l = [] : handleBackslashes ls
-    | last l == '\\' = case handleBackslashes ls of
-                            (l2 : ls') -> (l ++ '\n' : l2) : ls'
-                            ls' -> ls'
-    | otherwise = l : handleBackslashes ls
+
+handleBackslashes = f . map reverse where
+    f :: [String] -> [String]
+    f [] = []
+    f ls@(firstLine:otherLines)
+      | null backslashed = reverse firstLine : f otherLines
+      | otherwise = [reverse (concat (line : reverse backslashed))]
+            ++ replicate (length backslashed) ""
+            ++ f rest
+        where
+            backslashed :: [String]
+            backslashed = map (drop 1) $ takeWhile bs ls
+            unbackslashed = dropWhile bs ls
+            line :: String
+            rest:: [String]
+            (line,rest) = case unbackslashed of
+                (l:r) -> (l,r)
+                [] -> ("",[])
+            bs ('\\':_) = True
+            bs _ = False
 
 preprocess :: String -> String -> String        
 preprocess fn f = execute fn $ parseDirectives f

@@ -134,8 +134,24 @@ tests = "TestPreprocessor" ~: test [
             \#endif\n\
             \#endif",
             
-        "defineBackslash" ~: success
+        "defineBackslash" ~:
             "#define FOO bar\\\n\
             \            baz\n\
-            \success"
+            \A" ==>
+            "//#define FOO bar\
+              \            baz\n\
+              \\n\
+            \A",
+        
+        "defineArgBackslash" ~:
+            "#define FOO(x,y) bar\\\n\
+            \                 baz\n\
+            \A" ==>
+            "//#define FOO(x,y) bar\
+              \                 baz\n\
+              \\n\
+            \A",
+
+        "commentBackslash" ~:
+            "/* abc\\\ndef */\nghi\n" ==> "/* abc*//*def */\n\nghi\n"
     ]
