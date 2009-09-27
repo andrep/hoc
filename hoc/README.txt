@@ -37,36 +37,35 @@ platforms).  You'll thus have to build HOC from source code.
 
 1. Build the HOC library and the interface generator:
 
-  cabal configure
-  cabal build
-  cabal install
+  runhaskell Setup.hs configure
+  runhaskell Setup.hs build
+  sudo runhaskell Setup.hs install
 
 To run the unit tests, use:
 
-  cabal configure -fTests
-  cabal build
+  runhaskell Setup.hs configure -fTests
+  runhaskell Setup.hs build
   ./dist/build/hoc-test/hoc-test
-  cabal install
+  sudo runhaskell Setup.hs install
 
 2. Create the bindings:
   
   cd Bindings
-  sh make-bindings-macos.sh
+  sudo sh make-bindings-macos.sh
   cd ..
   
 3. Build the hoc-wrap tool:
   
   cd Tools
-  cabal configure
-  cabal build
-  cabal install
+  runhaskell Setup.hs configure
+  runhaskell Setup.hs build
+  sudo runhaskell Setup.hs install
   cd ..  
 
 
-Depending on your setup, you will need to add "sudo" in front of the
-"cabal install" commands and in front of the make-bindings command.
-You can also add additional Cabal configure options after "cabal configure"
-and after "sh make-bindings-macos.sh".
+Depending on your setup, you might be able to leae out the "sudo".
+You can also add additional Cabal configure options after "configure"
+commands, and after "sh make-bindings-macos.sh" (like, e.g. --user).
 
 Authors
 =======
