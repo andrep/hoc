@@ -174,7 +174,7 @@ buildCBits buildInfo = do
                 ++ ["-l" ++ lib | lib <- extraLibs buildInfo]
                 ++ ["-framework " ++ fw | fw <- frameworks buildInfo]
     
-    let cmd = "gcc -r -nostdlib -I`ghc --print-libdir`/include "
+    let cmd = "gcc -m32 -r -nostdlib -I`ghc --print-libdir`/include "
                     ++ unwords cflags
                     ++ " HOC_cbits/*.m -o " ++ cbitsObjectFile
     
