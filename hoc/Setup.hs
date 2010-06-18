@@ -81,7 +81,7 @@ gnustepPaths = do
     --    system_libs = gnustepsysroot </> "Library/Libraries"
     return (gcclibdir, system_libs, system_headers)
 
-customConfig :: (Either GenericPackageDescription PackageDescription, HookedBuildInfo) -> ConfigFlags -> IO LocalBuildInfo
+customConfig :: (GenericPackageDescription, HookedBuildInfo) -> ConfigFlags -> IO LocalBuildInfo
 customConfig pdbi cf = do
     cf <- setObjC2Flag cf
     
