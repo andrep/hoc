@@ -133,8 +133,6 @@ instance FFITypeable CFloat where
     makeFFIType _ = return ffi_type_float
 instance FFITypeable CDouble where
     makeFFIType _ = return ffi_type_double
-instance FFITypeable CLDouble where
-    makeFFIType _ = return ffi_type_longdouble
 
 -- ### FIXME: this should be autoconfigured.
 -- The following are correct for Mac OS X

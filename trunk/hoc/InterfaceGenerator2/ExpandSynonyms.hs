@@ -3,6 +3,10 @@ module ExpandSynonyms where
 
 import Language.Haskell.TH
 
+import Control.Arrow
+
+extractName (PlainTV n) = n
+extractName (KindedTV n _) = n
 expandSynonyms typ
     = typ >>= flip expandSynonyms1 []
     where
@@ -33,7 +37,7 @@ expandSynonyms typ
             = ForallT names cxt (substTy mapping' t)
             where mapping' = filter (not . (`elem` names) . fst) mapping
         substTy mapping (VarT name)
-            = case lookup name mapping of
+            = case lookup name (map (first extractName) mapping) of
                 Just t -> t
                 Nothing -> VarT name
         substTy mapping (AppT a b)
