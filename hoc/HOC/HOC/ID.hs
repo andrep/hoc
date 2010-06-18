@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, RecursiveDo,
+{-# LANGUAGE ForeignFunctionInterface, DoRec,
              MultiParamTypeClasses, FlexibleInstances #-}
 module HOC.ID where
 
@@ -196,15 +196,17 @@ lookupHSO p = do
 -- notice that wptr's finalizer definition requires new_sptr, which
 -- cannot be created till after the wptr;
 -- so we use 'mdo' (it's much more pratical than fixM)
-makeNewHSO immortal p = mdo
-    haskellData <- makeNewHaskellData p
-    dPutWords ["got haskell data", show haskellData]
-    let haskellObj = HSO p (fromMaybe [] haskellData)
-        finalizer | immortal = Nothing
-                  | otherwise = Just $ finalizeID p new_sptr
-    wptr <- mkWeakPtr haskellObj finalizer
-    new_sptr <- newStablePtr wptr
-    setHaskellPart p new_sptr (if immortal then 1 else 0)
+makeNewHSO immortal p = 
+  do
+    rec
+      haskellData <- makeNewHaskellData p
+      dPutWords ["got haskell data", show haskellData]
+      let haskellObj = HSO p (fromMaybe [] haskellData)
+          finalizer | immortal = Nothing
+                    | otherwise = Just $ finalizeID p new_sptr
+      wptr <- mkWeakPtr haskellObj finalizer
+      new_sptr <- newStablePtr wptr
+      setHaskellPart p new_sptr (if immortal then 1 else 0)
     return haskellObj
 
 finalizeID :: Ptr ObjCObject -> StablePtr (Weak HSO) -> IO ()

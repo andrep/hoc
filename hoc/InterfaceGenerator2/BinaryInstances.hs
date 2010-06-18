@@ -27,7 +27,7 @@ gput thing
         gput0 = case constrRep (toConstr thing) of
             IntConstr i     -> put i
             FloatConstr f   -> put f
-            StringConstr s  -> put s
+            CharConstr c    -> put c
             AlgConstr i     -> do
                 putWord8 (fromIntegral i)
                 gmapM (\x -> gput x >> return x) thing
@@ -53,9 +53,9 @@ gget
                     FloatRep -> do
                         f <- get
                         return $ mkFloatConstr dataType f
-                    StringRep -> do
-                        s <- get
-                        return $ mkStringConstr dataType s
+                    CharRep -> do
+                        c <- get
+                        return $ mkCharConstr dataType c
                     AlgRep constrs -> do
                         i <- getWord8
                         return (constrs !! (fromIntegral i - 1))

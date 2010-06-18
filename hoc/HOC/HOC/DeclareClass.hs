@@ -16,25 +16,25 @@ declareClass :: String -> String -> Q [Dec]
 
 declareClass name super = sequence $ [
         -- data $(phantomName) a
-        dataD (cxt []) (mkName phantomName) [mkName "a"]
+        dataD (cxt []) (mkName phantomName) [PlainTV (mkName "a")]
             -- the constructor is only here to work around
             -- GHC sourceforge bug #1244882.
             [return $ NormalC (mkName (phantomName ++ "dummy")) []] 
             [],
         
         -- type $(name) a = $(super) ($(phantomName) a)
-        tySynD (mkName name) [mkName "a"]
+        tySynD (mkName name) [PlainTV (mkName "a")]
             (conT (mkName super) `appT` (conT (mkName phantomName)
                                         `appT` varT (mkName "a"))),
         
         -- type $(metaClassName) a = $(superMetaClassName) ($(phantomName) a)
-        tySynD (mkName metaClassName) [mkName "a"]
+        tySynD (mkName metaClassName) [PlainTV (mkName "a")]
             (conT (mkName superMetaClassName)
                 `appT` (conT (mkName phantomName)
                         `appT` varT (mkName "a"))),
 
         -- type $(metaMetaClassName) a = $(superMetaMetaClassName) ($(phantomName) a)
-        tySynD (mkName metaMetaClassName) [mkName "a"]
+        tySynD (mkName metaMetaClassName) [PlainTV (mkName "a")]
             (conT (mkName superMetaMetaClassName)
                 `appT` (conT (mkName phantomName)
                         `appT` varT (mkName "a"))),

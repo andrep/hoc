@@ -143,12 +143,12 @@ declareRenamedSelector name haskellName typeSigQ =
                         retained,
                         liftForalls $
                         (if needInstance
-                            then ForallT (map mkName ["target", "inst"])
-                                [ConT (mkName className) `AppT` VarT (mkName "target"),
-                                 ConT (mkName "ClassAndObject")
-                                    `AppT` VarT (mkName "target") `AppT` VarT (mkName "inst")]
-                            else ForallT [mkName "target"]
-                                [ConT (mkName className) `AppT` VarT (mkName "target")]) $
+                            then ForallT (map (PlainTV . mkName) ["target", "inst"])
+                                 [ClassP (mkName className) [VarT (mkName "target")],
+                                  ClassP (mkName "ClassAndObject") [VarT (mkName "target"),
+                                                                    VarT (mkName "inst")]]
+                            else ForallT [PlainTV $ mkName "target"]
+                                 [ClassP (mkName className) [VarT (mkName "target")]]) $
                         replaceResult (
                             (ArrowT `AppT` (fromMaybe (VarT $ mkName "target") targetType))
                             `AppT` covariantResult
@@ -257,15 +257,15 @@ declareRenamedSelector name haskellName typeSigQ =
                         |]) [],
                     
                 -- type $(imptypeName) target inst = arg1 -> arg2 -> target -> IO result
-                tySynD (mkName imptypeName) (map mkName ["target","inst"])
+                tySynD (mkName imptypeName) (map (PlainTV . mkName) ["target","inst"])
                     (return $ makeImpType typeSig),
                 
                 -- class Object a => $(className) a
-                classD (cxt [conT ''MessageTarget `appT` varT (mkName "a")])
-                    (mkName className) [mkName "a"] [] [],
+                classD (cxt [classP ''MessageTarget [varT (mkName "a")]])
+                    (mkName className) [PlainTV $ mkName "a"] [] [],
                 
                 -- instance $(className) a => $(className) (SuperTarget a)
-                instanceD (cxt [conT (mkName className) `appT` varT (mkName "a")])
+                instanceD (cxt [classP (mkName className) [varT (mkName "a")]])
                     (conT (mkName className) `appT` (conT ''SuperTarget `appT` varT (mkName "a")))
                     [],
                 
