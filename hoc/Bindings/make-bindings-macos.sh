@@ -1,3 +1,4 @@
+set -x
 function build()
 {
     pushd HOC-$1
@@ -10,7 +11,12 @@ function build()
 ARGUMENTS=$*
 OPTS=
 
-IFGEN=hoc-ifgen
+IFGEN="hoc-ifgen"
+
+if [ "$HOC_SDK" != "" ];
+then
+    IFGEN="$IFGEN -s $HOC_SDK"
+fi
 
 set -e
 mkdir -p Generated
